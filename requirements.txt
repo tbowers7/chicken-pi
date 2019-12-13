@@ -1,4 +1,2 @@
-Adafruit-Blinka
-adafruit-circuitpython-busdevice
 adafruit-circuitpython-tsl2561
 adafruit-circuitpython-dht
