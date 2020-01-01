@@ -68,7 +68,7 @@ def update():
         try:
             tmp1 = dht1.temperature
             hmd1 = dht1.humidity
-            if hmd1 < 100:         # Quality control
+            if hmd1 < 100 and tmp1 < 100:         # Quality control
                 goodRead = True
             else:
                 time.sleep(0.1)    # Wait a moment, and try again
@@ -81,7 +81,7 @@ def update():
         try:
             tmp2 = dht2.temperature
             hmd2 = dht2.humidity
-            if hmd2 < 100:         # Quality control
+            if hmd2 < 100 and tmp2 < 100:         # Quality control
                 goodRead = True
             else:
                 time.sleep(0.1)    # Wait a moment, and try again
@@ -94,7 +94,7 @@ def update():
         try:
             tmp3 = dht3.temperature
             hmd3 = dht3.humidity
-            if hmd3 < 100:         # Quality control
+            if hmd3 < 100 and tmp3 < 100:         # Quality control
                 goodRead = True
             else:
                 time.sleep(0.1)    # Wait a moment, and try again
