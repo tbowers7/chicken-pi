@@ -18,7 +18,7 @@ Displays the values from chicken-pi sensors to the screen for visual inspection.
 from tkinter import *      # Tk for display window
 import time                # for the sleep() function
 import datetime            # date & time
-import os                  # Search for file on disk
+import os,sys              # Search for file on disk
 import csv                 # For CSV output
 import atexit              # Register cleanup functions
 import numpy as np         # Numpy!
@@ -60,9 +60,10 @@ dht1 = adafruit_dht.DHT22(board.D19)
 dht2 = adafruit_dht.DHT22(board.D20)
 dht3 = adafruit_dht.DHT22(board.D21)
 
-# Check to see if CSV file exists, if no, write header
-# Set up CSV file for writing, including close @ exit
-fn = 'temp_values.csv'
+# Check to see if CSV file exists in the script directory, if no,
+# write header.  Set up CSV file for writing, including close @ exit
+abspath = os.path.abspath(os.path.dirname(sys.argv[0]))
+fn = abspath+'/temp_values.csv'
 if not os.path.isfile(fn):
     csvfile = open(fn, 'w', newline='')
     csvfile.write("date,time,t1,h1,t2,h2,t3,h3\n")
