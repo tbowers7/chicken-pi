@@ -1,2 +1,3 @@
+numpy
 adafruit-circuitpython-tsl2561
 adafruit-circuitpython-dht

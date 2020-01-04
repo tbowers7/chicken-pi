@@ -20,6 +20,7 @@ import time
 import datetime
 import adafruit_dht
 import board
+import numpy as np
 # […]
 
 # Own modules
@@ -43,7 +44,6 @@ __status__ = 'Development Status :: 1 - Planning'
   2.  Method for updating DISPLAY STRING
   3.  Call the loop for Tk to DISPLAY STRING
 """
-
 # (1) Define the DISPLAY STRING
 root = Tk()
 val1 = ''
@@ -61,51 +61,30 @@ dht3 = adafruit_dht.DHT22(board.D21)
 def update():
     global val1   # Make val1 available globally
 
+    # Create list and arrays for reading loop
+    dhts = [dht1, dht2, dht3]
+    tc = np.empty(3)
+    hm = np.empty(3)
+    
     ### Read from the DHT sensors
-    # Sensor 1
-    goodRead = False
-    while goodRead == False:
-        try:
-            tmp1 = dht1.temperature
-            hmd1 = dht1.humidity
-            if hmd1 < 100 and tmp1 < 100:         # Quality control
-                goodRead = True
-            else:
-                time.sleep(0.1)    # Wait a moment, and try again
-        except:
-            time.sleep(0.1)  # If error, wait a moment, and try again
+    for sens, i in zip(dhts, [0,1,2]):
+        
+        goodRead = False
+        while goodRead == False:
+            try:
+                tc[i] = sens.temperature
+                hm[i] = sens.humidity
+                if hm[i] < 100 and tc[i] < 100:         # Quality control
+                    goodRead = True
+                else:
+                    time.sleep(0.1)    # Wait a moment, and try again
+            except:
+                time.sleep(0.1)  # If error, wait a moment, and try again
 
-    # Sensor 2
-    goodRead = False
-    while goodRead == False:
-        try:
-            tmp2 = dht2.temperature
-            hmd2 = dht2.humidity
-            if hmd2 < 100 and tmp2 < 100:         # Quality control
-                goodRead = True
-            else:
-                time.sleep(0.1)    # Wait a moment, and try again
-        except:
-            time.sleep(0.1)  # If error, wait a moment, and try again
-
-    # Sensor 3
-    goodRead = False
-    while goodRead == False:
-        try:
-            tmp3 = dht3.temperature
-            hmd3 = dht3.humidity
-            if hmd3 < 100 and tmp3 < 100:         # Quality control
-                goodRead = True
-            else:
-                time.sleep(0.1)    # Wait a moment, and try again
-        except:
-            time.sleep(0.1)  # If error, wait a moment, and try again
 
     ### Once we have good readings from all three sensors, do the C -> F
-    ### conversion and then create the output string
-    tmpf1 = tmp1 * (9. / 5.) + 32.
-    tmpf2 = tmp2 * (9. / 5.) + 32.
-    tmpf3 = tmp3 * (9. / 5.) + 32.
+    ### conversion and then create the output string (numpy is our friend)
+    tf = tc * (9. / 5.) + 32.
 
     # String includes:
     #   DATE
@@ -115,7 +94,8 @@ def update():
     
     now = datetime.datetime.now()
     val2 = "{0:s}\n\n DHT #1: {1:0.1f}\xb0F, {2:0.1f}% \n DHT #2: {3:0.1f}\xb0F, {4:0.1f}% \n DHT #3: {5:0.1f}\xb0F, {6:0.1f}% ".format(
-        now.strftime("%d-%b-%y %H:%M:%S"),tmpf1, hmd1, tmpf2, hmd2, tmpf3, hmd3)
+        now.strftime("%d-%b-%y %H:%M:%S"),
+        tf[0], hm[0], tf[1], hm[1], tf[2], hm[2])
 
     # Update the DISPLAY STRING
     if val2 != val1:
