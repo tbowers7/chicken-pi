@@ -28,7 +28,7 @@ import adafruit_dht        # DHT library
 
 # Own modules
 #from {path} import {class}
-# […]
+import chicken_tsl2591 as tsl
 
 
 ## Boilerplate variables
@@ -66,7 +66,7 @@ abspath = os.path.abspath(os.path.dirname(sys.argv[0]))
 fn = abspath+'/temp_values.csv'
 if not os.path.isfile(fn):
     csvfile = open(fn, 'w', newline='')
-    csvfile.write("date,time,t1,h1,t2,h2,t3,h3,cpu\n")
+    csvfile.write("date,time,t1,h1,t2,h2,t3,h3,cpu,lux\n")
 else:
     csvfile = open(fn, 'a', newline='')
 atexit.register(csvfile.close)
@@ -98,16 +98,21 @@ def update():
             except:
                 time.sleep(0.1)  # If error, wait a moment, and try again
 
+    ### Once we have good readings from all three sensors, do the C -> F
+    ### conversion and then create the output string (numpy is our friend)
+    tf = tc * (9. / 5.) + 32.
+
     ### Also read from the on-board temperature sensors on the Pi
     cputemp_fn = "/sys/class/thermal/thermal_zone0/temp"
     f = open(cputemp_fn,"r")
     if f.mode == 'r':
         cpuTemp = float(f.read())/1000.
     f.close()
-    
-    ### Once we have good readings from all three sensors, do the C -> F
-    ### conversion and then create the output string (numpy is our friend)
-    tf = tc * (9. / 5.) + 32.
+
+    ### Now, read from the TSL2591 light sensor on I2C
+    light = tsl.Read()
+    lux = light.read()
+    #print('Total light: {0:0.1f}lux'.format(lux))
     
     # String includes:
     #   DATE
@@ -116,9 +121,9 @@ def update():
     #   DHT3: Temp, Humidity
     
     now = datetime.datetime.now()
-    val2 = "{:s}\n\n DHT #1: {:0.1f}\xb0F, {:0.1f}% \n DHT #2: {:0.1f}\xb0F, {:0.1f}% \n DHT #3: {:0.1f}\xb0F, {:0.1f}% \n CPU: {:0.1f}\xb0C [< 85\xb0C] ".format(
+    val2 = "{:s}\n\n DHT #1: {:0.1f}\xb0F, {:0.1f}% \n DHT #2: {:0.1f}\xb0F, {:0.1f}% \n DHT #3: {:0.1f}\xb0F, {:0.1f}% \n Light: {:0.1f} lux \n CPU: {:0.1f}\xb0C [< 85\xb0C] ".format(
         now.strftime("%d-%b-%y %H:%M:%S"),
-        tf[0], hm[0], tf[1], hm[1], tf[2], hm[2], cpuTemp)
+        tf[0], hm[0], tf[1], hm[1], tf[2], hm[2], lux, cpuTemp)
 
     # Update the DISPLAY STRING
     if val2 != val1:
@@ -127,7 +132,7 @@ def update():
     
     # Write a line to the CSV file
     datawriter.writerow([now.strftime("%Y-%m-%d"),now.strftime("%H:%M:%S"),
-                         "{:0.2f},{:0.1f},{:0.2f},{:0.1f},{:0.2f},{:0.1f},{:0.1f}".format(tf[0], hm[0], tf[1], hm[1], tf[2], hm[2], cpuTemp)])
+                         "{:0.2f},{:0.1f},{:0.2f},{:0.1f},{:0.2f},{:0.1f},{:0.1f},{:0.1f}".format(tf[0], hm[0], tf[1], hm[1], tf[2], hm[2], cpuTemp, lux)])
     
     # This Method calls itself every 5s to update the display
     disp.after(5000, update)
