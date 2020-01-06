@@ -112,8 +112,14 @@ def update():
     ### Now, read from the TSL2591 light sensor on I2C
     light = tsl.Read()
     lux = light.read()
-    #print('Total light: {0:0.1f}lux'.format(lux))
-    
+    # Make LUX string, depending on value of lux
+    if lux < 10:
+        luxstr = '{:0.2f}'.format(lux)
+    elif lux < 100:
+        luxstr = '{:0.1f}'.format(lux)
+    else:
+        luxstr = '{:0.0f}'.format(lux)
+        
     # String includes:
     #   DATE
     #   DHT1: Temp, Humidity
@@ -121,9 +127,9 @@ def update():
     #   DHT3: Temp, Humidity
     
     now = datetime.datetime.now()
-    val2 = "{:s}\n\n DHT #1: {:0.1f}\xb0F, {:0.1f}% \n DHT #2: {:0.1f}\xb0F, {:0.1f}% \n DHT #3: {:0.1f}\xb0F, {:0.1f}% \n Light: {:0.1f} lux \n CPU: {:0.1f}\xb0C [< 85\xb0C] ".format(
+    val2 = "{:s}\n\n DHT #1: {:0.1f}\xb0F, {:0.1f}% \n DHT #2: {:0.1f}\xb0F, {:0.1f}% \n DHT #3: {:0.1f}\xb0F, {:0.1f}% \n Light: {:s} lux \n CPU: {:0.1f}\xb0C [< 85\xb0C] ".format(
         now.strftime("%d-%b-%y %H:%M:%S"),
-        tf[0], hm[0], tf[1], hm[1], tf[2], hm[2], lux, cpuTemp)
+        tf[0], hm[0], tf[1], hm[1], tf[2], hm[2], luxstr, cpuTemp)
 
     # Update the DISPLAY STRING
     if val2 != val1:
@@ -132,7 +138,7 @@ def update():
     
     # Write a line to the CSV file
     datawriter.writerow([now.strftime("%Y-%m-%d"),now.strftime("%H:%M:%S"),
-                         "{:0.2f},{:0.1f},{:0.2f},{:0.1f},{:0.2f},{:0.1f},{:0.1f},{:0.1f}".format(tf[0], hm[0], tf[1], hm[1], tf[2], hm[2], cpuTemp, lux)])
+                         "{:0.2f},{:0.1f},{:0.2f},{:0.1f},{:0.2f},{:0.1f},{:0.1f},{:s}".format(tf[0], hm[0], tf[1], hm[1], tf[2], hm[2], cpuTemp, luxstr)])
     
     # This Method calls itself every 5s to update the display
     disp.after(5000, update)
