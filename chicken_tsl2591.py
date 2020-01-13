@@ -40,7 +40,7 @@ class Read:
                 infrared = sensor.infrared
                 # Visible-only levels range from 0-2147483647 (32-bit)
                 visible = sensor.visible
-                if infrared < 60 and visible < 60:
+                if infrared < 256 and visible < 256:
                     increase_gain(sensor)
                 else:
                     self.lux = sensor.lux
