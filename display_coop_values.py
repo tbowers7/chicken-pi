@@ -56,10 +56,6 @@ val1 = ''
 disp = Label(root, font=('courier', 25, 'bold'), bg='black', fg='yellow')
 disp.pack(fill=BOTH, expand=1)
 
-dht1 = adafruit_dht.DHT22(board.D19)
-dht2 = adafruit_dht.DHT22(board.D20)
-dht3 = adafruit_dht.DHT22(board.D21)
-
 # Check to see if CSV file exists in the script directory, if no,
 # write header.  Set up CSV file for writing, including close @ exit
 abspath = os.path.abspath(os.path.dirname(sys.argv[0]))
@@ -77,6 +73,11 @@ datawriter = csv.writer(csvfile, delimiter=',',quotechar=' ',
 # (2) Method for updating DISPLAY STRING
 def update():
     global val1   # Make val1 available globally
+
+    # Start up the DHT sensors
+    dht1 = adafruit_dht.DHT22(board.D19)
+    dht2 = adafruit_dht.DHT22(board.D20)
+    dht3 = adafruit_dht.DHT22(board.D21)
 
     # Create list and arrays for reading loop
     dhts = [dht1, dht2, dht3]
@@ -101,6 +102,11 @@ def update():
     ### Once we have good readings from all three sensors, do the C -> F
     ### conversion and then create the output string (numpy is our friend)
     tf = tc * (9. / 5.) + 32.
+
+    ### Shut down the DHT pulseio's to minimize CPU heating from having
+    ### the libgpio_pulsed processes running constantly
+    for sens in dhts:
+        sens.pulse_in.deinit()
 
     ### Also read from the on-board temperature sensors on the Pi
     cputemp_fn = "/sys/class/thermal/thermal_zone0/temp"
