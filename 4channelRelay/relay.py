@@ -16,3 +16,4 @@ while True:
             t.sleep(1) 
     except KeyboardInterrupt as e:
         print("Quit the Loop")
+        exit()
