@@ -7,7 +7,7 @@ from adafruit_bus_device.i2c_device import I2CDevice
 from micropython import const
 
 _ADDR        = const(0x10)  # Address of the relay board
-_COMMAND_BIT = const(0xA0)  # Command bit of TSL2591
+_COMMAND_BIT = const(0x01)  # Apparent command bit of relay board
 
 
 
@@ -24,7 +24,7 @@ with busio.I2C(board.SCL, board.SDA) as i2c:
 
             
         # Add command bit
-        bytes_write[0] = 0x01 # Apparent command byte needed for relay board
+        bytes_write[0] = _COMMAND_BIT
         for jj in range(0,16):
             print(jj, jj&1, jj&2, jj&4, jj&8)
             bytes_write[1] = jj & 1
