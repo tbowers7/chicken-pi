@@ -53,7 +53,7 @@ __status__ = 'Development Status :: 1 - Planning'
 # (1) Define the DISPLAY STRING & open file for write
 root = Tk()
 val1 = ''
-disp = Label(root, font=('courier', 25, 'bold'), bg='black', fg='yellow')
+disp = Label(root, font=('courier', 18, 'bold'), bg='black', fg='yellow')
 disp.pack(fill=BOTH, expand=1)
 
 # Check to see if CSV file exists in the script directory, if no,
