@@ -69,31 +69,31 @@ class App:
         # Outlet #1
         Scale(self.frame, from_=0, to=24, orient=HORIZONTAL, showvalue=0,
               command=self.update1ON, resolution=0.25, digits=4,
-              variable=DoubleVar, fg='darkgray').grid(row=3,column=0)
+              variable=DoubleVar).grid(row=3,column=0)
         Scale(self.frame, from_=0, to=24, orient=HORIZONTAL, showvalue=0,
               command=self.update1OFF, resolution=0.25, digits=4,
-              variable=DoubleVar, fg='darkgray').grid(row=5,column=0)
+              variable=DoubleVar).grid(row=5,column=0)
         # Outlet #2
         Scale(self.frame, from_=0, to=24, orient=HORIZONTAL, showvalue=0,
               command=self.update2ON, resolution=0.25, digits=4,
-              variable=DoubleVar, fg='darkgray').grid(row=3,column=1)
+              variable=DoubleVar).grid(row=3,column=1)
         Scale(self.frame, from_=0, to=24, orient=HORIZONTAL, showvalue=0,
               command=self.update2OFF, resolution=0.25, digits=4,
-              variable=DoubleVar, fg='darkgray').grid(row=5,column=1)
+              variable=DoubleVar).grid(row=5,column=1)
         # Outlet #3
         Scale(self.frame, from_=0, to=24, orient=HORIZONTAL, showvalue=0,
               command=self.update3ON, resolution=0.25, digits=4,
-              variable=DoubleVar, fg='darkgray').grid(row=3,column=2)
+              variable=DoubleVar).grid(row=3,column=2)
         Scale(self.frame, from_=0, to=24, orient=HORIZONTAL, showvalue=0,
               command=self.update3OFF, resolution=0.25, digits=4,
-              variable=DoubleVar, fg='darkgray').grid(row=5,column=2)
+              variable=DoubleVar).grid(row=5,column=2)
         # Outlet #4
         Scale(self.frame, from_=0, to=24, orient=HORIZONTAL, showvalue=0,
               command=self.update4ON, resolution=0.25, digits=4,
-              variable=DoubleVar, fg='darkgray').grid(row=3,column=3)
+              variable=DoubleVar).grid(row=3,column=3)
         Scale(self.frame, from_=0, to=24, orient=HORIZONTAL, showvalue=0,
               command=self.update4OFF, resolution=0.25, digits=4,
-              variable=DoubleVar, fg='darkgray').grid(row=5,column=3)
+              variable=DoubleVar).grid(row=5,column=3)
 
     
     # These methods called whenever a slider moves
