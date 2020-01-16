@@ -17,6 +17,7 @@ with busio.I2C(board.SCL, board.SDA) as i2c:
     bytes_read2 = bytearray(5)
     bytes_write = bytearray(5)
     with device:
+        bytes_read[0] = 0x00
         device.readinto(bytes_read)
         print(bytes_read)
         for i in range(1,5):
