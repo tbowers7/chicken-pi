@@ -4,6 +4,7 @@ import time
 import datetime
 import board
 import busio
+import numpy as np
 from adafruit_bus_device.i2c_device import I2CDevice
 from micropython import const
 
@@ -62,7 +63,30 @@ class App:
               fg='green').grid(row=2,column=3)
         Label(self.frame, text=' OFF '+self.makeStringTime(self.OFF4time),
               fg='red').grid(row=4,column=3)
-
+        
+        ## Create an 'ENABLE' checkbox for each outlet
+        self.var1 = BooleanVar()
+        self.var2 = BooleanVar()
+        self.var3 = BooleanVar()
+        self.var4 = BooleanVar()
+        self.ENABLE1 = False
+        self.ENABLE2 = False
+        self.ENABLE3 = False
+        self.ENABLE4 = False
+        
+        Checkbutton(self.frame, text='Enable', onvalue=True, offvalue=False,
+                    variable=self.var1,
+                    command=self.update1ENABLE).grid(row=1, column=0)
+        Checkbutton(self.frame, text='Enable', onvalue=True, offvalue=False,
+                    variable=self.var2,
+                    command=self.update2ENABLE).grid(row=1, column=1)
+        Checkbutton(self.frame, text='Enable', onvalue=True, offvalue=False,
+                    variable=self.var3,
+                    command=self.update3ENABLE).grid(row=1, column=2)
+        Checkbutton(self.frame, text='Enable', onvalue=True, offvalue=False,
+                    variable=self.var4,
+                    command=self.update4ENABLE).grid(row=1, column=3)
+        
         ## Create the sliders and position them in a grid layout
         ## the 'command' attribute specifies a method to call when
         ## a slider is moved
@@ -94,8 +118,21 @@ class App:
         Scale(self.frame, from_=0, to=24, orient=HORIZONTAL, showvalue=0,
               command=self.update4OFF, resolution=0.25, digits=4,
               variable=DoubleVar).grid(row=5,column=3)
+        
+        
+    # These methods called whenever a checkbox is clicked
+    def update1ENABLE(self):
+        self.ENABLE1 = self.var1.get()
 
-    
+    def update2ENABLE(self):
+        self.ENABLE2 = self.var2.get()
+
+    def update3ENABLE(self):
+        self.ENABLE3 = self.var3.get()
+
+    def update4ENABLE(self):
+        self.ENABLE4 = self.var4.get()
+        
     # These methods called whenever a slider moves
     def update1ON(self,seltime):
         self.ON1time = float(seltime)
@@ -166,29 +203,45 @@ class App:
         else:
             statestr = "OFF "
         return statestr
-
+    
     # Function to update every 5 seconds
     def update(self):
+
+        # Get the time at the start of the method call
+        now = datetime.datetime.now()
+        
         # Determine current states of the relays
         state = relay.read_relay()
-
+        
         R1str = "  "+OUT1STR+" is " + self.onoffstr(state[1])
         R2str = "  "+OUT2STR+" is " + self.onoffstr(state[2])
         R3str = "  "+OUT3STR+" is " + self.onoffstr(state[3])
         R4str = "  "+OUT4STR+" is " + self.onoffstr(state[4])
-
-            
+        
         relayval = "{:s}\n{:s}\n{:s}\n{:s}".format(R1str,R2str,R3str,R4str)
-        disprelay = Label(self.frame, font=('courier', 14, 'bold'), fg='darkgreen')
+        disprelay = Label(self.frame, font=('courier', 14, 'bold'),
+                          fg='darkgreen')
         disprelay.grid(row=7, column=2, columnspan=2)
         disprelay.config(text=relayval)
-        #print("State:")
-        #print(state)
         
         
         # Adjust the relays, as needed based on the time.
         
-        
+        # Relay 1:
+        if abs(self.ON1time - self.OFF1time) == 24:  # ON always, special case
+            cycle = 3
+            
+        elif self.ON1time > self.OFF1time:    # ON - OFF - ON
+            cycle = 1
+            
+        elif self.ON1time < self.OFF1time:  # OFF - ON - OFF
+            cycle = 2
+            
+        else:                               # equal: ON always
+            cycle = 4
+            
+        #if cycle == 1:
+            # print(self.ON1time)
         
         
         
@@ -196,12 +249,13 @@ class App:
         
         ### Create output strings for display
         # Time
-        now = datetime.datetime.now()
         disptime = Label(self.frame, font=('courier', 14, 'bold'), fg='darkblue')
         disptime.grid(row=6, column=0, columnspan=4)
         disptime.config(text=now.strftime("%d-%b-%y %H:%M:%S"))
-        
-        val2=""
+
+        val2="{:b} {:b} {:b} {:b}\n{:d}".format(self.ENABLE1,self.ENABLE2,
+                                                self.ENABLE3,self.ENABLE4,
+                                                cycle)
         disp = Label(self.frame, font=('courier', 14, 'bold'), fg='darkred')
         disp.grid(row=7, column=0, columnspan=2)
         #disp.pack(fill=BOTH, expand=1)
