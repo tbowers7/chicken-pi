@@ -1,4 +1,21 @@
-# outlet_timers.py
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+  FILE: outlet_timers.py
+
+Controls the 4 outlets on the chicken-pi based on time and ENABLE
+
+"""
+""
+
+# Futures
+# […]
+
+# Built-in/Generic Imports
+# […]
+
+# Libs
 from tkinter import *      
 import time
 import datetime
@@ -7,8 +24,21 @@ import busio
 import numpy as np
 from adafruit_bus_device.i2c_device import I2CDevice
 from micropython import const
+# […]
 
+# Own modules
+#from {path} import {class}
 import chicken_relay as relay
+
+
+## Boilerplate variables
+__author__ = 'Timothy P. Ellsworth Bowers'
+__copyright__ = 'Copyright 2019-2020, chicken-pi'
+__credits__ = ['Stephen Bowers']
+__license__ = 'LGPL-3.0'
+__version__ = '0.1.0'
+__email__ = 'chickenpi@gmail.com'
+__status__ = 'Development Status :: 1 - Planning'
 
 _ADDR        = const(0x10)  # Address of the relay board
 _COMMAND_BIT = const(0x01)  # Apparent command bit of relay board

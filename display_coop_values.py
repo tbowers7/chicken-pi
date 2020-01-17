@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 """
@@ -154,4 +154,5 @@ def update():
 # (3) Call the loop for Tk to DISPLAY STRING
 update()
 root.winfo_toplevel().title("Chicken Coop Sensor Values")
+root.geometry("+600+0")
 root.mainloop()
