@@ -27,17 +27,26 @@ class Relay:
         # Read the current state of the relays
         with self._device as i2c:
             i2c.readinto(self._READ_BUF)
-            #print("In Realy.read()...")
-            #print(self._READ_BUF)
-            #for i in range(1,5):
-            #    print(self._READ_BUF[i] != 0x00)
             return self._READ_BUF
 
+    def write(self, r1, r2, r3, r4):
+        self._WRITE_BUF[0] = _RELAY_COMMAND_BIT
+        self._WRITE_BUF[1] = 0xff if r1 else 0x00
+        self._WRITE_BUF[2] = 0xff if r2 else 0x00
+        self._WRITE_BUF[3] = 0xff if r3 else 0x00
+        self._WRITE_BUF[4] = 0xff if r4 else 0x00
+        with self._device as i2c:
+            i2c.write_then_readinto(self._WRITE_BUF, self._READ_BUF)
 
 
-
+### User-facing functions
 
 def read_relay():
     i2c = busio.I2C(board.SCL, board.SDA)
     sensor = Relay(i2c)
     return sensor.read()
+
+def write_relay(r1, r2, r3, r4):      ### r1 - r4 are type BOOL
+    i2c = busio.I2C(board.SCL, board.SDA)
+    sensor = Relay(i2c)
+    sensor.write(r1, r2, r3, r4)
