@@ -40,22 +40,33 @@ __version__ = '0.1.0'
 __email__ = 'chickenpi@gmail.com'
 __status__ = 'Development Status :: 1 - Planning'
 
+
+### Constants
 _ADDR        = const(0x10)  # Address of the relay board
 _COMMAND_BIT = const(0x01)  # Apparent command bit of relay board
-OUT1STR      = "Heat Lamp"
-OUT2STR      = "Red Light"
-OUT3STR      = "_________"
-OUT4STR      = "_________"
-WIDGET_WIDE  = 600
-WIDGET_HIGH  = 250
+OUT1STR      = "Heat Lamp"  # Name of what is plugged into outlet #1
+OUT2STR      = "Red Light"  # Name of what is plugged into outlet #2
+OUT3STR      = "Heat Lamp"  # Name of what is plugged into outlet #3
+OUT4STR      = "_________"  # Name of what is plugged into outlet #4
+WIDGET_WIDE  = 600          # Width of the "Outlet Timers" window
+WIDGET_HIGH  = 250          # Height of the "Outlet Timers" window
 
-# group together all of the GUI code into a class called App
+
+
+### Group together all of the GUI code into a class called App
 class App:
+    """
+    class App: contains all of the GUI code needed for the Outlet Timers
+               window.  Contains the following methods:
+    __init__ : Initializes the main functions of the window, including the
+               column labels, ENABLE checkboxes, and slider bars.
+    
+    """
 
-    # This function gets called upon creation
+    ### This function gets called upon creation
     def __init__(self, master):
 
-        # Initialize the various variables required
+        ## Initialize the various variables required
         self.ON1time = 0
         self.OFF1time = 0
         self.ON2time = 0
@@ -73,10 +84,9 @@ class App:
         self.ENABLE3 = False
         self.ENABLE4 = False
         
-        
-        # A frame holds the various GUI controls
+        ## A "frame" holds the various GUI controls
         self.frame = Frame(master)
-        self.frame.pack(expand=1)#fill=BOTH, expand=1)
+        self.frame.pack(expand=0)
 
         ## Create the labels and position them in a grid layout
         # Outlet #1
@@ -118,11 +128,11 @@ class App:
                     variable=self.var4,
                     command=self.update4ENABLE).grid(row=1, column=3)
         
-        ## Create the sliders and position them in a grid layout
-        ## the 'command' attribute specifies a method to call when
+        ## Create the sliders and position them in a grid layout.
+        ## The 'command' attribute specifies a method to call when
         ## a slider is moved
         # Outlet #1
-        slider_size = (WIDGET_WIDE - 5*10) / 4
+        slider_size = (WIDGET_WIDE - 5*5) / 4   # Scale slider width to window
         Scale(self.frame, from_=0, to=24, orient=HORIZONTAL, showvalue=0,
               command=self.update1ON, resolution=0.25, digits=4,
               variable=DoubleVar, length=slider_size).grid(row=3,column=0)
@@ -152,7 +162,7 @@ class App:
               variable=DoubleVar, length=slider_size).grid(row=5,column=3)
         
         
-    # These methods called whenever a checkbox is clicked
+    ### The following methods are called whenever a checkbox is clicked:
     def update1ENABLE(self):
         self.ENABLE1 = self.var1.get()
 
@@ -164,8 +174,9 @@ class App:
 
     def update4ENABLE(self):
         self.ENABLE4 = self.var4.get()
-        
-    # These methods called whenever a slider moves
+    
+    
+    ## The following methods are called whenever a slider is moved:
     def update1ON(self,seltime):
         self.ON1time = float(seltime)
         Label(self.frame, text=' ON '+self.makeStringTime(self.ON1time),
@@ -207,33 +218,29 @@ class App:
               fg='red').grid(row=4,column=3)
 
         
-    # Make the string for display of the time
+    ### This method makes the string for display of time above slider bar
     def makeStringTime(self,inTime):
-        # Compute minutes from decimal hour
-        minute = 60 * (inTime % 1)
-        # Catch case of 24:00:00
-        if inTime == 24:
+        minute = 60 * (inTime % 1)      # Compute minutes from decimal hour
+        if inTime == 24:                # Catch case of 24:00
             inTime = 0
-        # Set PM/AM times
-        if inTime >= 12:
+        if inTime >= 12:                # Set PM/AM times
             ampm = "PM"
             inTime -= 12
         else:
             ampm = "AM"
-        # Catch case of 0:00:00
-        if int(inTime) == 0:
+        if int(inTime) == 0:            # Catch case of 0:00
             inTime = 12
-
         return "{:2d}:{:0>2d} {:s}".format(int(inTime),int(minute),ampm)
 
 
-    # Function to return ON/OFF based on relay state
-    def onoffstr(self,statevar):
+    ### This method returns a string "ON"/"OFF" based on relay state
+    def onOffStr(self,statevar):
         return "ON  " if statevar != 0x00 else "OFF "
     
     
-    # Function to return the ON/OFF cycle for the relay
-    def onoff_cycle(self, ontime, offtime):
+    ### This method defines a "cycle" of On/Off for the relay, used for
+    ###  computing whether the relay should be on or off based on time of day
+    def onOffCycle(self, ontime, offtime):
         if abs(ontime - offtime) == 24:  # equal: ON always, special case
             cycle = 3
         elif ontime > offtime:           # ON - OFF - ON
@@ -245,39 +252,38 @@ class App:
         return cycle
     
     
-    # Function to determine relay state based on time, cycle
-    def relay_state(self, cycle, ontime, offtime):
+    ### This method determines the commanded relay state based on time of day
+    def relayState(self, ontime, offtime):
         nowh = self.nowhour
+        # Determine the 'cycle' based on On/Off times
+        cycle = self.onOffCycle(ontime, offtime)
+        # Set commanded relay state based on current time
         if cycle == 1:
             restate = False if nowh > offtime and nowh < ontime else True
         elif cycle == 2:
             restate = True if nowh > ontime and nowh < offtime else False
         else:
-            restate = True
+            restate = True   # cycle = 3 or 4: both are ON always
         return restate
     
     
-    # Function to update every 5 seconds
+    ### This method self-calls every 5 seconds to update the display strings
+    ###  and check/set the states of the relays
     def update(self):
 
-        # Get the time at the start of the method call, particularly HH.HHHH
+        ## Get the time at the start of the method call, particularly HH.HHHH
         now = datetime.datetime.now()
         self.nowhour = now.hour + now.minute/60 + now.second/3600
         
-        # Adjust the relays, as needed based on the time.
-        cycle1 = self.onoff_cycle(self.ON1time, self.OFF1time)
-        cycle2 = self.onoff_cycle(self.ON2time, self.OFF2time)
-        cycle3 = self.onoff_cycle(self.ON3time, self.OFF3time)
-        cycle4 = self.onoff_cycle(self.ON4time, self.OFF4time)
-        
-        # Figure out when it is, with relation to cycle
-        relay1state = self.relay_state(cycle1, self.ON1time, self.OFF1time)
-        relay2state = self.relay_state(cycle2, self.ON2time, self.OFF2time)
-        relay3state = self.relay_state(cycle3, self.ON3time, self.OFF3time)
-        relay4state = self.relay_state(cycle4, self.ON4time, self.OFF4time)
+        ## Adjust the relays, as needed based on the time.
+        # Determine commanded relay state, based on current time
+        relay1state = self.relayState(self.ON1time, self.OFF1time)
+        relay2state = self.relayState(self.ON2time, self.OFF2time)
+        relay3state = self.relayState(self.ON3time, self.OFF3time)
+        relay4state = self.relayState(self.ON4time, self.OFF4time)
 
         # Conflate time-based state with ENABLE checkbox to construct
-        # output bytearray to write to Relay Board via I2C
+        #  output bytearray to write to Relay Board via I2C
         set1state = relay1state and self.ENABLE1
         set2state = relay2state and self.ENABLE2
         set3state = relay3state and self.ENABLE3
@@ -286,39 +292,45 @@ class App:
         # Write the states!
         relay.write_relay(set1state, set2state, set3state, set4state)
                 
-        # Determine current states of the relays
+        ## Determine current states of the relays for display on right side
+        ##  of the widget window
         state = relay.read_relay()
         
-        R1str = "  "+OUT1STR+" is " + self.onoffstr(state[1])
-        R2str = "  "+OUT2STR+" is " + self.onoffstr(state[2])
-        R3str = "  "+OUT3STR+" is " + self.onoffstr(state[3])
-        R4str = "  "+OUT4STR+" is " + self.onoffstr(state[4])
+        R1str = "  "+OUT1STR+" is " + self.onOffStr(state[1])
+        R2str = "  "+OUT2STR+" is " + self.onOffStr(state[2])
+        R3str = "  "+OUT3STR+" is " + self.onOffStr(state[3])
+        R4str = "  "+OUT4STR+" is " + self.onOffStr(state[4])
         
         relayval = "{:s}\n{:s}\n{:s}\n{:s}".format(R1str,R2str,R3str,R4str)
         disprelay = Label(self.frame, font=('courier', 14, 'bold'),
                           fg='darkgreen')
         disprelay.grid(row=7, column=2, columnspan=2)
         disprelay.config(text=relayval)
-                
-        ### Create output strings for display
+        
+        ## Create additional output strings for display
         # Time
-        disptime = Label(self.frame, font=('courier', 14, 'bold'), fg='darkblue')
+        disptime = Label(self.frame, font=('courier', 14, 'bold'),
+                         fg='darkblue')
         disptime.grid(row=6, column=0, columnspan=4)
         disptime.config(text=now.strftime("%d-%b-%y %H:%M:%S"))
 
-        val2="{:b} {:b} {:b} {:b}\n{:d} {:d} {:d} {:d}\n{:b} {:b} {:b} {:b}\n{:b} {:b} {:b} {:b}".format(self.ENABLE1,self.ENABLE2,self.ENABLE3,self.ENABLE4,
-                                                                                                         cycle1,cycle2, cycle3, cycle4,
-                                                                                                         relay1state, relay2state, relay3state, relay4state,
-                                                                                                         set1state, set2state, set3state, set4state)
+        # Debug values
+        val2= "   Enable: {:b} {:b} {:b} {:b}\n".format(self.ENABLE1,self.ENABLE2,self.ENABLE3,self.ENABLE4)
+        val2+="Commanded: {:b} {:b} {:b} {:b}\n".format(relay1state, relay2state, relay3state, relay4state)
+        val2+="      Set: {:b} {:b} {:b} {:b}".format(set1state, set2state, set3state, set4state)
         disp = Label(self.frame, font=('courier', 14, 'bold'), fg='darkred')
         disp.grid(row=7, column=0, columnspan=2)
         disp.config(text=val2)
+
+        # As the last display element described in self.update(), call this
+        #  method again in 5 seconds to update the display.
         disp.after(5000, self.update)
 
 
 
         
-# Set the GUI running, give the window a title, size, and position
+### Main Program: Set the GUI running, give the window a title, size,
+###  and position
 root = Tk()
 root.wm_title('Outlet Timers')
 app = App(root)
