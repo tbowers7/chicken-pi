@@ -13,17 +13,14 @@ Controls the 4 outlets on the chicken-pi based on time and ENABLE
 # […]
 
 # Built-in/Generic Imports
+from tkinter import *      # Tk for display window      
+import datetime            # Date & Time
+import os,sys              # Search for file on disk
+import csv                 # For CSV output
+import atexit              # Register cleanup functions
 # […]
 
 # Libs
-from tkinter import *      
-import time
-import datetime
-import board
-import busio
-import numpy as np
-from adafruit_bus_device.i2c_device import I2CDevice
-from micropython import const
 # […]
 
 # Own modules
@@ -42,8 +39,6 @@ __status__ = 'Development Status :: 1 - Planning'
 
 
 ### Constants
-_ADDR        = const(0x10)  # Address of the relay board
-_COMMAND_BIT = const(0x01)  # Apparent command bit of relay board
 OUT1STR      = "Heat Lamp"  # Name of what is plugged into outlet #1
 OUT2STR      = "Red Light"  # Name of what is plugged into outlet #2
 OUT3STR      = "Heat Lamp"  # Name of what is plugged into outlet #3
@@ -51,6 +46,9 @@ OUT4STR      = "_________"  # Name of what is plugged into outlet #4
 WIDGET_WIDE  = 600          # Width of the "Outlet Timers" window
 WIDGET_HIGH  = 250          # Height of the "Outlet Timers" window
 
+
+### Define location of the state file containing current slider / checkbox vals
+STATEFN = os.path.abspath(os.path.dirname(sys.argv[0]))+'/.outlet_state.txt'
 
 
 ### Group together all of the GUI code into a class called App
@@ -83,7 +81,7 @@ class App:
         self.ENABLE2 = False
         self.ENABLE3 = False
         self.ENABLE4 = False
-        
+
         ## A "frame" holds the various GUI controls
         self.frame = Frame(master)
         self.frame.pack(expand=0)
@@ -115,53 +113,106 @@ class App:
               fg='red').grid(row=4,column=3)
         
         ## Create an 'ENABLE' checkbox for each outlet
-        Checkbutton(self.frame, text='Enable', onvalue=True, offvalue=False,
-                    variable=self.var1,
-                    command=self.update1ENABLE).grid(row=1, column=0)
-        Checkbutton(self.frame, text='Enable', onvalue=True, offvalue=False,
-                    variable=self.var2,
-                    command=self.update2ENABLE).grid(row=1, column=1)
-        Checkbutton(self.frame, text='Enable', onvalue=True, offvalue=False,
-                    variable=self.var3,
-                    command=self.update3ENABLE).grid(row=1, column=2)
-        Checkbutton(self.frame, text='Enable', onvalue=True, offvalue=False,
-                    variable=self.var4,
-                    command=self.update4ENABLE).grid(row=1, column=3)
+        self.EN1 = Checkbutton(self.frame, text='Enable', onvalue=True,
+                               offvalue=False, variable=self.var1,
+                               command=self.update1ENABLE)
+        self.EN1.grid(row=1, column=0)
+        self.EN2 = Checkbutton(self.frame, text='Enable', onvalue=True,
+                               offvalue=False, variable=self.var2,
+                               command=self.update2ENABLE)
+        self.EN2.grid(row=1, column=1)
+        self.EN3 = Checkbutton(self.frame, text='Enable', onvalue=True,
+                               offvalue=False, variable=self.var3,
+                               command=self.update3ENABLE)
+        self.EN3.grid(row=1, column=2)
+        self.EN4 = Checkbutton(self.frame, text='Enable', onvalue=True,
+                               offvalue=False, variable=self.var4,
+                               command=self.update4ENABLE)
+        self.EN4.grid(row=1, column=3)
         
         ## Create the sliders and position them in a grid layout.
         ## The 'command' attribute specifies a method to call when
         ## a slider is moved
         # Outlet #1
         slider_size = (WIDGET_WIDE - 5*5) / 4   # Scale slider width to window
-        Scale(self.frame, from_=0, to=24, orient=HORIZONTAL, showvalue=0,
-              command=self.update1ON, resolution=0.25, digits=4,
-              variable=DoubleVar, length=slider_size).grid(row=3,column=0)
-        Scale(self.frame, from_=0, to=24, orient=HORIZONTAL, showvalue=0,
-              command=self.update1OFF, resolution=0.25, digits=4,
-              variable=DoubleVar, length=slider_size).grid(row=5,column=0)
+        self.S1ON = Scale(self.frame, from_=0, to=24, orient=HORIZONTAL,
+                          showvalue=0,command=self.update1ON,resolution=0.25,
+                          digits=4, variable=DoubleVar, length=slider_size)
+        self.S1ON.grid(row=3,column=0)
+        self.S1OFF = Scale(self.frame, from_=0, to=24, orient=HORIZONTAL,
+                           showvalue=0,command=self.update1OFF,resolution=0.25,
+                           digits=4, variable=DoubleVar, length=slider_size)
+        self.S1OFF.grid(row=5,column=0)
         # Outlet #2
-        Scale(self.frame, from_=0, to=24, orient=HORIZONTAL, showvalue=0,
-              command=self.update2ON, resolution=0.25, digits=4,
-              variable=DoubleVar, length=slider_size).grid(row=3,column=1)
-        Scale(self.frame, from_=0, to=24, orient=HORIZONTAL, showvalue=0,
-              command=self.update2OFF, resolution=0.25, digits=4,
-              variable=DoubleVar, length=slider_size).grid(row=5,column=1)
+        self.S2ON = Scale(self.frame, from_=0, to=24, orient=HORIZONTAL,
+                          showvalue=0,command=self.update2ON,resolution=0.25,
+                          digits=4, variable=DoubleVar, length=slider_size)
+        self.S2ON.grid(row=3,column=1)
+        self.S2OFF = Scale(self.frame, from_=0, to=24, orient=HORIZONTAL,
+                           showvalue=0,command=self.update2OFF,resolution=0.25,
+                           digits=4, variable=DoubleVar, length=slider_size)
+        self.S2OFF.grid(row=5,column=1)
         # Outlet #3
-        Scale(self.frame, from_=0, to=24, orient=HORIZONTAL, showvalue=0,
-              command=self.update3ON, resolution=0.25, digits=4,
-              variable=DoubleVar, length=slider_size).grid(row=3,column=2)
-        Scale(self.frame, from_=0, to=24, orient=HORIZONTAL, showvalue=0,
-              command=self.update3OFF, resolution=0.25, digits=4,
-              variable=DoubleVar, length=slider_size).grid(row=5,column=2)
+        self.S3ON = Scale(self.frame, from_=0, to=24, orient=HORIZONTAL,
+                          showvalue=0,command=self.update3ON,resolution=0.25,
+                          digits=4, variable=DoubleVar, length=slider_size)
+        self.S3ON.grid(row=3,column=2)
+        self.S3OFF = Scale(self.frame, from_=0, to=24, orient=HORIZONTAL,
+                           showvalue=0,command=self.update3OFF,resolution=0.25,
+                           digits=4, variable=DoubleVar, length=slider_size)
+        self.S3OFF.grid(row=5,column=2)
         # Outlet #4
-        Scale(self.frame, from_=0, to=24, orient=HORIZONTAL, showvalue=0,
-              command=self.update4ON, resolution=0.25, digits=4,
-              variable=DoubleVar, length=slider_size).grid(row=3,column=3)
-        Scale(self.frame, from_=0, to=24, orient=HORIZONTAL, showvalue=0,
-              command=self.update4OFF, resolution=0.25, digits=4,
-              variable=DoubleVar, length=slider_size).grid(row=5,column=3)
-        
-        
+        self.S4ON = Scale(self.frame, from_=0, to=24, orient=HORIZONTAL,
+                          showvalue=0,command=self.update4ON,resolution=0.25,
+                          digits=4, variable=DoubleVar, length=slider_size)
+        self.S4ON.grid(row=3,column=3)
+        self.S4OFF = Scale(self.frame, from_=0, to=24, orient=HORIZONTAL,
+                           showvalue=0,command=self.update4OFF,resolution=0.25,
+                           digits=4, variable=DoubleVar, length=slider_size)
+        self.S4OFF.grid(row=5,column=3)
+
+        ## If extant, read in the state file and restore sliders and checkboxes
+        ##  to last known values
+        if os.path.isfile(STATEFN):
+            with open(STATEFN, 'r') as statefile:
+                stateReader = csv.reader(statefile, delimiter=',')
+                for states in stateReader:
+                    self.readPrevStates(states)
+
+
+    ### This method reads in saved states and makes the appropriate changes
+    def readPrevStates(self,states):
+
+        # The ENABLE state variables
+        for jj,box in zip(range(4),[self.EN1,self.EN2,self.EN3,self.EN4]):
+            if int(states[jj]) == 0:
+                box.deselect()
+            else:
+                box.select()
+        self.update1ENABLE()
+        self.update2ENABLE()
+        self.update3ENABLE()
+        self.update4ENABLE()
+
+        # The TIME state variables
+        self.S1ON.set(states[4])
+        self.update1ON(states[4])
+        self.S2ON.set(states[6])
+        self.update2ON(states[6])
+        self.S3ON.set(states[8])
+        self.update3ON(states[8])
+        self.S4ON.set(states[10])
+        self.update4ON(states[10])
+        self.S1OFF.set(states[5])
+        self.update1OFF(states[5])
+        self.S2OFF.set(states[7])
+        self.update2OFF(states[7])
+        self.S3OFF.set(states[9])
+        self.update3OFF(states[9])
+        self.S4OFF.set(states[11])
+        self.update4OFF(states[11])
+    
+    
     ### The following methods are called whenever a checkbox is clicked:
     def update1ENABLE(self):
         self.ENABLE1 = self.var1.get()
@@ -176,7 +227,7 @@ class App:
         self.ENABLE4 = self.var4.get()
     
     
-    ## The following methods are called whenever a slider is moved:
+    ### The following methods are called whenever a slider is moved:
     def update1ON(self,seltime):
         self.ON1time = float(seltime)
         Label(self.frame, text=' ON '+self.makeStringTime(self.ON1time),
