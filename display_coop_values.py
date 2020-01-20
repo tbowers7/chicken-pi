@@ -58,6 +58,7 @@ DHT3Str = "NextBox"
 # (1) Define the DISPLAY STRING & open file for write
 root = Tk()
 val1 = ''
+lineswrote=0
 disp = Label(root, font=('courier', 18, 'bold'), bg='black', fg='yellow')
 disp.pack(fill=BOTH, expand=1)
 
@@ -77,8 +78,9 @@ datawriter = csv.writer(csvfile, delimiter=',',quotechar=' ',
 
 # (2) Method for updating DISPLAY STRING
 def update():
-    global val1   # Make val1 available globally
-
+    global val1         # Make available globally
+    global lineswrote   # Make available globally
+    
     # Start up the DHT sensors
     dht1 = adafruit_dht.DHT22(board.D19)
     dht2 = adafruit_dht.DHT22(board.D20)
@@ -153,6 +155,13 @@ def update():
     # Write a line to the CSV file
     datawriter.writerow([now.strftime("%Y-%m-%d"),now.strftime("%H:%M:%S"),
                          "{:0.2f},{:0.1f},{:0.2f},{:0.1f},{:0.2f},{:0.1f},{:0.1f},{:s}".format(tf[0], hm[0], tf[1], hm[1], tf[2], hm[2], cpuTemp, luxstr)])
+    lineswrote += 1
+    
+    if lineswrote >= 20:     # Write data to file every 20 lines
+        csvfile.flush()      #  (Rougly every 2 minutes at a 5 second refresh)
+        os.fsync(csvfile.fileno())
+        lineswrote = 0
+    
     
     # This Method calls itself every 5s to update the display
     disp.after(5000, update)
