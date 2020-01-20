@@ -36,7 +36,7 @@ __copyright__ = 'Copyright 2019-2020, chicken-pi'
 __credits__ = ['Stephen Bowers']
 __license__ = 'LGPL-3.0'
 __version__ = '0.1.0'
-__email__ = 'chickenpi@gmail.com'
+__email__ = 'chickenpi.flag@gmail.com'
 __status__ = 'Development Status :: 1 - Planning'
 
 
