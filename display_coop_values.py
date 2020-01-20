@@ -12,9 +12,6 @@ Displays the values from chicken-pi sensors to the screen for visual inspection.
 # […]
 
 # Built-in/Generic Imports
-# […]
-
-# Libs
 from tkinter import *      # Tk for display window
 import time                # for the sleep() function
 import datetime            # date & time
@@ -22,6 +19,9 @@ import os,sys              # Search for file on disk
 import csv                 # For CSV output
 import atexit              # Register cleanup functions
 import numpy as np         # Numpy!
+# […]
+
+# Libs
 import board               # Access to Raspberry Pi's GPIO pins
 import adafruit_dht        # DHT library
 # […]
@@ -47,6 +47,11 @@ __status__ = 'Development Status :: 1 - Planning'
   2.  Method for updating DISPLAY STRING
   3.  Call the loop for Tk to DISPLAY STRING
 """
+
+### Display Strings
+DHT1Str = "Outside"
+DHT2Str = "Roosts "
+DHT3Str = "NextBox"
 
 
 
@@ -131,11 +136,14 @@ def update():
     #   DHT1: Temp, Humidity
     #   DHT2: Temp, Humidity
     #   DHT3: Temp, Humidity
+    #   Light: Lux
+    #   CPU: CPU_Temp
     
     now = datetime.datetime.now()
-    val2 = "{:s}\n\n DHT #1: {:0.1f}\xb0F, {:0.1f}% \n DHT #2: {:0.1f}\xb0F, {:0.1f}% \n DHT #3: {:0.1f}\xb0F, {:0.1f}% \n Light: {:s} lux \n CPU: {:0.1f}\xb0C [< 85\xb0C] ".format(
-        now.strftime("%d-%b-%y %H:%M:%S"),
-        tf[0], hm[0], tf[1], hm[1], tf[2], hm[2], luxstr, cpuTemp)
+    val2 = "{:s}\n\n {:s}: {:0.1f}\xb0F, {:0.1f}% \n {:s}: {:0.1f}\xb0F, {:0.1f}% \n {:s}: {:0.1f}\xb0F, {:0.1f}% \n Light: {:s} lux \n CPU: {:0.1f}\xb0C [< 85\xb0C] ".format(
+        now.strftime("%d-%b-%y %H:%M:%S"),DHT1Str,
+        tf[0], hm[0], DHT2Str, tf[1], hm[1], DHT3Str, tf[2], hm[2],
+        luxstr, cpuTemp)
 
     # Update the DISPLAY STRING
     if val2 != val1:
