@@ -81,6 +81,7 @@ class App:
         self.ENABLE2 = False
         self.ENABLE3 = False
         self.ENABLE4 = False
+        self.changedState = False
 
         ## A "frame" holds the various GUI controls
         self.frame = Frame(master)
@@ -179,7 +180,10 @@ class App:
                 for states in stateReader:
                     self.readPrevStates(states)
 
+        ## Finally, reset changed varible to False
+        self.changedState = False
 
+    
     ### This method reads in saved states and makes the appropriate changes
     def readPrevStates(self,states):
 
@@ -213,18 +217,46 @@ class App:
         self.update4OFF(states[11])
     
     
+    ### This method reads in saved states and makes the appropriate changes
+    def writeCurrentStates(self):
+        states = []           # Create the list
+        # ENABLE variables
+        states.append(int(self.ENABLE1))
+        states.append(int(self.ENABLE2))
+        states.append(int(self.ENABLE3))
+        states.append(int(self.ENABLE4))
+        # Time variables
+        states.append(self.ON1time)
+        states.append(self.OFF1time)
+        states.append(self.ON2time)
+        states.append(self.OFF2time)
+        states.append(self.ON3time)
+        states.append(self.OFF3time)
+        states.append(self.ON4time)
+        states.append(self.OFF4time)
+        # Write to file
+        with open(STATEFN, 'w') as statefile:
+            stateWriter = csv.writer(statefile, delimiter=',')
+            stateWriter.writerow(states)
+        self.changedState = False
+    
+    
     ### The following methods are called whenever a checkbox is clicked:
     def update1ENABLE(self):
         self.ENABLE1 = self.var1.get()
+        self.changedState = True
 
     def update2ENABLE(self):
         self.ENABLE2 = self.var2.get()
+        self.changedState = True
 
     def update3ENABLE(self):
         self.ENABLE3 = self.var3.get()
+        self.changedState = True
 
     def update4ENABLE(self):
         self.ENABLE4 = self.var4.get()
+        self.changedState = True
     
     
     ### The following methods are called whenever a slider is moved:
@@ -232,41 +264,49 @@ class App:
         self.ON1time = float(seltime)
         Label(self.frame, text=' ON '+self.makeStringTime(self.ON1time),
               fg='green').grid(row=2,column=0)
+        self.changedState = True
         
     def update1OFF(self,seltime):
         self.OFF1time = float(seltime)
         Label(self.frame, text=' OFF '+self.makeStringTime(self.OFF1time),
               fg='red').grid(row=4,column=0)
+        self.changedState = True
         
     def update2ON(self,seltime):
         self.ON2time = float(seltime)
         Label(self.frame, text=' ON '+self.makeStringTime(self.ON2time),
               fg='green').grid(row=2,column=1)
+        self.changedState = True
         
     def update2OFF(self,seltime):
         self.OFF2time = float(seltime)
         Label(self.frame, text=' OFF '+self.makeStringTime(self.OFF2time),
               fg='red').grid(row=4,column=1)
+        self.changedState = True
 
     def update3ON(self,seltime):
         self.ON3time = float(seltime)
         Label(self.frame, text=' ON '+self.makeStringTime(self.ON3time),
               fg='green').grid(row=2,column=2)
+        self.changedState = True
         
     def update3OFF(self,seltime):
         self.OFF3time = float(seltime)
         Label(self.frame, text=' OFF '+self.makeStringTime(self.OFF3time),
               fg='red').grid(row=4,column=2)
+        self.changedState = True
         
     def update4ON(self,seltime):
         self.ON4time = float(seltime)
         Label(self.frame, text=' ON '+self.makeStringTime(self.ON4time),
               fg='green').grid(row=2,column=3)
+        self.changedState = True
         
     def update4OFF(self,seltime):
         self.OFF4time = float(seltime)
         Label(self.frame, text=' OFF '+self.makeStringTime(self.OFF4time),
               fg='red').grid(row=4,column=3)
+        self.changedState = True
 
         
     ### This method makes the string for display of time above slider bar
@@ -342,7 +382,12 @@ class App:
 
         # Write the states!
         relay.write_relay(set1state, set2state, set3state, set4state)
-                
+
+        # If any of the user-selected variables have changed, write to file
+        if self.changedState:
+            self.writeCurrentStates()
+        
+        
         ## Determine current states of the relays for display on right side
         ##  of the widget window
         state = relay.read_relay()
