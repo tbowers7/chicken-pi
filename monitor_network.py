@@ -47,15 +47,21 @@ val1 = ''
 ipaddr = ''
 disp = Label(root, font=('courier', 14, 'bold'), bg='lightblue', fg='darkgreen')
 disp.pack(fill=BOTH, expand=1)
+abspath = os.path.abspath(os.path.dirname(sys.argv[0]))
+ipfn = abspath+'/.ipaddr.txt'
 
-
+if os.path.isfile(ipfn):
+  with open(".ipaddr.txt", "r") as ipfile:
+    ipaddr = ipfile.read()
+    ipaddr.rstrip('\n')
+    
 ### Functions for looking for wifi/internet connectivity
 def wifi_on(host='192.168.0.1'):
   try:
     http = urllib3.PoolManager()
     http.request('GET', host, timeout=3, retries=False)
     return True
-  except urllib3.exceptions.NewConnectionError:
+  except urllib3.exceptions.Exception:
     return False
   
 
@@ -75,41 +81,49 @@ def internet_on(host='8.8.8.8', port=53, timeout=3):
 
 # (2) Method for updating DISPLAY STRING
 def update():
-    global val1         # Make available globally
-    global ipaddr       # Make available globally
+  global val1         # Make available globally
+  global ipaddr       # Make available globally
+  
+  # Check network connectivity
+  wifi = 'ON' if wifi_on() else 'OFF'
+  internet = 'ON' if internet_on() else 'OFF'
+  hostname = socket.gethostname()
+  localIP = (os.popen(
+    "/sbin/ifconfig wlan0 | grep 'inet ' | awk '{print $2}'").
+             read()).rstrip()
+  publicIP = get('https://api.ipify.org').text
+  publicIP.rstrip()
+  # If error message kicked by ipify.org, then publicIP will be longer than the
+  #  maximum 15 characters (xxx.xxx.xxx.xxx).  Set to empty string.
+  if len(publicIP) > 15:
+    publicIP = ''
     
-    # Check network connectivity
-    wifi = 'ON' if wifi_on() else 'OFF'
-    internet = 'ON' if internet_on() else 'OFF'
-    hostname = socket.gethostname()
-    localIP = (os.popen(
-        "ifconfig wlan0 | grep 'inet ' | awk '{print $2}'").
-               read()).rstrip("\n\r")
-    publicIP = get('https://api.ipify.org').text
-    #print(wifi,internet,hostname,localIP,publicIP)
+  # Get the current time
+  now = datetime.datetime.now()
+  val2 = "{:s}\n\nWiFi Status: {:s}\nInternet Status: {:s}\nLocal IP: {:s}\nPublic IP: {:s}".format(now.strftime("%d-%b-%y %H:%M:%S"),
+                                                                                                    wifi, internet, localIP, publicIP)
+  
+  # Update the DISPLAY STRING
+  if val2 != val1:
+    val1 = val2
+    disp.config(text=val2)
     
-    now = datetime.datetime.now()
-    val2 = "{:s}\n\nWiFi Status: {:s}\nInternet Status: {:s}\nLocal IP: {:s}\nPublic IP: {:s}".format(now.strftime("%d-%b-%y %H:%M:%S"),
-        wifi, internet, localIP, publicIP)
-    
-    # Update the DISPLAY STRING
-    if val2 != val1:
-        val1 = val2
-        disp.config(text=val2)
-    
-    # Send email with current IP address
-    if publicIP != ipaddr:
-        ipaddr = publicIP
-        sender = em.Emailer()
-        sendTo = 'tbowers7@gmail.com'
-        emailSubject = 'Chicken-Pi IP Address'
-        emailContent = 'Current chicken-pi IP address: '+publicIP
-        sender.sendmail(sendTo, emailSubject, emailContent)
-        
-        
-    # This Method calls itself every minute to update the display
-    disp.after(60000, update)
-        
+  # Send email with current IP address
+  if publicIP == "":
+    pass                      # Don't do anything...
+  elif publicIP != ipaddr:
+    ipaddr = publicIP         # Update the IP address
+    sender = em.Emailer()
+    sendTo = 'chickenpi.flag@gmail.com'
+    emailSubject = 'Chicken-Pi IP Address'
+    emailContent = 'Current chicken-pi IP address: '+publicIP
+    sender.sendmail(sendTo, emailSubject, emailContent)
+    with open(".ipaddr.txt", "w") as ipfile:
+      ipfile.write(publicIP)
+  
+  # This Method calls itself every minute to update the display
+  disp.after(60000, update)
+
 
 
 # (3) Call the loop for Tk to DISPLAY STRING
