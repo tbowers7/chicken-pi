@@ -48,10 +48,10 @@ ipaddr = ''
 disp = Label(root, font=('courier', 14, 'bold'), bg='lightblue', fg='darkgreen')
 disp.pack(fill=BOTH, expand=1)
 abspath = os.path.abspath(os.path.dirname(sys.argv[0]))
-ipfn = abspath+'/.ipaddr.txt'
+IPFN = abspath+'/.ipaddr.txt'
 
-if os.path.isfile(ipfn):
-  with open(".ipaddr.txt", "r") as ipfile:
+if os.path.isfile(IPFN):
+  with open(IPFN, "r") as ipfile:
     ipaddr = ipfile.read()
     ipaddr.rstrip('\n')
     
@@ -118,7 +118,7 @@ def update():
     emailSubject = 'Chicken-Pi IP Address'
     emailContent = 'Current chicken-pi IP address: '+publicIP
     sender.sendmail(sendTo, emailSubject, emailContent)
-    with open(".ipaddr.txt", "w") as ipfile:
+    with open(IPFN, "w") as ipfile:
       ipfile.write(publicIP)
   
   # This Method calls itself every minute to update the display
