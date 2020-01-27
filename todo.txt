@@ -1,0 +1,14 @@
+Chicken-Pi To-Do List
+
+Add flag to open "door" at light level (100-200 lux?)
+
+Add temperature control on heat lamp outlets (in addition to time)
+
+Combine the three routines (display_coop_values.py, outlet_timers.py,
+     monitor_network.py) into a single routine for data-sharing
+
+Slow the write-to-file to once per minute, possibly taking the median of the
+     observed values over the previous minute -- should eliminate spurious
+     values from incorrect sensor readings.
+
+Other?
