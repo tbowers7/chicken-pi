@@ -1,14 +1,18 @@
 Chicken-Pi To-Do List
 
-Add flag to open "door" at light level (100-200 lux?)
+* BUG: Fix exception handling from urllib3 in monitor_network.py
 
-Add temperature control on heat lamp outlets (in addition to time)
+* Feature: Add flag to open "door" at light level (100-200 lux?)
 
-Combine the three routines (display_coop_values.py, outlet_timers.py,
+* Feature: Add temperature control on heat lamp outlets (in addition to time);
+     NOTE: This will be included in the combination of the three routines into
+     a single driver.
+
+* Feature: Combine the three routines (display_coop_values.py, outlet_timers.py,
      monitor_network.py) into a single routine for data-sharing
 
-Slow the write-to-file to once per minute, possibly taking the median of the
-     observed values over the previous minute -- should eliminate spurious
-     values from incorrect sensor readings.
+* Feature: Slow the write-to-file to once per minute, possibly taking the
+     median of the observed values over the previous minute -- should eliminate
+     spurious values from incorrect sensor readings.
 
 Other?
