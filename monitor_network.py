@@ -61,7 +61,7 @@ def wifi_on(host='192.168.0.1'):
     http = urllib3.PoolManager()
     http.request('GET', host, timeout=3, retries=False)
     return True
-  except urllib3.exceptions.HTTPError:
+  except urllib3.exceptions.ConnectionError:
     return False
   
 
