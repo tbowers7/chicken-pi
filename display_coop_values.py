@@ -50,8 +50,8 @@ __status__ = 'Development Status :: 1 - Planning'
 
 ### Display Strings
 DHT1Str = "Outside"
-DHT2Str = "Roosts "
-DHT3Str = "NestBox"
+DHT3Str = "Roosts "
+DHT2Str = "NestBox"
 
 
 
