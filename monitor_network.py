@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-  FILE: monitor network.py
+  FILE: monitor_network.py
 
 Monotors and displays the current network status -- fixes as necessary
 
@@ -28,7 +28,7 @@ from requests import get
 
 # Own modules
 #from {path} import {class}
-import private_emailer as em
+import gmailer as em
 
 ## Boilerplate variables
 __author__ = 'Timothy P. Ellsworth Bowers'
