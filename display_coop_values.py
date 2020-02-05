@@ -85,17 +85,23 @@ def update():
     dht1 = adafruit_dht.DHT22(board.D19)
     dht2 = adafruit_dht.DHT22(board.D20)
     dht3 = adafruit_dht.DHT22(board.D21)
-
+    
     # Create list and arrays for reading loop
-    dhts = [dht1, dht2, dht3]
-    tc = np.empty(3)
-    hm = np.empty(3)
+    dhts     = [dht1, dht2, dht3]
+    tc       = np.empty(3)
+    hm       = np.empty(3)
+    dhtnames = [DHT1Str, DHT2Str, DHT3Str]
     
     ### Read from the DHT sensors
     for sens, i in zip(dhts, [0,1,2]):
-        
+
         goodRead = False
+        readTries = 0
         while goodRead == False:
+            if readTries > 100: # Don't wait too long... if no goodRead, move on
+                tc[i] = 0
+                hm[i] = 0
+                break
             try:
                 tc[i] = sens.temperature
                 hm[i] = sens.humidity
@@ -103,25 +109,27 @@ def update():
                     goodRead = True
                 else:
                     time.sleep(0.1)    # Wait a moment, and try again
+                    readTries += 1
             except:
                 time.sleep(0.1)  # If error, wait a moment, and try again
-
+                readTries += 1
+    
     ### Once we have good readings from all three sensors, do the C -> F
     ### conversion and then create the output string (numpy is our friend)
     tf = tc * (9. / 5.) + 32.
-
+    
     ### Shut down the DHT pulseio's to minimize CPU heating from having
     ### the libgpio_pulsed processes running constantly
     for sens in dhts:
         sens.pulse_in.deinit()
-
+    
     ### Also read from the on-board temperature sensors on the Pi
     cputemp_fn = "/sys/class/thermal/thermal_zone0/temp"
     f = open(cputemp_fn,"r")
     if f.mode == 'r':
         cpuTemp = float(f.read())/1000.
     f.close()
-
+    
     ### Now, read from the TSL2591 light sensor on I2C
     light = tsl.Read()
     lux = light.read()
@@ -142,11 +150,20 @@ def update():
     #   CPU: CPU_Temp
     
     now = datetime.datetime.now()
-    val2 = "{:s}\n\n {:s}: {:0.1f}\xb0F, {:0.1f}% \n {:s}: {:0.1f}\xb0F, {:0.1f}% \n {:s}: {:0.1f}\xb0F, {:0.1f}% \n Light: {:s} lux \n CPU: {:0.1f}\xb0C [< 85\xb0C] ".format(
-        now.strftime("%d-%b-%y %H:%M:%S"),DHT1Str,
-        tf[0], hm[0], DHT2Str, tf[1], hm[1], DHT3Str, tf[2], hm[2],
-        luxstr, cpuTemp)
 
+    # Create the output DHT strings for display, with case for "NO DATA"
+    dhtstrs = []
+    for i in [0,1,2]:
+        if tc[i] == 0 and hm[i] == 0:
+            dhtstrs.append("{:s}:    NO DATA   ".format(dhtnames[i]))
+        else:
+            dhtstrs.append("{:s}: {:0.1f}\xb0F, {:0.1f}%".format(dhtnames[i],
+                                                                 tf[i], hm[i]))
+    
+    val2 = "{:s}\n\n {:s} \n {:s} \n {:s} \n Light: {:s} lux \n CPU: {:0.1f}\xb0C [< 85\xb0C] ".format(
+        now.strftime("%d-%b-%y %H:%M:%S"),dhtstrs[0],dhtstrs[1],dhtstrs[2],
+        luxstr, cpuTemp)
+    
     # Update the DISPLAY STRING
     if val2 != val1:
         val1 = val2
