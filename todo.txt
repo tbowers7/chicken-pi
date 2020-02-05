@@ -1,15 +1,21 @@
 Chicken-Pi To-Do List
 
 * BUG: Fix exception handling from urllib3 in monitor_network.py
+  --- UPDATE: I think this is fixed... still testing (2/5/20)
 
 * Feature: Add flag to open "door" at light level (100-200 lux?)
+
+* Feature: Combine the three routines (display_coop_values.py, outlet_timers.py,
+     monitor_network.py) into a single routine for data-sharing
 
 * Feature: Add temperature control on heat lamp outlets (in addition to time);
      NOTE: This will be included in the combination of the three routines into
      a single driver.
-
-* Feature: Combine the three routines (display_coop_values.py, outlet_timers.py,
-     monitor_network.py) into a single routine for data-sharing
+     ADDITIONAL REQUIREMENTS: For each outlet, can select temperature based on
+     any of the three temps (or combination).  Add radio button for each temp
+     (don't care/turn on above/turn on below), along with a button for AND/OR
+     with respect to the time (turn on when time AND temp / turn on when time OR
+     temp).
 
 * Feature: Slow the write-to-file to once per minute, possibly taking the
      median of the observed values over the previous minute -- should eliminate
