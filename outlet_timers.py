@@ -39,12 +39,12 @@ __status__ = 'Development Status :: 1 - Planning'
 
 
 ### Constants
-OUT1STR      = "Heat Lamp"  # Name of what is plugged into outlet #1
-OUT2STR      = "Red Light"  # Name of what is plugged into outlet #2
-OUT3STR      = "Heat Lamp"  # Name of what is plugged into outlet #3
-OUT4STR      = "_________"  # Name of what is plugged into outlet #4
-WIDGET_WIDE  = 600          # Width of the "Outlet Timers" window
-WIDGET_HIGH  = 250          # Height of the "Outlet Timers" window
+OUT1STR      = "Roost Lamp"  # Name of what is plugged into outlet #1
+OUT2STR      = "Red Light "  # Name of what is plugged into outlet #2
+OUT3STR      = "Nest Lamp "  # Name of what is plugged into outlet #3
+OUT4STR      = "__________"  # Name of what is plugged into outlet #4
+WIDGET_WIDE  = 600           # Width of the "Outlet Timers" window
+WIDGET_HIGH  = 250           # Height of the "Outlet Timers" window
 
 
 ### Define location of the state file containing current slider / checkbox vals
@@ -171,7 +171,21 @@ class App:
                            showvalue=0,command=self.update4OFF,resolution=0.25,
                            digits=4, variable=DoubleVar, length=slider_size)
         self.S4OFF.grid(row=5,column=3)
-
+        
+        ## Set up the 3 variable text display areas
+        # Current Time
+        self.disptime = Label(self.frame, font=('courier', 14, 'bold'),
+                              fg='darkblue')
+        self.disptime.grid(row=6, column=0, columnspan=4)
+        # Status of the relays
+        self.disprelay = Label(self.frame, font=('courier', 14, 'bold'),
+                               fg='darkgreen')
+        self.disprelay.grid(row=7, column=2, columnspan=2)
+        # Debugging information
+        self.disp = Label(self.frame, font=('courier', 14, 'bold'),
+                          fg='darkred')
+        self.disp.grid(row=7, column=0, columnspan=2)
+        
         ## If extant, read in the state file and restore sliders and checkboxes
         ##  to last known values
         if os.path.isfile(STATEFN):
@@ -217,7 +231,7 @@ class App:
         self.update4OFF(states[11])
     
     
-    ### This method reads in saved states and makes the appropriate changes
+    ### This method writes out the current states to file
     def writeCurrentStates(self):
         states = []           # Create the list
         # ENABLE variables
@@ -361,7 +375,9 @@ class App:
     ### This method self-calls every 5 seconds to update the display strings
     ###  and check/set the states of the relays
     def update(self):
-
+        
+        print("Start of update()")
+        
         ## Get the time at the start of the method call, particularly HH.HHHH
         now = datetime.datetime.now()
         self.nowhour = now.hour + now.minute/60 + now.second/3600
@@ -372,17 +388,17 @@ class App:
         relay2state = self.relayState(self.ON2time, self.OFF2time)
         relay3state = self.relayState(self.ON3time, self.OFF3time)
         relay4state = self.relayState(self.ON4time, self.OFF4time)
-
+        
         # Conflate time-based state with ENABLE checkbox to construct
         #  output bytearray to write to Relay Board via I2C
         set1state = relay1state and self.ENABLE1
         set2state = relay2state and self.ENABLE2
         set3state = relay3state and self.ENABLE3
         set4state = relay4state and self.ENABLE4
-
+        
         # Write the states!
         relay.write_relay(set1state, set2state, set3state, set4state)
-
+        
         # If any of the user-selected variables have changed, write to file
         if self.changedState:
             self.writeCurrentStates()
@@ -398,33 +414,27 @@ class App:
         R4str = "  "+OUT4STR+" is " + self.onOffStr(state[4])
         
         relayval = "{:s}\n{:s}\n{:s}\n{:s}".format(R1str,R2str,R3str,R4str)
-        disprelay = Label(self.frame, font=('courier', 14, 'bold'),
-                          fg='darkgreen')
-        disprelay.grid(row=7, column=2, columnspan=2)
-        disprelay.config(text=relayval)
+        self.disprelay.config(text=relayval)
         
         ## Create additional output strings for display
         # Time
-        disptime = Label(self.frame, font=('courier', 14, 'bold'),
-                         fg='darkblue')
-        disptime.grid(row=6, column=0, columnspan=4)
-        disptime.config(text=now.strftime("%d-%b-%y %H:%M:%S"))
-
+        self.disptime.config(text=now.strftime("%d-%b-%y %H:%M:%S"))
+        
         # Debug values
         val2= "   Enable: {:b} {:b} {:b} {:b}\n".format(self.ENABLE1,self.ENABLE2,self.ENABLE3,self.ENABLE4)
         val2+="Commanded: {:b} {:b} {:b} {:b}\n".format(relay1state, relay2state, relay3state, relay4state)
         val2+="      Set: {:b} {:b} {:b} {:b}".format(set1state, set2state, set3state, set4state)
-        disp = Label(self.frame, font=('courier', 14, 'bold'), fg='darkred')
-        disp.grid(row=7, column=0, columnspan=2)
-        disp.config(text=val2)
-
+        self.disp.config(text=val2)
+        
+        print("About to call disp.after(...)")
+        
         # As the last display element described in self.update(), call this
         #  method again in 5 seconds to update the display.
-        disp.after(5000, self.update)
+        self.frame.after(5000, self.update)
 
 
 
-        
+
 ### Main Program: Set the GUI running, give the window a title, size,
 ###  and position
 root = Tk()
