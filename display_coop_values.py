@@ -81,20 +81,44 @@ def update():
     global val1         # Make available globally
     global lineswrote   # Make available globally
     
-    # Start up the DHT sensors
-    dht1 = adafruit_dht.DHT22(board.D19)
-    dht2 = adafruit_dht.DHT22(board.D20)
-    dht3 = adafruit_dht.DHT22(board.D21)
+    # Start up the DHT sensors, with error checking
+    try:
+        dht1 = adafruit_dht.DHT22(board.D19)
+        usedht1 = True
+    except:
+        dht1 = 0
+        usedht1 = False
+    try:
+        dht2 = adafruit_dht.DHT22(board.D20)
+        usedht2 = True
+    except:
+        dht2 = 0
+        usedht2 = False
+    try:
+        dht3 = adafruit_dht.DHT22(board.D21)
+        usedht3 = True
+    except:
+        dht3 = 0
+        usedht3 = False
     
     # Create list and arrays for reading loop
     dhts     = [dht1, dht2, dht3]
+    uses     = [usedht1,usedht2,usedht3]
     tc       = np.empty(3)
     hm       = np.empty(3)
     dhtnames = [DHT1Str, DHT2Str, DHT3Str]
     
     ### Read from the DHT sensors
-    for sens, i in zip(dhts, [0,1,2]):
+    for sens, useMe, i in zip(dhts, uses, [0,1,2]):
 
+        ## If we can't load the DHT sensor (for whatever reason), set outputs to
+        ##  'NO DATA' condition
+        if not useMe:
+            tc[i] = 0
+            hm[i] = 0
+            continue
+
+        ## Work on reading in a good value from the DHT sensor
         goodRead = False
         readTries = 0
         while goodRead == False:
