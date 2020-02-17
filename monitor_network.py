@@ -61,7 +61,7 @@ def wifi_on(host='192.168.0.1'):
     http = urllib3.PoolManager()
     http.request('GET', host, timeout=3, retries=False)
     return True
-  except (urllib3.exceptions.TimeoutError, urllib3.exceptions.HTTPError):
+  except:
     return False
   
 
@@ -75,7 +75,7 @@ def internet_on(host='8.8.8.8', port=53, timeout=3):
     socket.setdefaulttimeout(timeout)
     socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
     return True
-  except socket.error as ex:
+  except:
     return False
 
 
