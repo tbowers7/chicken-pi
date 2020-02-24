@@ -91,11 +91,14 @@ def update():
   localIP = (os.popen(
     "/sbin/ifconfig wlan0 | grep 'inet ' | awk '{print $2}'").
              read()).rstrip()
-  publicIP = get('https://api.ipify.org').text
-  publicIP.rstrip()
-  # If error message kicked by ipify.org, then publicIP will be longer than the
-  #  maximum 15 characters (xxx.xxx.xxx.xxx).  Set to empty string.
-  if len(publicIP) > 15:
+  try:
+    publicIP = get('https://api.ipify.org').text
+    publicIP.rstrip()
+    # If error message kicked by ipify.org, then publicIP will be longer than
+    #  the maximum 15 characters (xxx.xxx.xxx.xxx).  Set to empty string.
+    if len(publicIP) > 15:
+      publicIP = ''
+  except:
     publicIP = ''
     
   # Get the current time
