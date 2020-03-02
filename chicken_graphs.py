@@ -1,10 +1,9 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 """
-  FILE: chickenpi.py
+  FILE: chicken_graphs.py
 
-Main driver routine for the integrated Chicken-Pi setup.
+Graphs display window, updates occasionally with current values
 
 """
 
@@ -22,15 +21,11 @@ import numpy as np         # Numpy!
 # […]
 
 # Libs
-#import board               # Access to Raspberry Pi's GPIO pins
-#import adafruit_dht        # DHT library
 # […]
 
 # Own modules
 #from {path} import {class}
-#import chicken_tsl2591 as tsl
-from chicken_status import *
-from chicken_graphs import *
+
 
 ## Boilerplate variables
 __author__ = 'Timothy P. Ellsworth Bowers'
@@ -42,21 +37,17 @@ __email__ = 'chickenpi.flag@gmail.com'
 __status__ = 'Development Status :: 2 - Pre-Alpha'
 
 
-class Control_Window:
+class Graphs_Window:
     def __init__(self, master):
         self.master = master
-        self.master.geometry("600x400+0+25")
-        self.frame  = Frame(self.master)
-        self.label = Label(self.frame, text="This is the control window")
-        self.label.pack()
+        self.master.geometry("600x200+600+250")
+        self.master.title("Graphs Window")
+        self.frame = Frame(self.master)
+        self.quit = Button(self.frame, text = f"Quit this window.", command = self.close_window)
+        self.quit.pack()
         self.frame.pack()
-        self.newStatus = Toplevel(self.master)
-        Status_Window(self.newStatus)
-        self.newGraphs = Toplevel(self.master)
-        Graphs_Window(self.newGraphs)
-
-
-root = Tk()
-app = Control_Window(root)
-root.mainloop()
+        
+    def close_window(self):
+        self.master.destroy()
+        
         
