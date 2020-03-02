@@ -41,16 +41,26 @@ TK_HEADER  = 25
 
 
 class Status_Window:
+    """
+    Status_Window class
+    Creates the status window and (supposedly) updates it from time to time.
+    """
     def __init__(self, master):
         self.master = master
         self.master.geometry("600x200+600+{:d}".format(PI_TOOLBAR))
         self.master.title("Status Window")
         self.frame = Frame(self.master)
-        self.quit = Button(self.frame, text = f"Quit this window.", command = self.close_window)
-        self.quit.pack()
+                
+        self.disptime = Label(self.frame, font=('courier', 12, 'bold'),
+                              fg='darkblue', bg='yellow')
+        self.disptime.grid(row=0)
         self.frame.pack()
         
     def close_window(self):
         self.master.destroy()
         
         
+    def update(self):
+        now = datetime.datetime.now()
+        self.disptime.config(text=now.strftime("%d-%b-%y %H:%M:%S"))
+        #self.frame.after(5000, self.update)

@@ -46,7 +46,16 @@ TK_HEADER  = 25
 
 
 class Control_Window:
+    """
+    Control_Window class
+    Creates the main control window and also spawns the secondary display
+    windows.
+    """
     def __init__(self, master):
+        """
+        __init__: initializes the class, including geometry and spawning
+        display windows
+        """
         self.master = master
         self.master.geometry("600x400+0+{:d}".format(PI_TOOLBAR))
         self.master.title("Control Window")
@@ -55,12 +64,24 @@ class Control_Window:
         self.label.pack()
         self.frame.pack()
         self.newStatus = Toplevel(self.master)
-        Status_Window(self.newStatus)
+        self.win1 = Status_Window(self.newStatus)
         self.newGraphs = Toplevel(self.master)
-        Graphs_Window(self.newGraphs)
+        self.win2 = Graphs_Window(self.newGraphs)
+        
+    def update(self):
+        """
+        update: method for updating the display windows
+        """
+        self.win1.update()
+        self.frame.after(5000, self.update)
+        
 
 
+### Main Routine ###
 root = Tk()
 app = Control_Window(root)
-root.mainloop()
-        
+try:
+    app.update()
+    root.mainloop()
+finally:
+    print("Ending...")
