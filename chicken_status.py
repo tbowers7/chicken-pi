@@ -36,11 +36,14 @@ __version__ = '0.2.0'
 __email__ = 'chickenpi.flag@gmail.com'
 __status__ = 'Development Status :: 2 - Pre-Alpha'
 
+PI_TOOLBAR = 36
+TK_HEADER  = 25
+
 
 class Status_Window:
     def __init__(self, master):
         self.master = master
-        self.master.geometry("600x200+600+25")
+        self.master.geometry("600x200+600+{:d}".format(PI_TOOLBAR))
         self.master.title("Status Window")
         self.frame = Frame(self.master)
         self.quit = Button(self.frame, text = f"Quit this window.", command = self.close_window)

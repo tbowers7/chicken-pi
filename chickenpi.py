@@ -41,11 +41,15 @@ __version__ = '0.2.0'
 __email__ = 'chickenpi.flag@gmail.com'
 __status__ = 'Development Status :: 2 - Pre-Alpha'
 
+PI_TOOLBAR = 36
+TK_HEADER  = 25
+
 
 class Control_Window:
     def __init__(self, master):
         self.master = master
-        self.master.geometry("600x400+0+25")
+        self.master.geometry("600x400+0+{:d}".format(PI_TOOLBAR))
+        self.master.title("Control Window")
         self.frame  = Frame(self.master)
         self.label = Label(self.frame, text="This is the control window")
         self.label.pack()
