@@ -29,8 +29,7 @@ import numpy as np         # Numpy!
 # Own modules
 #from {path} import {class}
 #import chicken_tsl2591 as tsl
-from chicken_status import *
-from chicken_graphs import *
+from chicken_control import *
 
 ## Boilerplate variables
 __author__ = 'Timothy P. Ellsworth Bowers'
@@ -44,37 +43,6 @@ __status__ = 'Development Status :: 2 - Pre-Alpha'
 PI_TOOLBAR = 36
 TK_HEADER  = 25
 
-
-class Control_Window:
-    """
-    Control_Window class
-    Creates the main control window and also spawns the secondary display
-    windows.
-    """
-    def __init__(self, master):
-        """
-        __init__: initializes the class, including geometry and spawning
-        display windows
-        """
-        self.master = master
-        self.master.geometry("600x400+0+{:d}".format(PI_TOOLBAR))
-        self.master.title("Control Window")
-        self.frame  = Frame(self.master)
-        self.label = Label(self.frame, text="This is the control window")
-        self.label.pack()
-        self.frame.pack()
-        self.newStatus = Toplevel(self.master)
-        self.win1 = Status_Window(self.newStatus)
-        self.newGraphs = Toplevel(self.master)
-        self.win2 = Graphs_Window(self.newGraphs)
-        
-    def update(self):
-        """
-        update: method for updating the display windows
-        """
-        self.win1.update()
-        self.frame.after(5000, self.update)
-        
 
 
 ### Main Routine ###
