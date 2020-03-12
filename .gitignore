@@ -1,6 +1,8 @@
 private_emailer.py
 .ipaddr.txt
 .outlet_state.txt
+.noaa_token.txt
+.lonlat.txt
 .key.bin
 .gmailuname.bin
 .gmailpasswd.bin
