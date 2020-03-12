@@ -46,11 +46,15 @@ class Status_Window:
     Creates the status window and (supposedly) updates it from time to time.
     """
     def __init__(self, master):
+        """
+        __init__ method: initializes the Status Window
+        """
         self.master = master
         self.master.geometry("600x200+600+{:d}".format(PI_TOOLBAR))
         self.master.title("Status Window")
         self.frame = Frame(self.master)
-                
+        
+        ## 
         self.disptime = Label(self.frame, font=('courier', 12, 'bold'),
                               fg='darkblue', bg='yellow')
         self.disptime.grid(row=0)
