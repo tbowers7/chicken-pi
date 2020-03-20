@@ -235,49 +235,49 @@ class Control_Window:
     def update1ON(self,seltime):
         self.ON1time = float(seltime)
         Label(self.frame, text=' ON '+self.makeStringTime(self.ON1time),
-              fg='green').grid(row=2,column=0)
+              fg='green').grid(row=OUTROW+3,column=0)
         self.changedState = True
         
     def update1OFF(self,seltime):
         self.OFF1time = float(seltime)
         Label(self.frame, text=' OFF '+self.makeStringTime(self.OFF1time),
-              fg='red').grid(row=4,column=0)
+              fg='red').grid(row=OUTROW+5,column=0)
         self.changedState = True
         
     def update2ON(self,seltime):
         self.ON2time = float(seltime)
         Label(self.frame, text=' ON '+self.makeStringTime(self.ON2time),
-              fg='green').grid(row=2,column=1)
+              fg='green').grid(row=OUTROW+3,column=1)
         self.changedState = True
         
     def update2OFF(self,seltime):
         self.OFF2time = float(seltime)
         Label(self.frame, text=' OFF '+self.makeStringTime(self.OFF2time),
-              fg='red').grid(row=4,column=1)
+              fg='red').grid(row=OUTROW+5,column=1)
         self.changedState = True
 
     def update3ON(self,seltime):
         self.ON3time = float(seltime)
         Label(self.frame, text=' ON '+self.makeStringTime(self.ON3time),
-              fg='green').grid(row=2,column=2)
+              fg='green').grid(row=OUTROW+3,column=2)
         self.changedState = True
         
     def update3OFF(self,seltime):
         self.OFF3time = float(seltime)
         Label(self.frame, text=' OFF '+self.makeStringTime(self.OFF3time),
-              fg='red').grid(row=4,column=2)
+              fg='red').grid(row=OUTROW+5,column=2)
         self.changedState = True
         
     def update4ON(self,seltime):
         self.ON4time = float(seltime)
         Label(self.frame, text=' ON '+self.makeStringTime(self.ON4time),
-              fg='green').grid(row=2,column=3)
+              fg='green').grid(row=OUTROW+3,column=3)
         self.changedState = True
         
     def update4OFF(self,seltime):
         self.OFF4time = float(seltime)
         Label(self.frame, text=' OFF '+self.makeStringTime(self.OFF4time),
-              fg='red').grid(row=4,column=3)
+              fg='red').grid(row=OUTROW+5,column=3)
         self.changedState = True
 
         
