@@ -18,7 +18,7 @@ import os,sys              # Search for file on disk
 import csv                 # For CSV output
 import atexit              # Register cleanup functions
 import numpy as np         # Numpy!
-from datetime import datetime
+
 # […]
 
 # Libs
@@ -55,11 +55,15 @@ class Graphs_Window(Tk):
 
         # Load the local coordinates from file
         ABSPATH = os.path.abspath(os.path.dirname(sys.argv[0]))
-        with open(ABSPATH+'/.lonlat.txt','r') as fileobj:
-            coords = []
-            for line in fileobj:
-                coords.append(line.rstrip())
-                
+        try:
+            with open(ABSPATH+'/.lonlat.txt','r') as fileobj:
+                coords = []
+                for line in fileobj:
+                    coords.append(line.rstrip())
+        except:
+            print("You must create a file .lonlat.txt containing the coordinates to submit to NOAA")
+            exit()
+        
         self.lat = coords[1]
         self.lon = coords[0]
         
@@ -98,11 +102,17 @@ class Graphs_Window(Tk):
         
         for x in range(0,nperiods):
             
-            startBlock = datetime.strptime(
-                forecast['properties']['periods'][x]['startTime'],
+            # For <= 3.6 compatibility, remove colon in time zone
+            startTime  = forecast['properties']['periods'][x]['startTime']
+            startTZcol = startTime.rindex(':')
+            endTime    = forecast['properties']['periods'][x]['endTime']
+            endTZcol   = endTime.rindex(':')
+            
+            startBlock = datetime.datetime.strptime(
+                startTime[:startTZcol]+startTime[startTZcol+1:],
                 "%Y-%m-%dT%H:%M:%S%z")
-            endBlock = datetime.strptime(
-                forecast['properties']['periods'][x]['endTime'],
+            endBlock = datetime.datetime.strptime(
+                endTime[:endTZcol]+endTime[endTZcol+1:],
                 "%Y-%m-%dT%H:%M:%S%z")
             midpoint = (startBlock + (endBlock - startBlock)/2)
             
