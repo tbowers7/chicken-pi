@@ -105,28 +105,36 @@ class Control_Window:
                                                  columnspan=4)
         # Outlet #1
         Label(self.frame, text=OUT1STR+' (#1)').grid(row=OUTROW+1,column=0)
-        Label(self.frame, text=' ON '+self.makeStringTime(self.ON1time),
-              fg='green').grid(row=OUTROW+3,column=0)
-        Label(self.frame, text=' OFF '+self.makeStringTime(self.OFF1time)
-              , fg='red').grid(row=OUTROW+5,column=0)
+        self.dout11 = Label(self.frame, fg='green', text=' ON '+
+                            self.makeStringTime(self.ON1time))
+        self.dout11.grid(row=OUTROW+3,column=0)
+        self.dout10 = Label(self.frame, fg='red', text=' OFF '+
+                            self.makeStringTime(self.OFF1time))
+        self.dout10.grid(row=OUTROW+5,column=0)
         # Outlet #2
         Label(self.frame, text=OUT2STR+' (#2)').grid(row=OUTROW+1,column=1)
-        Label(self.frame, text=' ON '+self.makeStringTime(self.ON2time),
-              fg='green').grid(row=OUTROW+3,column=1)
-        Label(self.frame, text=' OFF '+self.makeStringTime(self.OFF2time),
-              fg='red').grid(row=OUTROW+5,column=1)
+        self.dout21 = Label(self.frame, fg='green', text=' ON '+
+                            self.makeStringTime(self.ON2time))
+        self.dout21.grid(row=OUTROW+3,column=1)
+        self.dout20 = Label(self.frame, fg='red', text=' OFF '+
+                            self.makeStringTime(self.OFF2time))
+        self.dout20.grid(row=OUTROW+5,column=1)
         # Outlet #3
         Label(self.frame, text=OUT3STR+' (#3)').grid(row=OUTROW+1,column=2)
-        Label(self.frame, text=' ON '+self.makeStringTime(self.ON3time),
-              fg='green').grid(row=OUTROW+3,column=2)
-        Label(self.frame, text=' OFF '+self.makeStringTime(self.OFF3time),
-              fg='red').grid(row=OUTROW+5,column=2)
+        self.dout31 = Label(self.frame, fg='green', text=' ON '+
+                            self.makeStringTime(self.ON3time))
+        self.dout31.grid(row=OUTROW+3,column=2)
+        self.dout30 = Label(self.frame, fg='red', text=' OFF '+
+                            self.makeStringTime(self.OFF3time))
+        self.dout30.grid(row=OUTROW+5,column=2)
         # Outlet #4
         Label(self.frame, text=OUT4STR+' (#4)').grid(row=OUTROW+1,column=3)
-        Label(self.frame, text=' ON '+self.makeStringTime(self.ON4time),
-              fg='green').grid(row=OUTROW+3,column=3)
-        Label(self.frame, text=' OFF '+self.makeStringTime(self.OFF4time),
-              fg='red').grid(row=OUTROW+5,column=3)
+        self.dout41 = Label(self.frame,  fg='green', text=' ON '+
+                            self.makeStringTime(self.ON4time))
+        self.dout41.grid(row=OUTROW+3,column=3)
+        self.dout40 = Label(self.frame, fg='red', text=' OFF '+
+                            self.makeStringTime(self.OFF4time))
+        self.dout40.grid(row=OUTROW+5,column=3)
         
         ## Create an 'ENABLE' checkbox for each outlet
         self.EN1 = Checkbutton(self.frame, text='Enable', onvalue=True,
@@ -234,50 +242,42 @@ class Control_Window:
     ### The following methods are called whenever a slider is moved:
     def update1ON(self,seltime):
         self.ON1time = float(seltime)
-        Label(self.frame, text=' ON '+self.makeStringTime(self.ON1time),
-              fg='green').grid(row=OUTROW+3,column=0)
+        self.dout11.config(text=' ON '+self.makeStringTime(self.ON1time))
         self.changedState = True
         
     def update1OFF(self,seltime):
         self.OFF1time = float(seltime)
-        Label(self.frame, text=' OFF '+self.makeStringTime(self.OFF1time),
-              fg='red').grid(row=OUTROW+5,column=0)
+        self.dout10.config(text=' OFF '+self.makeStringTime(self.OFF1time))
         self.changedState = True
         
     def update2ON(self,seltime):
         self.ON2time = float(seltime)
-        Label(self.frame, text=' ON '+self.makeStringTime(self.ON2time),
-              fg='green').grid(row=OUTROW+3,column=1)
+        self.dout21.config(text=' ON '+self.makeStringTime(self.ON2time))
         self.changedState = True
         
     def update2OFF(self,seltime):
         self.OFF2time = float(seltime)
-        Label(self.frame, text=' OFF '+self.makeStringTime(self.OFF2time),
-              fg='red').grid(row=OUTROW+5,column=1)
+        self.dout20.config(text=' OFF '+self.makeStringTime(self.OFF2time))
         self.changedState = True
 
     def update3ON(self,seltime):
         self.ON3time = float(seltime)
-        Label(self.frame, text=' ON '+self.makeStringTime(self.ON3time),
-              fg='green').grid(row=OUTROW+3,column=2)
+        self.dout31.config(text=' ON '+self.makeStringTime(self.ON3time))
         self.changedState = True
         
     def update3OFF(self,seltime):
         self.OFF3time = float(seltime)
-        Label(self.frame, text=' OFF '+self.makeStringTime(self.OFF3time),
-              fg='red').grid(row=OUTROW+5,column=2)
+        self.dout30.config(text=' OFF '+self.makeStringTime(self.OFF3time))
         self.changedState = True
         
     def update4ON(self,seltime):
         self.ON4time = float(seltime)
-        Label(self.frame, text=' ON '+self.makeStringTime(self.ON4time),
-              fg='green').grid(row=OUTROW+3,column=3)
+        self.dout41.config(text=' ON '+self.makeStringTime(self.ON4time))
         self.changedState = True
         
     def update4OFF(self,seltime):
         self.OFF4time = float(seltime)
-        Label(self.frame, text=' OFF '+self.makeStringTime(self.OFF4time),
-              fg='red').grid(row=OUTROW+5,column=3)
+        self.dout40.config(text=' OFF '+self.makeStringTime(self.OFF4time))
         self.changedState = True
 
         
