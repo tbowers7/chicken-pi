@@ -18,7 +18,7 @@ import os,sys              # Search for file on disk
 import csv                 # For CSV output
 import atexit              # Register cleanup functions
 import numpy as np         # Numpy!
-
+import threading           # Threading to allow for NWS request
 # […]
 
 # Libs
@@ -28,6 +28,7 @@ matplotlib.use("TkAgg")
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
 from matplotlib.figure import Figure
 from noaa_sdk import noaa
+from matplotlib.dates import DateFormatter, DayLocator, HourLocator
 
 # Own modules
 #from {path} import {class}
@@ -63,37 +64,33 @@ class Graphs_Window(Tk):
         except:
             print("You must create a file .lonlat.txt containing the coordinates to submit to NOAA")
             exit()
-        
         self.lat = coords[1]
         self.lon = coords[0]
+
+        # Create the NOAA object instance
+        self.n             = noaa.NOAA()
+        self.have_forecast = False
+
+        # Plot date formats
+        self.alldays   = DayLocator()
+        self.quartdays = HourLocator(byhour=[0,6,12,18])
+        self.dayFormat = DateFormatter('%a %-m/%d')
         
-        self.n = noaa.NOAA()
-        
-        self.get_forecast()
-        f = Figure(figsize=(5,5), dpi=100)
-        a = f.add_subplot(111)
-        a.plot(self.highDate, self.highTemp)
-        a.plot(self.lowDate,  self.lowTemp)
-        
-        
-        
-        canvas = FigureCanvasTkAgg(f, self.master)
-        canvas.draw()
-        canvas.get_tk_widget().pack(side=BOTTOM, fill=BOTH, expand=True)
-        
-        toolbar = NavigationToolbar2Tk(canvas, self.master)
-        toolbar.update()
-        canvas._tkcanvas.pack(side=TOP, fill=BOTH, expand=True)
-        
+      
         
         
     def close_window(self):
         self.master.destroy()
         
-        
-    def get_forecast(self):
-        forecast = self.n.points_forecast(self.lat,self.lon,hourly=False)
 
+    ### GET FORECAST METHOD ###
+    def get_forecast(self):
+        try:
+            forecast = self.n.points_forecast(self.lat,self.lon,hourly=False)
+        except:
+            self.have_forecast = False
+            return
+            
         nperiods = len(forecast['properties']['periods'])
         highTemp = []
         highDate = []
@@ -129,3 +126,41 @@ class Graphs_Window(Tk):
         self.highDate = highDate
         self.lowTemp  = lowTemp
         self.lowDate  = lowDate
+        
+        self.have_forecast = True
+        #print(lowDate)
+
+        
+    ### UPDATE METHOD ###
+    def update(self):
+        x = threading.Thread(target=self.get_forecast, daemon=True)
+        x.start()
+        print(self.have_forecast)
+        print("Got here 0?")
+        
+        if self.have_forecast:
+            f = Figure(figsize=(5,5), dpi=100)
+            a = f.add_subplot(111)
+            # a.xaxis.set_major_locator(self.alldays)
+            # a.xaxis.set_minor_locator(self.quartdays)
+            a.xaxis.set_major_formatter(self.dayFormat)
+            a.grid(which='major',axis='x',color='#505050',linestyle='-')
+            # a.grid(which='minor',axis='x',color='pink',linestyle='-')
+            a.plot(self.highDate, self.highTemp, 'ro')
+            a.plot(self.lowDate,  self.lowTemp, 'bo')
+            a.plot(self.highDate, self.highTemp, 'r-')
+            a.plot(self.lowDate,  self.lowTemp, 'b-')
+            
+            print("Got here 1?")
+            canvas = FigureCanvasTkAgg(f, self.master)
+            print("Got here 1a?")
+            canvas.draw()
+            print("Got here 1b?")
+            canvas.get_tk_widget().pack(side=BOTTOM, fill=BOTH, expand=True)
+            
+            print("Got here 2?")
+            toolbar = NavigationToolbar2Tk(canvas, self.master)
+            toolbar.update()
+            canvas._tkcanvas.pack(side=TOP, fill=BOTH, expand=True)
+        
+        

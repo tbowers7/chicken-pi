@@ -51,6 +51,7 @@ WIDGET_WIDE  = 600           # Width of the "Outlet Timers" window
 WIDGET_HIGH  = 400           # Height of the "Outlet Timers" window
 OUTROW       = 0
 DOORROW      = 10
+CONTBG       = 'lightgreen'
 
 
 class Control_Window:
@@ -68,13 +69,16 @@ class Control_Window:
         self.master = master
         self.newStatus = Toplevel(self.master)
         self.win1 = Status_Window(self.newStatus)
-        self.newGraphs = Toplevel(self.master)
+        self.newGraphs = Toplevel(self.master, bg='forestgreen')
         self.win2 = Graphs_Window(self.newGraphs)
 
         ## Define the geometry and title for the control window
         self.master.geometry("{:d}x{:d}+0+{:d}".format(
             WIDGET_WIDE,WIDGET_HIGH,PI_TOOLBAR))
         self.master.title("Control Window")
+        self.master.configure(bg=CONTBG)
+
+        self.nupdate = 0
         
         ## Initialize the various variables required
         self.ON1time = 0
@@ -304,8 +308,13 @@ class Control_Window:
         """
         update: method for updating the display windows
         """
+        self.nupdate += 1
         self.win1.update()
-        self.frame.after(5000, self.update)
+        print(self.nupdate)
+        if (self.nupdate % 5) == 0:
+            self.win2.update()
+        print("Waiting for next call...")
+        self.master.after(5000, self.update)
         
 
 

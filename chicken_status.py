@@ -38,6 +38,7 @@ __status__ = 'Development Status :: 2 - Pre-Alpha'
 
 PI_TOOLBAR = 36
 TK_HEADER  = 25
+STATBG     = 'black'
 
 
 class Status_Window:
@@ -52,12 +53,33 @@ class Status_Window:
         self.master = master
         self.master.geometry("600x200+600+{:d}".format(PI_TOOLBAR))
         self.master.title("Status Window")
-        self.frame = Frame(self.master)
+        self.master.configure(bg=STATBG)
+        self.frame = Frame(self.master, bg=STATBG)
         
-        ## 
+        ## Time at the top
         self.disptime = Label(self.frame, font=('courier', 12, 'bold'),
-                              fg='darkblue', bg='yellow')
-        self.disptime.grid(row=0)
+                              bg=STATBG, fg='lightblue')
+        self.disptime.grid(row=0, columnspan=4)
+        
+        ## Next, label for environmental statuses
+        Label(self.frame, font=('times', 12, 'bold'), fg='yellow',
+              bg=STATBG,text='Environmental Status').grid(row=1, columnspan=4)
+
+        ## And now, the actual statuses:
+        stattext1 = 'Outside:\nNests:\nRoosts:'
+        stattext2 = 'Light:\nCPU:'
+        Label(self.frame, font=('courier', 12, 'bold'), fg='lightgreen',
+              bg=STATBG, text=stattext1).grid(row=2, column=0)
+        Label(self.frame, font=('courier', 12, 'bold'), fg='lightgreen',
+              bg=STATBG, text=stattext2).grid(row=2, column=2)
+        self.envstat1 = Label(self.frame, font=('courier', 12, 'bold'),
+                             bg=STATBG, fg='green')
+        self.envstat1.grid(row=2, column=1)
+        self.envstat2 = Label(self.frame, font=('courier', 12, 'bold'),
+                             bg=STATBG, fg='green')
+        self.envstat2.grid(row=2, column=3)
+        self.count = 0
+        
         self.frame.pack()
         
     def close_window(self):
@@ -68,3 +90,8 @@ class Status_Window:
         now = datetime.datetime.now()
         self.disptime.config(text=now.strftime("%d-%b-%y %H:%M:%S"))
         #self.frame.after(5000, self.update)
+        self.count += 1
+        self.envstat1.config(text='{:d}\n{:d}\n{:d}'.format(
+            self.count,self.count+1,self.count+2))
+        self.envstat2.config(text='{:d}\n{:d}'.format(
+            self.count+3,self.count+4))
