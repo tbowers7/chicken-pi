@@ -78,45 +78,48 @@ class Control_Window:
         self.master.title("Control Window")
         self.master.configure(bg=CONTBG)
 
-        self.nupdate = 0
-        
-        ## Initialize the various variables required
-        self.ON1time = 0
-        self.OFF1time = 0
-        self.SWTCH1tmp = 20
-        self.ON2time = 0
-        self.OFF2time = 0
-        self.ON3time = 0
-        self.OFF3time = 0
-        self.ON4time = 0
-        self.OFF4time = 0
-        self.var1 = BooleanVar()
-        self.var2 = BooleanVar()
-        self.var3 = BooleanVar()
-        self.var4 = BooleanVar()
-        self.var1a = IntVar()
-        self.var2a = IntVar()
-        self.var3a = IntVar()
-        self.var4a = IntVar()
-        self.ENABLE1 = False
-        self.ENABLE2 = False
-        self.ENABLE3 = False
-        self.ENABLE4 = False
-        self.TD1 = 0
-        self.TD2 = 0
-        self.TD3 = 0
-        self.TD4 = 0
-        self.changedState = False
-
         ## A "frame" holds the various GUI controls
         self.frame = Frame(self.master)
         self.frame.pack(expand=0)
+        
+        ## Initialize the various variables required
+        self.ENABLE1 = False       # Switch enabled
+        self.ENABLE2 = False
+        self.ENABLE3 = False
+        self.ENABLE4 = False
+        self.ON1time = 0           # Switch turn on time
+        self.ON2time = 0
+        self.ON3time = 0
+        self.ON4time = 0
+        self.OFF1time = 0          # Switch turn off time
+        self.OFF2time = 0
+        self.OFF3time = 0
+        self.OFF4time = 0
+        self.SWTCH1tmp = 20        # Temperature trigger for switch
+        self.SWTCH2tmp = 20
+        self.SWTCH3tmp = 20
+        self.SWTCH4tmp = 20
+        self.TD1 = 0               # Temperature direction for trigger
+        self.TD2 = 0               # 0  = temperature independent
+        self.TD3 = 0               # +1 = turn ON above the trigger
+        self.TD4 = 0               # -1 = turn OFF above the trigger
+        self.var1 = BooleanVar()   # Variables needed for ENABLE boxes
+        self.var2 = BooleanVar()
+        self.var3 = BooleanVar()
+        self.var4 = BooleanVar()
+        self.var1a = IntVar()      # Variables needed for temp radio buttons
+        self.var2a = IntVar()
+        self.var3a = IntVar()
+        self.var4a = IntVar()
+        self.changedState = False  # Trigger for updating relay state
+        self.nupdate = 0           # Keep a running count of update cycles
+        
         
         ## Create the labels and position them in a grid layout
         Label(self.frame, text='Switched Outlets', fg='darkblue',
               font=('courier', 14, 'bold')).grid(row=OUTROW, column=0,
                                                  columnspan=4)
-        # Outlet #1
+        # Outlet #1 Labels
         Label(self.frame, text=OUT1STR+' (#1)').grid(row=OUTROW+1,column=0)
         self.dout11 = Label(self.frame, fg='green', text=' ON '+
                             self.makeStringTime(self.ON1time))
@@ -127,7 +130,7 @@ class Control_Window:
         self.dout1t = Label(self.frame, fg='blue', text=' Temperature '+
                             self.makeStringTemp(self.SWTCH1tmp))
         self.dout1t.grid(row=OUTROW+10,column=0)
-        # Outlet #2
+        # Outlet #2 Labels
         Label(self.frame, text=OUT2STR+' (#2)').grid(row=OUTROW+1,column=1)
         self.dout21 = Label(self.frame, fg='green', text=' ON '+
                             self.makeStringTime(self.ON2time))
@@ -135,7 +138,10 @@ class Control_Window:
         self.dout20 = Label(self.frame, fg='red', text=' OFF '+
                             self.makeStringTime(self.OFF2time))
         self.dout20.grid(row=OUTROW+5,column=1)
-        # Outlet #3
+        self.dout2t = Label(self.frame, fg='blue', text=' Temperature '+
+                            self.makeStringTemp(self.SWTCH2tmp))
+        self.dout2t.grid(row=OUTROW+10,column=1)
+        # Outlet #3 Labels
         Label(self.frame, text=OUT3STR+' (#3)').grid(row=OUTROW+1,column=2)
         self.dout31 = Label(self.frame, fg='green', text=' ON '+
                             self.makeStringTime(self.ON3time))
@@ -143,7 +149,10 @@ class Control_Window:
         self.dout30 = Label(self.frame, fg='red', text=' OFF '+
                             self.makeStringTime(self.OFF3time))
         self.dout30.grid(row=OUTROW+5,column=2)
-        # Outlet #4
+        self.dout3t = Label(self.frame, fg='blue', text=' Temperature '+
+                            self.makeStringTemp(self.SWTCH3tmp))
+        self.dout3t.grid(row=OUTROW+10,column=2)
+        # Outlet #4 Labels
         Label(self.frame, text=OUT4STR+' (#4)').grid(row=OUTROW+1,column=3)
         self.dout41 = Label(self.frame,  fg='green', text=' ON '+
                             self.makeStringTime(self.ON4time))
@@ -151,7 +160,10 @@ class Control_Window:
         self.dout40 = Label(self.frame, fg='red', text=' OFF '+
                             self.makeStringTime(self.OFF4time))
         self.dout40.grid(row=OUTROW+5,column=3)
-        
+        self.dout4t = Label(self.frame, fg='blue', text=' Temperature '+
+                            self.makeStringTemp(self.SWTCH4tmp))
+        self.dout4t.grid(row=OUTROW+10,column=3)
+
         ## Create an 'ENABLE' checkbox for each outlet
         self.EN1 = Checkbutton(self.frame, text='Enable', onvalue=True,
                                offvalue=False, variable=self.var1,
@@ -196,6 +208,10 @@ class Control_Window:
                            showvalue=0,command=self.update2OFF,resolution=0.25,
                            digits=4, variable=DoubleVar, length=slider_size)
         self.S2OFF.grid(row=OUTROW+6,column=1)
+        self.S2TMP = Scale(self.frame, from_=20, to=80, orient=HORIZONTAL,
+                           showvalue=0,command=self.update2TMP,resolution=5,
+                           digits=2, variable=IntVar, length=slider_size)
+        self.S2TMP.grid(row=OUTROW+11,column=1)
         # Outlet #3
         self.S3ON = Scale(self.frame, from_=0, to=24, orient=HORIZONTAL,
                           showvalue=0,command=self.update3ON,resolution=0.25,
@@ -205,6 +221,10 @@ class Control_Window:
                            showvalue=0,command=self.update3OFF,resolution=0.25,
                            digits=4, variable=DoubleVar, length=slider_size)
         self.S3OFF.grid(row=OUTROW+6,column=2)
+        self.S3TMP = Scale(self.frame, from_=20, to=80, orient=HORIZONTAL,
+                           showvalue=0,command=self.update3TMP,resolution=5,
+                           digits=2, variable=IntVar, length=slider_size)
+        self.S3TMP.grid(row=OUTROW+11,column=2)
         # Outlet #4
         self.S4ON = Scale(self.frame, from_=0, to=24, orient=HORIZONTAL,
                           showvalue=0,command=self.update4ON,resolution=0.25,
@@ -214,6 +234,10 @@ class Control_Window:
                            showvalue=0,command=self.update4OFF,resolution=0.25,
                            digits=4, variable=DoubleVar, length=slider_size)
         self.S4OFF.grid(row=OUTROW+6,column=3)
+        self.S4TMP = Scale(self.frame, from_=20, to=80, orient=HORIZONTAL,
+                           showvalue=0,command=self.update4TMP,resolution=5,
+                           digits=2, variable=IntVar, length=slider_size)
+        self.S4TMP.grid(row=OUTROW+11,column=3)
         
         
         ## Create radio buttons for temp and position them in a grid layout.
@@ -321,6 +345,25 @@ class Control_Window:
         self.SWTCH1tmp = int(seltemp)
         self.dout1t.config(text=' Temperature '+
                            self.makeStringTemp(self.SWTCH1tmp))
+        self.changedState = True
+        
+    def update2TMP(self,seltemp):
+        self.SWTCH2tmp = int(seltemp)
+        self.dout2t.config(text=' Temperature '+
+                           self.makeStringTemp(self.SWTCH2tmp))
+        self.changedState = True
+        
+    def update3TMP(self,seltemp):
+        self.SWTCH3tmp = int(seltemp)
+        self.dout3t.config(text=' Temperature '+
+                           self.makeStringTemp(self.SWTCH3tmp))
+        self.changedState = True
+        
+    def update4TMP(self,seltemp):
+        self.SWTCH4tmp = int(seltemp)
+        self.dout4t.config(text=' Temperature '+
+                           self.makeStringTemp(self.SWTCH4tmp))
+        self.changedState = True
         
         
         
