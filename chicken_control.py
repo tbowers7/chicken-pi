@@ -83,6 +83,7 @@ class Control_Window:
         ## Initialize the various variables required
         self.ON1time = 0
         self.OFF1time = 0
+        self.SWTCH1tmp = 20
         self.ON2time = 0
         self.OFF2time = 0
         self.ON3time = 0
@@ -93,10 +94,18 @@ class Control_Window:
         self.var2 = BooleanVar()
         self.var3 = BooleanVar()
         self.var4 = BooleanVar()
+        self.var1a = IntVar()
+        self.var2a = IntVar()
+        self.var3a = IntVar()
+        self.var4a = IntVar()
         self.ENABLE1 = False
         self.ENABLE2 = False
         self.ENABLE3 = False
         self.ENABLE4 = False
+        self.TD1 = 0
+        self.TD2 = 0
+        self.TD3 = 0
+        self.TD4 = 0
         self.changedState = False
 
         ## A "frame" holds the various GUI controls
@@ -115,6 +124,9 @@ class Control_Window:
         self.dout10 = Label(self.frame, fg='red', text=' OFF '+
                             self.makeStringTime(self.OFF1time))
         self.dout10.grid(row=OUTROW+5,column=0)
+        self.dout1t = Label(self.frame, fg='blue', text=' Temperature '+
+                            self.makeStringTemp(self.SWTCH1tmp))
+        self.dout1t.grid(row=OUTROW+10,column=0)
         # Outlet #2
         Label(self.frame, text=OUT2STR+' (#2)').grid(row=OUTROW+1,column=1)
         self.dout21 = Label(self.frame, fg='green', text=' ON '+
@@ -171,6 +183,10 @@ class Control_Window:
                            showvalue=0,command=self.update1OFF,resolution=0.25,
                            digits=4, variable=DoubleVar, length=slider_size)
         self.S1OFF.grid(row=OUTROW+6,column=0)
+        self.S1TMP = Scale(self.frame, from_=20, to=80, orient=HORIZONTAL,
+                           showvalue=0,command=self.update1TMP,resolution=5,
+                           digits=2, variable=IntVar, length=slider_size)
+        self.S1TMP.grid(row=OUTROW+11,column=0)
         # Outlet #2
         self.S2ON = Scale(self.frame, from_=0, to=24, orient=HORIZONTAL,
                           showvalue=0,command=self.update2ON,resolution=0.25,
@@ -200,7 +216,20 @@ class Control_Window:
         self.S4OFF.grid(row=OUTROW+6,column=3)
         
         
-        ## Temperature sliders...
+        ## Create radio buttons for temp and position them in a grid layout.
+        self.S1TNO = Radiobutton(self.frame, text="Temp independent",
+                                 value=0, variable=self.var1a, fg='blue',
+                                 command=self.update1TD)
+        self.S1TNO.grid(row=OUTROW+7,column=0)
+        self.S1TUP = Radiobutton(self.frame, text="Turn ON above: ",
+                                 value=1, variable=self.var1a, fg='blue',
+                                 command=self.update1TD)
+        self.S1TUP.grid(row=OUTROW+8,column=0)
+        self.S1TDN = Radiobutton(self.frame, text="Turn OFF above:",
+                                 value=-1, variable=self.var1a, fg='blue',
+                                 command=self.update1TD)
+        self.S1TDN.grid(row=OUTROW+9,column=0)
+
         
         
         
@@ -225,7 +254,7 @@ class Control_Window:
         
         
         
-            ### The following methods are called whenever a checkbox is clicked:
+    ### The following methods are called whenever a checkbox is clicked:
     def update1ENABLE(self):
         self.ENABLE1 = self.var1.get()
         self.changedState = True
@@ -240,6 +269,10 @@ class Control_Window:
 
     def update4ENABLE(self):
         self.ENABLE4 = self.var4.get()
+        self.changedState = True
+
+    def update1TD(self):
+        self.TD1 = self.var1a.get()
         self.changedState = True
     
     
@@ -284,6 +317,12 @@ class Control_Window:
         self.dout40.config(text=' OFF '+self.makeStringTime(self.OFF4time))
         self.changedState = True
 
+    def update1TMP(self,seltemp):
+        self.SWTCH1tmp = int(seltemp)
+        self.dout1t.config(text=' Temperature '+
+                           self.makeStringTemp(self.SWTCH1tmp))
+        
+        
         
     ### This method makes the string for display of time above slider bar
     def makeStringTime(self,inTime):
@@ -298,6 +337,10 @@ class Control_Window:
         if int(inTime) == 0:            # Catch case of 0:00
             inTime = 12
         return "{:2d}:{:0>2d} {:s}".format(int(inTime),int(minute),ampm)
+
+    ### This method makes the string for display of temperature above slider bar
+    def makeStringTemp(self,inTemp):
+        return "{:2d}\N{DEGREE SIGN} F".format(int(inTemp))
 
 
 
