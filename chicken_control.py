@@ -212,99 +212,100 @@ class Control_Window:
         
         
     ### The following methods are called whenever a checkbox is clicked:
-    def update1ENABLE(self):
-        self.ENABLE[0] = self.var[0].get()
+    def updateENABLE(self, i):
+        self.ENABLE[i] = self.var[i].get()
         self.changedState = True
+            
+    # Helper functions
+    def update1ENABLE(self):
+        self.updateENABLE(0)
 
     def update2ENABLE(self):
-        self.ENABLE[1] = self.var[1].get()
-        self.changedState = True
+        self.updateENABLE(1)
 
     def update3ENABLE(self):
-        self.ENABLE[2] = self.var[2].get()
-        self.changedState = True
+        self.updateENABLE(2)
 
     def update4ENABLE(self):
-        self.ENABLE[3] = self.var[3].get()
-        self.changedState = True
-        print(self.ENABLE)
-
-    def update1TD(self):
-        self.TD1 = self.var1a.get()
-        self.changedState = True
+        self.updateENABLE(3)
     
     
     ### The following methods are called whenever a slider is moved:
-    def update1ON(self,seltime):
-        self.ONtime[0] = float(seltime)
-        self.onLabels[0].config(text=' ON '+self.makeStringTime(self.ONtime[0]))
+    def updateON(self, seltime, i):
+        self.ONtime[i] = float(seltime)
+        self.onLabels[i].config(text=' ON '+self.makeStringTime(self.ONtime[i]))
         self.changedState = True
+    
+    def updateOFF(self,seltime, i):
+        self.OFFtime[i] = float(seltime)
+        self.offLabels[i].config(text=' OFF '+
+                                 self.makeStringTime(self.OFFtime[i]))
+        self.changedState = True
+        
+    def updateTMP(self,seltemp, i):
+        self.SWCHtmp[i] = int(seltemp)
+        self.tmpLabels[i].config(text=' Temperature '+
+                                 self.makeStringTemp(self.SWCHtmp[i]))
+        self.changedState = True
+
+    # Helper functions
+    def update1ON(self,seltime):
+        self.updateON(seltime, 0)
         
     def update2ON(self,seltime):
-        self.ONtime[1] = float(seltime)
-        self.onLabels[1].config(text=' ON '+self.makeStringTime(self.ONtime[1]))
-        self.changedState = True
+        self.updateON(seltime, 1)
         
     def update3ON(self,seltime):
-        self.ONtime[2] = float(seltime)
-        self.onLabels[2].config(text=' ON '+self.makeStringTime(self.ONtime[2]))
-        self.changedState = True
+        self.updateON(seltime, 2)
         
     def update4ON(self,seltime):
-        self.ONtime[3] = float(seltime)
-        self.onLabels[3].config(text=' ON '+self.makeStringTime(self.ONtime[3]))
-        self.changedState = True
+        self.updateON(seltime, 3)
         
-    def update1OFF(self,seltime):
-        self.OFFtime[0] = float(seltime)
-        self.offLabels[0].config(text=' OFF '+
-                                 self.makeStringTime(self.OFFtime[0]))
-        self.changedState = True
+    def update1OFF(self, seltime):
+        self.updateOFF(seltime, 0)
         
     def update2OFF(self,seltime):
-        self.OFFtime[1] = float(seltime)
-        self.offLabels[1].config(text=' OFF '+
-                                 self.makeStringTime(self.OFFtime[1]))
-        self.changedState = True
+        self.updateOFF(seltime, 1)
 
     def update3OFF(self,seltime):
-        self.OFFtime[2] = float(seltime)
-        self.offLabels[2].config(text=' OFF '+
-                                 self.makeStringTime(self.OFFtime[2]))
-        self.changedState = True
+        self.updateOFF(seltime, 2)
         
     def update4OFF(self,seltime):
-        self.OFFtime[3] = float(seltime)
-        self.offLabels[3].config(text=' OFF '+
-                                 self.makeStringTime(self.OFFtime[3]))
-        self.changedState = True
+        self.updateOFF(seltime, 3)
 
-    def update1TMP(self,seltemp):
-        self.SWCHtmp[0] = int(seltemp)
-        self.tmpLabels[0].config(text=' Temperature '+
-                                 self.makeStringTemp(self.SWCHtmp[0]))
-        self.changedState = True
+    def update1TMP(self, seltemp):
+        self.updateTMP(seltmp, 0)
         
     def update2TMP(self,seltemp):
-        self.SWCHtmp[1] = int(seltemp)
-        self.tmpLabels[1].config(text=' Temperature '+
-                                 self.makeStringTemp(self.SWCHtmp[1]))
-        self.changedState = True
+        self.updateTMP(seltmp, 1)
         
     def update3TMP(self,seltemp):
-        self.SWCHtmp[2] = int(seltemp)
-        self.tmpLabels[2].config(text=' Temperature '+
-                                 self.makeStringTemp(self.SWCHtmp[2]))
-        self.changedState = True
+        self.updateTMP(seltmp, 2)
         
     def update4TMP(self,seltemp):
-        self.SWCHtmp[3] = int(seltemp)
-        self.tmpLabels[3].config(text=' Temperature '+
-                                 self.makeStringTemp(self.SWCHtmp[3]))
+        self.updateTMP(seltmp, 3)
+    
+    
+    ### The following methods are called whenever a radio button is clicked:
+    def updateTD(self, i):
+        self.TD[i] = self.vara[i].get()
         self.changedState = True
         
+    # Helper functions
+    def update1TD(self):
+        self.updateTD(0)
         
+    def update2TD(self):
+        self.updateTD(1)
         
+    def update3TD(self):
+        self.updateTD(2)
+        
+    def update4TD(self):
+        self.updateTD(3)
+        
+    
+    
     ### This method makes the string for display of time above slider bar
     def makeStringTime(self,inTime):
         minute = 60 * (inTime % 1)      # Compute minutes from decimal hour
