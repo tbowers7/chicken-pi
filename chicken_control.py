@@ -115,8 +115,8 @@ class Control_Window:
                                        self.makeStringTime(ont)))
             self.offLabels.append(Label(self.frame, fg='red', text=' OFF '+
                                         self.makeStringTime(offt)))
-            self.tmpLabels.append(Label(self.frame, fg='blue', text=
-                                        ' Temperature '+
+            self.tmpLabels.append(Label(self.frame, fg='blue',
+                                        text=' Temperature '+
                                         self.makeStringTemp(swt)))
             # Set to grid
             self.onLabels[i].grid(row=OUTROW+3, column=i)
