@@ -88,8 +88,10 @@ class Control_Window:
         self.OFFtime = [0]*4        # Switch turn off time
         self.SWCHtmp =  [20]*4      # Temperature trigger for switch
         self.TD = [0]*4             # Temperature direction for trigger
-        self.var = [BooleanVar()]*4 # Variables needed for ENABLE boxes
-        self.vara = [IntVar()]*4    # Variables needed for temp radio buttons
+        # Variables needed for ENABLE boxes
+        self.var = [BooleanVar(), BooleanVar(), BooleanVar(), BooleanVar()]
+        # Variables needed for temp radio buttons
+        self.vara = [IntVar(), IntVar(), IntVar(), IntVar()]
         self.changedState = False   # Trigger for updating relay state
         self.nupdate = 0            # Keep a running count of update cycles
         
