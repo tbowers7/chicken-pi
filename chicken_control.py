@@ -274,16 +274,16 @@ class Control_Window:
         self.updateOFF(seltime, 3)
 
     def update1TMP(self, seltemp):
-        self.updateTMP(seltmp, 0)
+        self.updateTMP(seltemp, 0)
         
     def update2TMP(self,seltemp):
-        self.updateTMP(seltmp, 1)
+        self.updateTMP(seltemp, 1)
         
     def update3TMP(self,seltemp):
-        self.updateTMP(seltmp, 2)
+        self.updateTMP(seltemp, 2)
         
     def update4TMP(self,seltemp):
-        self.updateTMP(seltmp, 3)
+        self.updateTMP(seltemp, 3)
     
     
     ### The following methods are called whenever a radio button is clicked:
