@@ -174,19 +174,30 @@ class Control_Window:
         
         
         ## Create radio buttons for temp and position them in a grid layout.
-        self.S1TNO = Radiobutton(self.frame, text="Temp independent",
-                                 value=0, variable=self.vara[0], fg='blue',
-                                 command=self.update1TD)
-        self.S1TNO.grid(row=OUTROW+7,column=0)
-        self.S1TUP = Radiobutton(self.frame, text="Turn ON above: ",
-                                 value=1, variable=self.vara[0], fg='blue',
-                                 command=self.update1TD)
-        self.S1TUP.grid(row=OUTROW+8,column=0)
-        self.S1TDN = Radiobutton(self.frame, text="Turn OFF above:",
-                                 value=-1, variable=self.vara[0], fg='blue',
-                                 command=self.update1TD)
-        self.S1TDN.grid(row=OUTROW+9,column=0)
+        self.noTempButton = []
+        self.upTempButton = []
+        self.dnTempButton = []
 
+        radiocmds = [self.update1TD, self.update2TD,
+                     self.update3TD, self.update4TD]
+
+        for (i, cmd) in zip(outlets, radiocmds):
+            self.noTempButton.append(Radiobutton(self.frame, fg='blue', value=0,
+                                                 variable=self.vara[i],
+                                                 text='Temp independent',
+                                                 command=cmd))
+            self.upTempButton.append(Radiobutton(self.frame, fg='blue', value=1,
+                                                 variable=self.vara[i],
+                                                 text='Turn ON above: ',
+                                                 command=cmd))
+            self.dnTempButton.append(Radiobutton(self.frame, fg='blue',value=-1,
+                                                 variable=self.vara[i],
+                                                 text='Turn OFF above:',
+                                                 command=cmd))
+            # Set to grid
+            self.noTempButton[i].grid(row=OUTROW+7, column=i)
+            self.upTempButton[i].grid(row=OUTROW+8, column=i)
+            self.dnTempButton[i].grid(row=OUTROW+9, column=i)
         
         
         
@@ -215,6 +226,7 @@ class Control_Window:
     def updateENABLE(self, i):
         self.ENABLE[i] = self.var[i].get()
         self.changedState = True
+        #print(self.ENABLE)
             
     # Helper functions
     def update1ENABLE(self):
@@ -235,18 +247,21 @@ class Control_Window:
         self.ONtime[i] = float(seltime)
         self.onLabels[i].config(text=' ON '+self.makeStringTime(self.ONtime[i]))
         self.changedState = True
+        #print(self.ONtime)
     
     def updateOFF(self,seltime, i):
         self.OFFtime[i] = float(seltime)
         self.offLabels[i].config(text=' OFF '+
                                  self.makeStringTime(self.OFFtime[i]))
         self.changedState = True
+        #print(self.OFFtime)
         
     def updateTMP(self,seltemp, i):
         self.SWCHtmp[i] = int(seltemp)
         self.tmpLabels[i].config(text=' Temperature '+
                                  self.makeStringTemp(self.SWCHtmp[i]))
         self.changedState = True
+        #print(self.SWCHtmp)
 
     # Helper functions
     def update1ON(self,seltime):
@@ -290,6 +305,7 @@ class Control_Window:
     def updateTD(self, i):
         self.TD[i] = self.vara[i].get()
         self.changedState = True
+        #print(self.TD)
         
     # Helper functions
     def update1TD(self):
