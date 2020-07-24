@@ -185,7 +185,8 @@ class Control_Window:
             self.noTempButton.append(Radiobutton(self.frame, fg='blue', value=0,
                                                  variable=self.vara[i],
                                                  text='Temp independent',
-                                                 command=cmd))
+                                                 command=cmd,
+                                                 font=('',9)))
             self.upTempButton.append(Radiobutton(self.frame, fg='blue', value=1,
                                                  variable=self.vara[i],
                                                  text='Turn ON above: ',
