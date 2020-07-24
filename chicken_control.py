@@ -83,174 +83,105 @@ class Control_Window:
         self.frame.pack(expand=0)
         
         ## Initialize the various variables required
-        self.ENABLE1 = False       # Switch enabled
-        self.ENABLE2 = False
-        self.ENABLE3 = False
-        self.ENABLE4 = False
-        self.ON1time = 0           # Switch turn on time
-        self.ON2time = 0
-        self.ON3time = 0
-        self.ON4time = 0
-        self.OFF1time = 0          # Switch turn off time
-        self.OFF2time = 0
-        self.OFF3time = 0
-        self.OFF4time = 0
-        self.SWTCH1tmp = 20        # Temperature trigger for switch
-        self.SWTCH2tmp = 20
-        self.SWTCH3tmp = 20
-        self.SWTCH4tmp = 20
-        self.TD1 = 0               # Temperature direction for trigger
-        self.TD2 = 0               # 0  = temperature independent
-        self.TD3 = 0               # +1 = turn ON above the trigger
-        self.TD4 = 0               # -1 = turn OFF above the trigger
-        self.var1 = BooleanVar()   # Variables needed for ENABLE boxes
-        self.var2 = BooleanVar()
-        self.var3 = BooleanVar()
-        self.var4 = BooleanVar()
-        self.var1a = IntVar()      # Variables needed for temp radio buttons
-        self.var2a = IntVar()
-        self.var3a = IntVar()
-        self.var4a = IntVar()
-        self.changedState = False  # Trigger for updating relay state
-        self.nupdate = 0           # Keep a running count of update cycles
+        self.ENABLE = [False]*4     # Switch Enabled
+        self.ONtime = [0]*4         # Switch turn on time
+        self.OFFtime = [0]*4        # Switch turn off time
+        self.SWCHtmp =  [20]*4      # Temperature trigger for switch
+        self.TD = [0]*4             # Temperature direction for trigger
+        self.var = [BooleanVar()]*4 # Variables needed for ENABLE boxes
+        self.vara = [IntVar()]*4    # Variables needed for temp radio buttons
+        self.changedState = False   # Trigger for updating relay state
+        self.nupdate = 0            # Keep a running count of update cycles
         
         
         ## Create the labels and position them in a grid layout
         Label(self.frame, text='Switched Outlets', fg='darkblue',
               font=('courier', 14, 'bold')).grid(row=OUTROW, column=0,
                                                  columnspan=4)
-        # Outlet #1 Labels
-        Label(self.frame, text=OUT1STR+' (#1)').grid(row=OUTROW+1,column=0)
-        self.dout11 = Label(self.frame, fg='green', text=' ON '+
-                            self.makeStringTime(self.ON1time))
-        self.dout11.grid(row=OUTROW+3,column=0)
-        self.dout10 = Label(self.frame, fg='red', text=' OFF '+
-                            self.makeStringTime(self.OFF1time))
-        self.dout10.grid(row=OUTROW+5,column=0)
-        self.dout1t = Label(self.frame, fg='blue', text=' Temperature '+
-                            self.makeStringTemp(self.SWTCH1tmp))
-        self.dout1t.grid(row=OUTROW+10,column=0)
-        # Outlet #2 Labels
-        Label(self.frame, text=OUT2STR+' (#2)').grid(row=OUTROW+1,column=1)
-        self.dout21 = Label(self.frame, fg='green', text=' ON '+
-                            self.makeStringTime(self.ON2time))
-        self.dout21.grid(row=OUTROW+3,column=1)
-        self.dout20 = Label(self.frame, fg='red', text=' OFF '+
-                            self.makeStringTime(self.OFF2time))
-        self.dout20.grid(row=OUTROW+5,column=1)
-        self.dout2t = Label(self.frame, fg='blue', text=' Temperature '+
-                            self.makeStringTemp(self.SWTCH2tmp))
-        self.dout2t.grid(row=OUTROW+10,column=1)
-        # Outlet #3 Labels
-        Label(self.frame, text=OUT3STR+' (#3)').grid(row=OUTROW+1,column=2)
-        self.dout31 = Label(self.frame, fg='green', text=' ON '+
-                            self.makeStringTime(self.ON3time))
-        self.dout31.grid(row=OUTROW+3,column=2)
-        self.dout30 = Label(self.frame, fg='red', text=' OFF '+
-                            self.makeStringTime(self.OFF3time))
-        self.dout30.grid(row=OUTROW+5,column=2)
-        self.dout3t = Label(self.frame, fg='blue', text=' Temperature '+
-                            self.makeStringTemp(self.SWTCH3tmp))
-        self.dout3t.grid(row=OUTROW+10,column=2)
-        # Outlet #4 Labels
-        Label(self.frame, text=OUT4STR+' (#4)').grid(row=OUTROW+1,column=3)
-        self.dout41 = Label(self.frame,  fg='green', text=' ON '+
-                            self.makeStringTime(self.ON4time))
-        self.dout41.grid(row=OUTROW+3,column=3)
-        self.dout40 = Label(self.frame, fg='red', text=' OFF '+
-                            self.makeStringTime(self.OFF4time))
-        self.dout40.grid(row=OUTROW+5,column=3)
-        self.dout4t = Label(self.frame, fg='blue', text=' Temperature '+
-                            self.makeStringTemp(self.SWTCH4tmp))
-        self.dout4t.grid(row=OUTROW+10,column=3)
-
-        ## Create an 'ENABLE' checkbox for each outlet
-        self.EN1 = Checkbutton(self.frame, text='Enable', onvalue=True,
-                               offvalue=False, variable=self.var1,
-                               command=self.update1ENABLE)
-        self.EN1.grid(row=OUTROW+2, column=0)
-        self.EN2 = Checkbutton(self.frame, text='Enable', onvalue=True,
-                               offvalue=False, variable=self.var2,
-                               command=self.update2ENABLE)
-        self.EN2.grid(row=OUTROW+2, column=1)
-        self.EN3 = Checkbutton(self.frame, text='Enable', onvalue=True,
-                               offvalue=False, variable=self.var3,
-                               command=self.update3ENABLE)
-        self.EN3.grid(row=OUTROW+2, column=2)
-        self.EN4 = Checkbutton(self.frame, text='Enable', onvalue=True,
-                               offvalue=False, variable=self.var4,
-                               command=self.update4ENABLE)
-        self.EN4.grid(row=OUTROW+2, column=3)
         
+        self.onLabels  = []
+        self.offLabels = []
+        self.tmpLabels = []
+        outlets = range(4)
+        strs    = [OUT1STR, OUT2STR, OUT3STR, OUT4STR]
+        
+        for (i, s, ont, offt, swt) in zip(
+                outlets, strs, self.ONtime, self.OFFtime, self.SWCHtmp):
+            # Column Label for this outlet
+            Label(self.frame, text=s+' (#{:d})'.format(i+1)).grid(
+                row=OUTROW+1, column=i)
+            # Individual Labels:
+            self.onLabels.append(Label(self.frame, fg='green', text=' ON '+
+                                       self.makeStringTime(ont)))
+            self.offLabels.append(Label(self.frame, fg='red', text=' OFF '+
+                                        self.makeStringTime(offt)))
+            self.tmpLabels.append(Label(self.frame, fg='blue', text=
+                                        ' Temperature '+
+                                        self.makeStringTemp(swt)))
+            # Set to grid
+            self.onLabels[i].grid(row=OUTROW+3, column=i)
+            self.offLabels[i].grid(row=OUTROW+5, column=i)
+            self.tmpLabels[i].grid(row=OUTROW+10, column=i)
+            
+            
+        ## Create an 'ENABLE' checkbox for each outlet
+        self.enableBox = []
+        cmds = [self.update1ENABLE, self.update2ENABLE,
+                self.update3ENABLE, self.update4ENABLE]
+        
+        for (i, cmd, v) in zip(outlets, cmds, self.var):
+            self.enableBox.append(Checkbutton(self.frame, text='Enable',
+                                              onvalue=True, offvalue=False,
+                                              variable=v, command=cmd))
+            self.enableBox[i].grid(row=OUTROW+2, column=i)
+            
+            
         ## Create the sliders and position them in a grid layout.
         ## The 'command' attribute specifies a method to call when
         ## a slider is moved
-        # Outlet #1
         slider_size = (WIDGET_WIDE - 5*5) / 4   # Scale slider width to window
-        self.S1ON = Scale(self.frame, from_=0, to=24, orient=HORIZONTAL,
-                          showvalue=0,command=self.update1ON,resolution=0.25,
-                          digits=4, variable=DoubleVar, length=slider_size)
-        self.S1ON.grid(row=OUTROW+4,column=0)
-        self.S1OFF = Scale(self.frame, from_=0, to=24, orient=HORIZONTAL,
-                           showvalue=0,command=self.update1OFF,resolution=0.25,
-                           digits=4, variable=DoubleVar, length=slider_size)
-        self.S1OFF.grid(row=OUTROW+6,column=0)
-        self.S1TMP = Scale(self.frame, from_=20, to=80, orient=HORIZONTAL,
-                           showvalue=0,command=self.update1TMP,resolution=5,
-                           digits=2, variable=IntVar, length=slider_size)
-        self.S1TMP.grid(row=OUTROW+11,column=0)
-        # Outlet #2
-        self.S2ON = Scale(self.frame, from_=0, to=24, orient=HORIZONTAL,
-                          showvalue=0,command=self.update2ON,resolution=0.25,
-                          digits=4, variable=DoubleVar, length=slider_size)
-        self.S2ON.grid(row=OUTROW+4,column=1)
-        self.S2OFF = Scale(self.frame, from_=0, to=24, orient=HORIZONTAL,
-                           showvalue=0,command=self.update2OFF,resolution=0.25,
-                           digits=4, variable=DoubleVar, length=slider_size)
-        self.S2OFF.grid(row=OUTROW+6,column=1)
-        self.S2TMP = Scale(self.frame, from_=20, to=80, orient=HORIZONTAL,
-                           showvalue=0,command=self.update2TMP,resolution=5,
-                           digits=2, variable=IntVar, length=slider_size)
-        self.S2TMP.grid(row=OUTROW+11,column=1)
-        # Outlet #3
-        self.S3ON = Scale(self.frame, from_=0, to=24, orient=HORIZONTAL,
-                          showvalue=0,command=self.update3ON,resolution=0.25,
-                          digits=4, variable=DoubleVar, length=slider_size)
-        self.S3ON.grid(row=OUTROW+4,column=2)
-        self.S3OFF = Scale(self.frame, from_=0, to=24, orient=HORIZONTAL,
-                           showvalue=0,command=self.update3OFF,resolution=0.25,
-                           digits=4, variable=DoubleVar, length=slider_size)
-        self.S3OFF.grid(row=OUTROW+6,column=2)
-        self.S3TMP = Scale(self.frame, from_=20, to=80, orient=HORIZONTAL,
-                           showvalue=0,command=self.update3TMP,resolution=5,
-                           digits=2, variable=IntVar, length=slider_size)
-        self.S3TMP.grid(row=OUTROW+11,column=2)
-        # Outlet #4
-        self.S4ON = Scale(self.frame, from_=0, to=24, orient=HORIZONTAL,
-                          showvalue=0,command=self.update4ON,resolution=0.25,
-                          digits=4, variable=DoubleVar, length=slider_size)
-        self.S4ON.grid(row=OUTROW+4,column=3)
-        self.S4OFF = Scale(self.frame, from_=0, to=24, orient=HORIZONTAL,
-                           showvalue=0,command=self.update4OFF,resolution=0.25,
-                           digits=4, variable=DoubleVar, length=slider_size)
-        self.S4OFF.grid(row=OUTROW+6,column=3)
-        self.S4TMP = Scale(self.frame, from_=20, to=80, orient=HORIZONTAL,
-                           showvalue=0,command=self.update4TMP,resolution=5,
-                           digits=2, variable=IntVar, length=slider_size)
-        self.S4TMP.grid(row=OUTROW+11,column=3)
+        
+        self.onSlider = []
+        self.offSlider = []
+        self.tmpSlider = []
+        oncmds  = [self.update1ON, self.update2ON,
+                   self.update3ON, self.update4ON]
+        offcmds = [self.update1OFF, self.update2OFF,
+                   self.update3OFF, self.update4OFF]
+        tmpcmds = [self.update1TMP, self.update2TMP,
+                   self.update3TMP, self.update4TMP]
+        
+        for (i, onc, offc, tmpc) in zip(outlets, oncmds, offcmds, tmpcmds):
+            self.onSlider.append(Scale(self.frame, from_=0, to=24, digits=4,
+                                       orient=HORIZONTAL, resolution=0.25,
+                                       command=onc, variable=DoubleVar,
+                                       length=slider_size, showvalue=0))
+            self.offSlider.append(Scale(self.frame, from_=0, to=24, digits=4,
+                                       orient=HORIZONTAL, resolution=0.25,
+                                       command=offc, variable=DoubleVar,
+                                        length=slider_size, showvalue=0))
+            self.tmpSlider.append(Scale(self.frame, from_=20, to=80, digits=2,
+                                        orient=HORIZONTAL, resolution=5,
+                                        command=tmpc, variable=IntVar,
+                                        length=slider_size, showvalue=0))
+            # Set to grid
+            self.onSlider[i].grid(row=OUTROW+4, column=i)
+            self.offSlider[i].grid(row=OUTROW+6, column=i)
+            self.tmpSlider[i].grid(row=OUTROW+11, column=i)
+            
         
         
         ## Create radio buttons for temp and position them in a grid layout.
         self.S1TNO = Radiobutton(self.frame, text="Temp independent",
-                                 value=0, variable=self.var1a, fg='blue',
+                                 value=0, variable=self.vara[0], fg='blue',
                                  command=self.update1TD)
         self.S1TNO.grid(row=OUTROW+7,column=0)
         self.S1TUP = Radiobutton(self.frame, text="Turn ON above: ",
-                                 value=1, variable=self.var1a, fg='blue',
+                                 value=1, variable=self.vara[0], fg='blue',
                                  command=self.update1TD)
         self.S1TUP.grid(row=OUTROW+8,column=0)
         self.S1TDN = Radiobutton(self.frame, text="Turn OFF above:",
-                                 value=-1, variable=self.var1a, fg='blue',
+                                 value=-1, variable=self.vara[0], fg='blue',
                                  command=self.update1TD)
         self.S1TDN.grid(row=OUTROW+9,column=0)
 
@@ -280,20 +211,21 @@ class Control_Window:
         
     ### The following methods are called whenever a checkbox is clicked:
     def update1ENABLE(self):
-        self.ENABLE1 = self.var1.get()
+        self.ENABLE[0] = self.var[0].get()
         self.changedState = True
 
     def update2ENABLE(self):
-        self.ENABLE2 = self.var2.get()
+        self.ENABLE[1] = self.var[1].get()
         self.changedState = True
 
     def update3ENABLE(self):
-        self.ENABLE3 = self.var3.get()
+        self.ENABLE[2] = self.var[2].get()
         self.changedState = True
 
     def update4ENABLE(self):
-        self.ENABLE4 = self.var4.get()
+        self.ENABLE[3] = self.var[3].get()
         self.changedState = True
+        print(self.ENABLE)
 
     def update1TD(self):
         self.TD1 = self.var1a.get()
@@ -302,67 +234,71 @@ class Control_Window:
     
     ### The following methods are called whenever a slider is moved:
     def update1ON(self,seltime):
-        self.ON1time = float(seltime)
-        self.dout11.config(text=' ON '+self.makeStringTime(self.ON1time))
-        self.changedState = True
-        
-    def update1OFF(self,seltime):
-        self.OFF1time = float(seltime)
-        self.dout10.config(text=' OFF '+self.makeStringTime(self.OFF1time))
+        self.ONtime[0] = float(seltime)
+        self.onLabels[0].config(text=' ON '+self.makeStringTime(self.ONtime[0]))
         self.changedState = True
         
     def update2ON(self,seltime):
-        self.ON2time = float(seltime)
-        self.dout21.config(text=' ON '+self.makeStringTime(self.ON2time))
+        self.ONtime[1] = float(seltime)
+        self.onLabels[1].config(text=' ON '+self.makeStringTime(self.ONtime[1]))
         self.changedState = True
         
-    def update2OFF(self,seltime):
-        self.OFF2time = float(seltime)
-        self.dout20.config(text=' OFF '+self.makeStringTime(self.OFF2time))
-        self.changedState = True
-
     def update3ON(self,seltime):
-        self.ON3time = float(seltime)
-        self.dout31.config(text=' ON '+self.makeStringTime(self.ON3time))
-        self.changedState = True
-        
-    def update3OFF(self,seltime):
-        self.OFF3time = float(seltime)
-        self.dout30.config(text=' OFF '+self.makeStringTime(self.OFF3time))
+        self.ONtime[2] = float(seltime)
+        self.onLabels[2].config(text=' ON '+self.makeStringTime(self.ONtime[2]))
         self.changedState = True
         
     def update4ON(self,seltime):
-        self.ON4time = float(seltime)
-        self.dout41.config(text=' ON '+self.makeStringTime(self.ON4time))
+        self.ONtime[3] = float(seltime)
+        self.onLabels[3].config(text=' ON '+self.makeStringTime(self.ONtime[3]))
+        self.changedState = True
+        
+    def update1OFF(self,seltime):
+        self.OFFtime[0] = float(seltime)
+        self.offLabels[0].config(text=' OFF '+
+                                 self.makeStringTime(self.OFFtime[0]))
+        self.changedState = True
+        
+    def update2OFF(self,seltime):
+        self.OFFtime[1] = float(seltime)
+        self.offLabels[1].config(text=' OFF '+
+                                 self.makeStringTime(self.OFFtime[1]))
+        self.changedState = True
+
+    def update3OFF(self,seltime):
+        self.OFFtime[2] = float(seltime)
+        self.offLabels[2].config(text=' OFF '+
+                                 self.makeStringTime(self.OFFtime[2]))
         self.changedState = True
         
     def update4OFF(self,seltime):
-        self.OFF4time = float(seltime)
-        self.dout40.config(text=' OFF '+self.makeStringTime(self.OFF4time))
+        self.OFFtime[3] = float(seltime)
+        self.offLabels[3].config(text=' OFF '+
+                                 self.makeStringTime(self.OFFtime[3]))
         self.changedState = True
 
     def update1TMP(self,seltemp):
-        self.SWTCH1tmp = int(seltemp)
-        self.dout1t.config(text=' Temperature '+
-                           self.makeStringTemp(self.SWTCH1tmp))
+        self.SWCHtmp[0] = int(seltemp)
+        self.tmpLabels[0].config(text=' Temperature '+
+                                 self.makeStringTemp(self.SWCHtmp[0]))
         self.changedState = True
         
     def update2TMP(self,seltemp):
-        self.SWTCH2tmp = int(seltemp)
-        self.dout2t.config(text=' Temperature '+
-                           self.makeStringTemp(self.SWTCH2tmp))
+        self.SWCHtmp[1] = int(seltemp)
+        self.tmpLabels[1].config(text=' Temperature '+
+                                 self.makeStringTemp(self.SWCHtmp[1]))
         self.changedState = True
         
     def update3TMP(self,seltemp):
-        self.SWTCH3tmp = int(seltemp)
-        self.dout3t.config(text=' Temperature '+
-                           self.makeStringTemp(self.SWTCH3tmp))
+        self.SWCHtmp[2] = int(seltemp)
+        self.tmpLabels[2].config(text=' Temperature '+
+                                 self.makeStringTemp(self.SWCHtmp[2]))
         self.changedState = True
         
     def update4TMP(self,seltemp):
-        self.SWTCH4tmp = int(seltemp)
-        self.dout4t.config(text=' Temperature '+
-                           self.makeStringTemp(self.SWTCH4tmp))
+        self.SWCHtmp[3] = int(seltemp)
+        self.tmpLabels[3].config(text=' Temperature '+
+                                 self.makeStringTemp(self.SWCHtmp[3]))
         self.changedState = True
         
         
