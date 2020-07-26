@@ -50,7 +50,7 @@ OUT4STR      = "__________"  # Name of what is plugged into outlet #4
 WIDGET_WIDE  = 600           # Width of the "Outlet Timers" window
 WIDGET_HIGH  = 400           # Height of the "Outlet Timers" window
 OUTROW       = 0
-DOORROW      = 10
+DOORROW      = 13
 CONTBG       = 'lightgreen'
 
 
@@ -83,19 +83,21 @@ class Control_Window:
         self.frame.pack(expand=0)
         
         ## Initialize the various variables required
-        self.ENABLE = [False]*4     # Switch Enabled
-        self.ONtime = [0]*4         # Switch turn on time
-        self.OFFtime = [0]*4        # Switch turn off time
-        self.SWCHtmp =  [20]*4      # Temperature trigger for switch
+        self.ENABLE = [False]*5     # Switch / Door Enabled
+        self.ONtime = [0]*5         # Switch / Door turn on time
+        self.OFFtime = [0]*5        # Switch / Door turn off time
+        self.SWCHtmp =  [20]*5      # Temp / Light trigger for switch / door
         self.TD = [0]*4             # Temperature direction for trigger
         # Variables needed for ENABLE boxes
         self.var = [BooleanVar(), BooleanVar(), BooleanVar(), BooleanVar()]
         # Variables needed for temp radio buttons
         self.vara = [IntVar(), IntVar(), IntVar(), IntVar()]
+        self.vard = BooleanVar()    # Variable needed for door enable
         self.changedState = False   # Trigger for updating relay state
         self.nupdate = 0            # Keep a running count of update cycles
         
-        
+
+        ### SWITCHED OUTLETS
         ## Create the labels and position them in a grid layout
         Label(self.frame, text='Switched Outlets', fg='darkblue',
               font=('courier', 14, 'bold')).grid(row=OUTROW, column=0,
@@ -199,6 +201,52 @@ class Control_Window:
             self.noTempButton[i].grid(row=OUTROW+7, column=i)
             self.upTempButton[i].grid(row=OUTROW+8, column=i)
             self.dnTempButton[i].grid(row=OUTROW+9, column=i)
+        
+        
+        ### DOOR
+        ## Create the labels
+        Label(self.frame, text=' - '*40,
+              fg='darkblue').grid(row=DOORROW-1, column=0, columnspan=4)
+        Label(self.frame, text='Automated Chicken Door', fg='darkblue',
+              font=('courier', 14, 'bold')).grid(row=DOORROW, column=0,
+                                                 columnspan=4)
+
+        # Column 0: ENABLE
+        self.doorEnable = Checkbutton(self.frame, text='Enable', onvalue=True,
+                                      offvalue=False, variable=self.vard,
+                                      command=self.update_door_enable)
+        self.doorEnable.grid(row=DOORROW+1, column=0, rowspan=2)
+        
+        # Column 1: Open Time
+        self.doorOpenLabel = Label(self.frame, fg='green', text=' OPEN '+
+                                   self.make_string_time(self.ONtime[4]))
+        self.doorOpenLabel.grid(row=DOORROW+1, column=1)
+        self.doorOpenSlider = Scale(self.frame, from_=0, to=24, digits=4,
+                                    orient=HORIZONTAL, resolution=0.25,
+                                    command=self.update_door_open, showvalue=0,
+                                    variable=DoubleVar, length=slider_size)
+        self.doorOpenSlider.grid(row=DOORROW+2, column=1)
+        
+        # Column 2: Close Time
+        self.doorCloseLabel = Label(self.frame, fg='red', text=' CLOSE '+
+                                    self.make_string_time(self.OFFtime[4]))
+        self.doorCloseLabel.grid(row=DOORROW+1, column=2)
+        self.doorCloseSlider = Scale(self.frame, from_=0, to=24, digits=4,
+                                     orient=HORIZONTAL, resolution=0.25,
+                                     command=self.update_door_close,showvalue=0,
+                                     variable=DoubleVar, length=slider_size)
+        self.doorCloseSlider.grid(row=DOORROW+2, column=2)
+        
+        # Column 3: Light Trigger
+        self.SWCHtmp[4] = 2
+        self.doorLightLabel = Label(self.frame, fg='darkorchid', text=' LIGHT '+
+                                    self.make_string_light(self.SWCHtmp[4]))
+        self.doorLightLabel.grid(row=DOORROW+1, column=3)
+        self.doorLightSlider = Scale(self.frame, from_=2, to=4, digits=4,
+                                     orient=HORIZONTAL, resolution=0.05,
+                                     command=self.update_door_light,showvalue=0,
+                                     variable=DoubleVar, length=slider_size)
+        self.doorLightSlider.grid(row=DOORROW+2, column=3)
         
         
         
@@ -321,7 +369,36 @@ class Control_Window:
         
     def update_tempdir_4(self):
         self.update_temp_direction(3)
+    
+    
+    ### The following methods are called whenever door options change:
+    def update_door_enable(self):
+        self.ENABLE[4] = self.vard.get()
+        self.changedState = True
+        #print(self.ENABLE)
+
+    def update_door_open(self, seltime):
+        self.ONtime[4] = float(seltime)
+        self.doorOpenLabel.config(text=' OPEN '+
+                                  self.make_string_time(self.ONtime[4]))
+        self.changedState = True
+        #print(self.ONtime)
+
+    def update_door_close(self, seltime):
+        self.OFFtime[4] = float(seltime)
+        self.doorCloseLabel.config(text=' CLOSE '+
+                                  self.make_string_time(self.OFFtime[4]))
+        self.changedState = True
+        #print(self.OFFtime)
         
+    def update_door_light(self, seltime):
+        self.OFFtime[4] = float(seltime)
+        self.doorLightLabel.config(text=' LIGHT '+
+                                   self.make_string_light(self.OFFtime[4]))
+        self.changedState = True
+        #print(self.OFFtime)
+
+       
     
     
     ### This method makes the string for display of time above slider bar
@@ -342,11 +419,17 @@ class Control_Window:
     def make_string_temp(self,inTemp):
         return "{:2d}\N{DEGREE SIGN} F".format(int(inTemp))
 
-
-
-        
-        
-        
+    ### This method makes the string for display of light level above slider bar
+    def make_string_light(self,inLogLux):
+        inLux = 10 ** inLogLux
+        if inLux < 1000:                         # Round to make look pretty
+            inLux = np.round(inLux / 10.) * 10.
+        else:
+            inLux = np.round(inLux / 100.) * 100.
+        return "{:,.0f} lux".format(int(inLux))
+    
+    
+    ### Update Method ###
     def update(self):
         """
         update: method for updating the display windows
@@ -358,6 +441,3 @@ class Control_Window:
             self.win2.update()
         print("Waiting for next call...")
         self.master.after(5000, self.update)
-        
-
-
