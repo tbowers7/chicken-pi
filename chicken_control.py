@@ -50,7 +50,7 @@ OUT4STR      = "__________"  # Name of what is plugged into outlet #4
 WIDGET_WIDE  = 600           # Width of the "Control Window"
 WIDGET_HIGH  = 400           # Height of the "Control Window"
 OUTROW       = 0
-DOORROW      = 13
+DOORROW      = 14
 CONTBG       = 'lightgreen'
 
 
@@ -80,18 +80,20 @@ class Control_Window:
 
         ## A "frame" holds the various GUI controls
         self.frame = Frame(self.master)
-        self.frame.pack(expand=0)
+        self.frame.pack(expand=1, fill=BOTH)
         
         ## Initialize the various variables required
-        self.ENABLE = [False]*5     # Switch / Door Enabled
-        self.ONtime = [0]*5         # Switch / Door turn on time
+        self.ENABLE  = [False]*5    # Switch / Door Enabled
+        self.ANDOR   = [False]*4    # Time AND/OR Temperature
+        self.ONtime  = [0]*5        # Switch / Door turn on time
         self.OFFtime = [0]*5        # Switch / Door turn off time
         self.SWCHtmp =  [20]*5      # Temp / Light trigger for switch / door
-        self.TD = [0]*4             # Temperature direction for trigger
+        self.TD      = [0]*4        # Temperature direction for trigger
         # Variables needed for ENABLE boxes
         self.var = [BooleanVar(), BooleanVar(), BooleanVar(), BooleanVar()]
         # Variables needed for temp radio buttons
         self.vara = [IntVar(), IntVar(), IntVar(), IntVar()]
+        self.varb = [BooleanVar(), BooleanVar(), BooleanVar(), BooleanVar()]
         self.vard = BooleanVar()    # Variable needed for door enable
         self.changedState = False   # Trigger for updating relay state
         self.nupdate = 0            # Keep a running count of update cycles
@@ -112,20 +114,22 @@ class Control_Window:
         for (i, s, ont, offt, swt) in zip(
                 outlets, strs, self.ONtime, self.OFFtime, self.SWCHtmp):
             # Column Label for this outlet
-            Label(self.frame, text=s+' (#{:d})'.format(i+1)).grid(
-                row=OUTROW+1, column=i)
+            Label(self.frame, text=s+' (#{:d})'.format(i+1),
+                  bg='#f0f0f0').grid(row=OUTROW+1, column=i, sticky=W+E)
             # Individual Labels:
-            self.onLabels.append(Label(self.frame, fg='green', text=' ON '+
-                                       self.make_string_time(ont)))
-            self.offLabels.append(Label(self.frame, fg='red', text=' OFF '+
-                                        self.make_string_time(offt)))
-            self.tmpLabels.append(Label(self.frame, fg='blue',
-                                        text=' Temperature '+
-                                        self.make_string_temp(swt)))
+            self.onLabels.append(
+                Label(self.frame, fg='green', bg='#e0ffe0',
+                      text=' ON '+self.make_string_time(ont)))
+            self.offLabels.append(
+                Label(self.frame, fg='red', bg='#ffe0e0',
+                      text=' OFF '+self.make_string_time(offt)))
+            self.tmpLabels.append(
+                Label(self.frame, fg='blue', bg='#e0e0ff',
+                      text=' Temperature '+self.make_string_temp(swt)))
             # Set to grid
-            self.onLabels[i].grid(row=OUTROW+3, column=i)
-            self.offLabels[i].grid(row=OUTROW+5, column=i)
-            self.tmpLabels[i].grid(row=OUTROW+10, column=i)
+            self.onLabels[i].grid(row=OUTROW+3, column=i, sticky=W+E)
+            self.offLabels[i].grid(row=OUTROW+5, column=i, sticky=W+E)
+            self.tmpLabels[i].grid(row=OUTROW+11, column=i, sticky=W+E)
             
             
         ## Create an 'ENABLE' checkbox for each outlet
@@ -134,9 +138,9 @@ class Control_Window:
                 self.update_enable_3, self.update_enable_4]
         
         for (i, cmd, v) in zip(outlets, cmds, self.var):
-            self.enableBox.append(Checkbutton(self.frame, text='Enable',
-                                              onvalue=True, offvalue=False,
-                                              variable=v, command=cmd))
+            self.enableBox.append(
+                Checkbutton(self.frame, text='Enable', variable=v, command=cmd,
+                            onvalue=True, offvalue=False))
             self.enableBox[i].grid(row=OUTROW+2, column=i)
             
             
@@ -156,23 +160,47 @@ class Control_Window:
                    self.update_temp_3, self.update_temp_4]
         
         for (i, onc, offc, tmpc) in zip(outlets, oncmds, offcmds, tmpcmds):
-            self.onSlider.append(Scale(self.frame, from_=0, to=24, digits=4,
-                                       orient=HORIZONTAL, resolution=0.25,
-                                       command=onc, variable=DoubleVar,
-                                       length=slider_size, showvalue=0))
-            self.offSlider.append(Scale(self.frame, from_=0, to=24, digits=4,
-                                       orient=HORIZONTAL, resolution=0.25,
-                                       command=offc, variable=DoubleVar,
-                                        length=slider_size, showvalue=0))
-            self.tmpSlider.append(Scale(self.frame, from_=20, to=80, digits=2,
-                                        orient=HORIZONTAL, resolution=5,
-                                        command=tmpc, variable=IntVar,
-                                        length=slider_size, showvalue=0))
+            self.onSlider.append(
+                Scale(self.frame, from_=0, to=24, digits=4, orient=HORIZONTAL,
+                      resolution=0.25, command=onc, variable=DoubleVar,
+                      length=slider_size, showvalue=0, troughcolor='#bfd9bf'))
+            self.offSlider.append(
+                Scale(self.frame, from_=0, to=24, digits=4, orient=HORIZONTAL,
+                      resolution=0.25, command=offc, variable=DoubleVar,
+                      length=slider_size, showvalue=0, troughcolor='#d9bfbf'))
+            self.tmpSlider.append(
+                Scale(self.frame, from_=20, to=80, digits=2, orient=HORIZONTAL,
+                      resolution=5, command=tmpc, variable=IntVar,
+                      length=slider_size, showvalue=0, troughcolor='#bfbfd9'))
             # Set to grid
-            self.onSlider[i].grid(row=OUTROW+4, column=i)
-            self.offSlider[i].grid(row=OUTROW+6, column=i)
-            self.tmpSlider[i].grid(row=OUTROW+11, column=i)
+            self.onSlider[i].grid(row=OUTROW+4, column=i, sticky=W+E)
+            self.offSlider[i].grid(row=OUTROW+6, column=i, sticky=W+E)
+            self.tmpSlider[i].grid(row=OUTROW+12, column=i, sticky=W+E)
+        
+        
+        ## Create AND/OR radio buttons for choosing time AND/OR temperature
+        self.andButton = []
+        self.orButton  = []
+        self.andorFrame = []
+        
+        andorcmds = [self.update_andor_1, self.update_andor_2,
+                     self.update_andor_3, self.update_andor_4]
+
+        for (i, cmd) in zip(outlets, andorcmds):
+            self.andorFrame.append(Frame(self.frame))
+            self.andorFrame[i].grid(row=OUTROW+7, column=i, sticky=W+E)
             
+            self.andButton.append(
+                Radiobutton(self.andorFrame[i], indicatoron=0, value=True,
+                            text='   AND   ', variable=self.varb[i],
+                            command=cmd, bg='navajowhite', selectcolor='blue'))
+            self.orButton.append(
+                Radiobutton(self.andorFrame[i], indicatoron=0, value=False,
+                            text='   OR   ', variable=self.varb[i],
+                            command=cmd, bg='navajowhite', selectcolor='blue'))
+            # Set to grid
+            self.andButton[i].pack(side=LEFT, expand=1)
+            self.orButton[i].pack(side=LEFT, expand=1)
         
         
         ## Create radio buttons for temp and position them in a grid layout.
@@ -184,32 +212,31 @@ class Control_Window:
                      self.update_tempdir_3, self.update_tempdir_4]
 
         for (i, cmd) in zip(outlets, radiocmds):
-            self.noTempButton.append(Radiobutton(self.frame, fg='blue', value=0,
-                                                 variable=self.vara[i],
-                                                 text='Temp independent',
-                                                 command=cmd,
-                                                 font=('',9)))
-            self.upTempButton.append(Radiobutton(self.frame, fg='blue', value=1,
-                                                 variable=self.vara[i],
-                                                 text='Turn ON above: ',
-                                                 command=cmd))
-            self.dnTempButton.append(Radiobutton(self.frame, fg='blue',value=-1,
-                                                 variable=self.vara[i],
-                                                 text='Turn ON below:',
-                                                 command=cmd))
+            self.noTempButton.append(
+                Radiobutton(self.frame, fg='blue', bg='#f0f0ff', value=0,
+                            command=cmd, variable=self.vara[i],
+                            text='Temp independent', font=('',9), anchor=W))
+            self.upTempButton.append(
+                Radiobutton(self.frame, fg='blue', bg='#f0f0ff', value=1,
+                            command=cmd, variable=self.vara[i],
+                            text='Turn ON above: ', anchor=W))
+            self.dnTempButton.append(
+                Radiobutton(self.frame, fg='blue', bg='#f0f0ff', value=-1,
+                            command=cmd, variable=self.vara[i],
+                            text='Turn ON below:', anchor=W))
             # Set to grid
-            self.noTempButton[i].grid(row=OUTROW+7, column=i)
-            self.upTempButton[i].grid(row=OUTROW+8, column=i)
-            self.dnTempButton[i].grid(row=OUTROW+9, column=i)
+            self.noTempButton[i].grid(row=OUTROW+8, column=i, sticky=W+E)
+            self.upTempButton[i].grid(row=OUTROW+9, column=i, sticky=W+E)
+            self.dnTempButton[i].grid(row=OUTROW+10, column=i, sticky=W+E)
         
         
         ### DOOR
         ## Create the labels
-        Label(self.frame, text=' - '*40,
-              fg='darkblue').grid(row=DOORROW-1, column=0, columnspan=4)
+        Label(self.frame, text=' - '*40,fg='darkblue').grid(
+            row=DOORROW-1, column=0, columnspan=4, sticky=W+E)
         Label(self.frame, text='Automated Chicken Door', fg='darkblue',
               font=('courier', 14, 'bold')).grid(row=DOORROW, column=0,
-                                                 columnspan=4)
+                                                 columnspan=4, sticky=W+E)
 
         # Column 0: ENABLE
         self.doorEnable = Checkbutton(self.frame, text='Enable', onvalue=True,
@@ -218,35 +245,41 @@ class Control_Window:
         self.doorEnable.grid(row=DOORROW+1, column=0, rowspan=2)
         
         # Column 1: Open Time
-        self.doorOpenLabel = Label(self.frame, fg='green', text=' OPEN '+
+        self.doorOpenLabel = Label(self.frame, fg='green', bg='#e0ffe0',
+                                   text=' OPEN '+
                                    self.make_string_time(self.ONtime[4]))
-        self.doorOpenLabel.grid(row=DOORROW+1, column=1)
         self.doorOpenSlider = Scale(self.frame, from_=0, to=24, digits=4,
                                     orient=HORIZONTAL, resolution=0.25,
                                     command=self.update_door_open, showvalue=0,
-                                    variable=DoubleVar, length=slider_size)
-        self.doorOpenSlider.grid(row=DOORROW+2, column=1)
+                                    variable=DoubleVar, length=slider_size,
+                                    troughcolor='#bfd9bf')
+        self.doorOpenLabel.grid(row=DOORROW+1, column=1, sticky=W+E)
+        self.doorOpenSlider.grid(row=DOORROW+2, column=1, sticky=W+E)
         
         # Column 2: Close Time
-        self.doorCloseLabel = Label(self.frame, fg='red', text=' CLOSE '+
+        self.doorCloseLabel = Label(self.frame, fg='red', bg='#ffe0e0',
+                                    text=' CLOSE '+
                                     self.make_string_time(self.OFFtime[4]))
-        self.doorCloseLabel.grid(row=DOORROW+1, column=2)
         self.doorCloseSlider = Scale(self.frame, from_=0, to=24, digits=4,
                                      orient=HORIZONTAL, resolution=0.25,
                                      command=self.update_door_close,showvalue=0,
-                                     variable=DoubleVar, length=slider_size)
-        self.doorCloseSlider.grid(row=DOORROW+2, column=2)
+                                     variable=DoubleVar, length=slider_size,
+                                     troughcolor='#d9bfbf')
+        self.doorCloseLabel.grid(row=DOORROW+1, column=2, sticky=W+E)
+        self.doorCloseSlider.grid(row=DOORROW+2, column=2, sticky=W+E)
         
         # Column 3: Light Trigger
         self.SWCHtmp[4] = 2
-        self.doorLightLabel = Label(self.frame, fg='darkorchid', text=' LIGHT '+
+        self.doorLightLabel = Label(self.frame, fg='#9932cc', bg='#f3e6f9',
+                                    text=' LIGHT '+
                                     self.make_string_light(self.SWCHtmp[4]))
-        self.doorLightLabel.grid(row=DOORROW+1, column=3)
         self.doorLightSlider = Scale(self.frame, from_=2, to=4, digits=4,
                                      orient=HORIZONTAL, resolution=0.05,
                                      command=self.update_door_light,showvalue=0,
-                                     variable=DoubleVar, length=slider_size)
-        self.doorLightSlider.grid(row=DOORROW+2, column=3)
+                                     variable=DoubleVar, length=slider_size,
+                                     troughcolor='#cfc4d4')
+        self.doorLightLabel.grid(row=DOORROW+1, column=3, sticky=W+E)
+        self.doorLightSlider.grid(row=DOORROW+2, column=3, sticky=W+E)
         
         
         
@@ -349,6 +382,26 @@ class Control_Window:
         
     def update_temp_4(self,seltemp):
         self.update_temp_trigger(seltemp, 3)
+    
+    
+    ### The following methods are called whenever an AND/OR button is clicked:
+    def update_andor(self, i):
+        self.ANDOR[i] = self.varb[i].get()
+        self.changedState = True
+        print(self.ANDOR)
+        
+    # Helper functions
+    def update_andor_1(self):
+        self.update_andor(0)
+    
+    def update_andor_2(self):
+        self.update_andor(1)
+    
+    def update_andor_3(self):
+        self.update_andor(2)
+    
+    def update_andor_4(self):
+        self.update_andor(3)
     
     
     ### The following methods are called whenever a radio button is clicked:
