@@ -101,9 +101,9 @@ class Control_Window:
 
         ### SWITCHED OUTLETS
         ## Create the labels and position them in a grid layout
-        Label(self.frame, text='Switched Outlets', fg='darkblue',
+        Label(self.frame, text='Switched Outlets', fg='darkblue', bg='#ffff80',
               font=('courier', 14, 'bold')).grid(row=OUTROW, column=0,
-                                                 columnspan=4)
+                                                 columnspan=4, sticky=W+E)
         
         self.onLabels  = []
         self.offLabels = []
@@ -235,8 +235,8 @@ class Control_Window:
         Label(self.frame, text=' - '*40,fg='darkblue').grid(
             row=DOORROW-1, column=0, columnspan=4, sticky=W+E)
         Label(self.frame, text='Automated Chicken Door', fg='darkblue',
-              font=('courier', 14, 'bold')).grid(row=DOORROW, column=0,
-                                                 columnspan=4, sticky=W+E)
+              bg='#ffff80', font=('courier', 14, 'bold')).grid(
+                  row=DOORROW, column=0, columnspan=4, sticky=W+E)
 
         # Column 0: ENABLE
         self.doorEnable = Checkbutton(self.frame, text='Enable', onvalue=True,
