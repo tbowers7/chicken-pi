@@ -47,8 +47,8 @@ OUT1STR      = "Roost Lamp"  # Name of what is plugged into outlet #1
 OUT2STR      = "Red Light "  # Name of what is plugged into outlet #2
 OUT3STR      = "Nest Lamp "  # Name of what is plugged into outlet #3
 OUT4STR      = "__________"  # Name of what is plugged into outlet #4
-WIDGET_WIDE  = 600           # Width of the "Outlet Timers" window
-WIDGET_HIGH  = 400           # Height of the "Outlet Timers" window
+WIDGET_WIDE  = 600           # Width of the "Control Window"
+WIDGET_HIGH  = 400           # Height of the "Control Window"
 OUTROW       = 0
 DOORROW      = 13
 CONTBG       = 'lightgreen'
@@ -68,7 +68,7 @@ class Control_Window:
         ## Define the MASTER for the window, and spawn the other two windows
         self.master = master
         self.newStatus = Toplevel(self.master)
-        self.win1 = Status_Window(self.newStatus)
+        self.win1 = Status_Window(self.newStatus, WIDGET_WIDE)
         self.newGraphs = Toplevel(self.master, bg='forestgreen')
         self.win2 = Graphs_Window(self.newGraphs)
 
@@ -195,7 +195,7 @@ class Control_Window:
                                                  command=cmd))
             self.dnTempButton.append(Radiobutton(self.frame, fg='blue',value=-1,
                                                  variable=self.vara[i],
-                                                 text='Turn OFF above:',
+                                                 text='Turn ON below:',
                                                  command=cmd))
             # Set to grid
             self.noTempButton[i].grid(row=OUTROW+7, column=i)
