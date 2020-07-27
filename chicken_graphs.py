@@ -47,7 +47,7 @@ PI_TOOLBAR = 36
 TK_HEADER  = 25
 
 
-class GraphsWindow(Tk):
+class GraphsWindow():
     def __init__(self, master):
         self.master = master
         self.master.geometry("700x400+600+{:d}".format(200+PI_TOOLBAR+TK_HEADER))

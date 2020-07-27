@@ -54,7 +54,7 @@ DOORROW      = 14
 CONTBG       = 'lightgreen'
 
 
-class ControlWindow:
+class ControlWindow():
     """
     ControlWindow class
     Creates the main control window and also spawns the secondary display

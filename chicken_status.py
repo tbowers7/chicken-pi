@@ -45,7 +45,7 @@ WIDGET_HIGH  = 200           # Height of the "Status Window"
 STATBG     = 'black'
 
 
-class StatusWindow:
+class StatusWindow():
     """
     StatusWindow class
     Creates the status window and (supposedly) updates it from time to time.
