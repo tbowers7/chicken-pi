@@ -47,7 +47,7 @@ TK_HEADER  = 25
 
 ### Main Routine ###
 root = Tk()
-app = Control_Window(root)
+app = ControlWindow(root)
 try:
     app.update()
     root.mainloop()

@@ -45,9 +45,9 @@ WIDGET_HIGH  = 200           # Height of the "Status Window"
 STATBG     = 'black'
 
 
-class Status_Window:
+class StatusWindow:
     """
-    Status_Window class
+    StatusWindow class
     Creates the status window and (supposedly) updates it from time to time.
     """
     def __init__(self, master, CONTROL_WIDTH):

@@ -54,9 +54,9 @@ DOORROW      = 14
 CONTBG       = 'lightgreen'
 
 
-class Control_Window:
+class ControlWindow:
     """
-    Control_Window class
+    ControlWindow class
     Creates the main control window and also spawns the secondary display
     windows.
     """
@@ -68,9 +68,9 @@ class Control_Window:
         ## Define the MASTER for the window, and spawn the other two windows
         self.master = master
         self.newStatus = Toplevel(self.master)
-        self.win1 = Status_Window(self.newStatus, WIDGET_WIDE)
+        self.win1 = StatusWindow(self.newStatus, WIDGET_WIDE)
         self.newGraphs = Toplevel(self.master, bg='forestgreen')
-        self.win2 = Graphs_Window(self.newGraphs)
+        self.win2 = GraphsWindow(self.newGraphs)
 
         ## Define the geometry and title for the control window
         self.master.geometry("{:d}x{:d}+0+{:d}".format(
