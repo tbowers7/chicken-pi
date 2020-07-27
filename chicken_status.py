@@ -38,6 +38,10 @@ __status__ = 'Development Status :: 2 - Pre-Alpha'
 
 PI_TOOLBAR = 36
 TK_HEADER  = 25
+
+### Constants
+WIDGET_WIDE  = 600           # Width of the "Status Window"
+WIDGET_HIGH  = 200           # Height of the "Status Window"
 STATBG     = 'black'
 
 
@@ -46,15 +50,22 @@ class Status_Window:
     Status_Window class
     Creates the status window and (supposedly) updates it from time to time.
     """
-    def __init__(self, master):
+    def __init__(self, master, CONTROL_WIDTH):
         """
         __init__ method: initializes the Status Window
         """
+        ## Define the MASTER for the window
         self.master = master
-        self.master.geometry("600x200+600+{:d}".format(PI_TOOLBAR))
+        
+        ## Define the geometry and title for the status window
+        self.master.geometry("{:d}x{:d}+{:d}+{:d}".format(
+            WIDGET_WIDE,WIDGET_HIGH,CONTROL_WIDTH+10,PI_TOOLBAR))
         self.master.title("Status Window")
         self.master.configure(bg=STATBG)
+        
+        ## A "frame" holds the various window contents
         self.frame = Frame(self.master, bg=STATBG)
+        self.frame.pack(expand=0)
         
         ## Time at the top
         self.disptime = Label(self.frame, font=('courier', 12, 'bold'),
@@ -80,7 +91,6 @@ class Status_Window:
         self.envstat2.grid(row=2, column=3)
         self.count = 0
         
-        self.frame.pack()
         
     def close_window(self):
         self.master.destroy()
