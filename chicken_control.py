@@ -193,11 +193,11 @@ class ControlWindow():
             self.andButton.append(
                 Radiobutton(self.andorFrame[i], indicatoron=0, value=True,
                             text='   AND   ', variable=self.varb[i],
-                            command=cmd, bg='navajowhite', selectcolor='blue'))
+                            command=cmd, bg='#c0c0c0', selectcolor='#ffaa00'))
             self.orButton.append(
                 Radiobutton(self.andorFrame[i], indicatoron=0, value=False,
                             text='   OR   ', variable=self.varb[i],
-                            command=cmd, bg='navajowhite', selectcolor='blue'))
+                            command=cmd, bg='#c0c0c0', selectcolor='#ffaa00'))
             # Set to grid
             self.andButton[i].pack(side=LEFT, expand=1)
             self.orButton[i].pack(side=LEFT, expand=1)
