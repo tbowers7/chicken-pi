@@ -125,7 +125,7 @@ class ControlWindow():
                       text=' OFF '+self.make_string_time(offt)))
             self.tmpLabels.append(
                 Label(self.frame, fg='blue', bg='#e0e0ff',
-                      text=' Temperature '+self.make_string_temp(swt)))
+                      text=' Coop Temp '+self.make_string_temp(swt)))
             # Set to grid
             self.onLabels[i].grid(row=OUTROW+3, column=i, sticky=W+E)
             self.offLabels[i].grid(row=OUTROW+5, column=i, sticky=W+E)
@@ -341,7 +341,7 @@ class ControlWindow():
         
     def update_temp_trigger(self,seltemp, i):
         self.SWCHtmp[i] = int(seltemp)
-        self.tmpLabels[i].config(text=' Temperature '+
+        self.tmpLabels[i].config(text=' Coop Temp '+
                                  self.make_string_temp(self.SWCHtmp[i]))
         self.changedState = True
         #print(self.SWCHtmp)
