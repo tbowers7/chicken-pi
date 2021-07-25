@@ -9,7 +9,10 @@ import adafruit_tsl2591
 i2c = busio.I2C(board.SCL, board.SDA)
 
 # Initialize the sensor.
-sensor = adafruit_tsl2591.TSL2591(i2c)
+try:
+    sensor = adafruit_tsl2591.TSL2591(i2c)
+except ValueError:
+    sensor = None
 
 # Define functions to increase or decrease the gain
 def decrease_gain(sensor):
@@ -47,5 +50,8 @@ class Read:
                     self.goodRead = 1
             except RuntimeError as e:
                 decrease_gain(sensor)
-                
+            except AttributeError:
+                self.lux = None
+                self.goodRead = 1
+
         return self.lux

@@ -158,13 +158,16 @@ def update():
     light = tsl.Read()
     lux = light.read()
     # Make LUX string, depending on value of lux
-    if lux < 10:
+    if lux is None:
+        luxstr = '-'*5
+    elif lux < 10:
         luxstr = '{:0.2f}'.format(lux)
     elif lux < 100:
         luxstr = '{:0.1f}'.format(lux)
     else:
         luxstr = '{:0.0f}'.format(lux)
-        
+    
+
     # String includes:
     #   DATE
     #   DHT1: Temp, Humidity
@@ -208,9 +211,14 @@ def update():
     disp.after(5000, update)
         
 
+def main():
 
-# (3) Call the loop for Tk to DISPLAY STRING
-update()
-root.winfo_toplevel().title("Chicken Coop Sensor Values")
-root.geometry("+600+0")
-root.mainloop()
+    # (3) Call the loop for Tk to DISPLAY STRING
+    update()
+    root.winfo_toplevel().title("Chicken Coop Sensor Values")
+    root.geometry("+600+0")
+    root.mainloop()
+
+
+if __name__ == '__main__':
+    main()
