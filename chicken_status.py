@@ -48,7 +48,10 @@ STATBG       = 'black'
 FONTSIZE     = 13
 DATAFIELD    = 15
 
-SYSTYPE = (os.popen("/usr/bin/uname -a").read()).split()[0]
+try:
+    SYSTYPE = (os.popen("/usr/bin/uname -a").read()).split()[0]
+except IndexError:
+    SYSTYPE = (os.popen("/bin/uname -a").read()).split()[0]
 WLAN = 'en0' if SYSTYPE == 'Darwin' else 'wlan0'
 
 class StatusWindow():
