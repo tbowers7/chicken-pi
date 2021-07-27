@@ -95,7 +95,7 @@ class StatusWindow():
         self.envNestLab = self.make_stat_label('      Nests:', row=3, column=0)
         self.envRoosLab = self.make_stat_label('     Roosts:', row=4, column=0)
         self.envLighLab = self.make_stat_label('      Light:', row=2, column=2)
-        self.envCPUTLab = self.make_stat_label('        CPU:', row=3, column=2)
+        self.envCPUTLab = self.make_stat_label('CPU (< 185):', row=3, column=2)
 
         # Environmental Status Data
         self.envOutsDat = self.make_stat_data(row=2, column=1)
@@ -167,7 +167,7 @@ class StatusWindow():
         self.netInetDat.config(text='ON' if internet_on() else 'OFF')
         self.netLANaDat.config(text=get_local_IP())
         self.netWANaDat.config(text=get_public_IP())
-        self.envCPUTDat.config(text=f"{get_cpu_temp():0.1f}\xb0F [< 185\xb0F]" if \
+        self.envCPUTDat.config(text=f"{get_cpu_temp():0.1f}\xb0F" if \
             get_cpu_temp() is not None else "-----")
 
 
