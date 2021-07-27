@@ -33,7 +33,7 @@ from chicken_control import *
 
 ## Boilerplate variables
 __author__ = 'Timothy P. Ellsworth Bowers'
-__copyright__ = 'Copyright 2019-2020, chicken-pi'
+__copyright__ = 'Copyright 2019-2021, chicken-pi'
 __credits__ = ['Stephen Bowers']
 __license__ = 'LGPL-3.0'
 __version__ = '0.2.0'
@@ -44,12 +44,15 @@ PI_TOOLBAR = 36
 TK_HEADER  = 25
 
 
-
 ### Main Routine ###
-root = Tk()
-app = ControlWindow(root)
-try:
-    app.update()
-    root.mainloop()
-finally:
-    print("Ending...")
+def main():
+    root = Tk()
+    app = ControlWindow(root)
+    try:
+        app.update()
+        root.mainloop()
+    finally:
+        print("Exiting...")
+
+if __name__ == '__main__':
+    main()
