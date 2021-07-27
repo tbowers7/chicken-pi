@@ -167,7 +167,7 @@ class StatusWindow():
         self.netInetDat.config(text='ON' if internet_on() else 'OFF')
         self.netLANaDat.config(text=get_local_IP())
         self.netWANaDat.config(text=get_public_IP())
-        self.envCPUTDat.config(text=f"{get_cpu_temp():0.1f}\xb0C [< 85\xb0C]" if \
+        self.envCPUTDat.config(text=f"{get_cpu_temp():0.1f}\xb0F [< 185\xb0F]" if \
             get_cpu_temp() is not None else "-----")
 
 
@@ -225,5 +225,5 @@ def get_cpu_temp():
     if SYSTYPE == 'Linux':
         cputemp_fn = "/sys/class/thermal/thermal_zone0/temp"
         with open(cputemp_fn,"r") as f:
-            return float(f.read())/1000.
+            return (float(f.read())/1000.)*9./5. + 32.
     return None
