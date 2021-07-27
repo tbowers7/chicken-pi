@@ -82,7 +82,7 @@ class StatusWindow():
 
         # Put the time at the top of the window
         self.dispTime = Label(self.frame, font=('courier', FONTSIZE, 'bold'),
-                              bg=STATBG, fg='lightblue')
+                              bg=STATBG, fg='skyblue')
         self.dispTime.grid(row=0, columnspan=4)
         
         # Create the various section labels
@@ -135,7 +135,7 @@ class StatusWindow():
     # Label Creator Methods
     def make_sect_label(self, text, row):
         label = Label(self.frame, font=('times', FONTSIZE, 'bold'),
-                      bg=STATBG, fg='yellow', text=text)
+                      bg=STATBG, fg='thistle2', text=text)
         label.grid(row=row, columnspan=4)
         return label
 
@@ -147,7 +147,7 @@ class StatusWindow():
 
     def make_stat_data(self, row, column):
         label = Label(self.frame, font=('courier', FONTSIZE, 'bold'),
-                      bg=STATBG, fg='green', width=DATAFIELD)
+                      bg=STATBG, fg='burlywood1', width=DATAFIELD)
         label.grid(row=row, column=column)
         return label
 
