@@ -178,7 +178,7 @@ def wifi_on(host='192.168.0.1'):
     except:
        return False
 
-def internet_on(host='8.8.8.8', port=53, timeout=3):
+def internet_on(host='1.1.1.1', port=80, timeout=3):
   """
   Host: 8.8.8.8 (google-public-dns-a.google.com)
   OpenPort: 53/tcp
@@ -186,7 +186,7 @@ def internet_on(host='8.8.8.8', port=53, timeout=3):
   """
   try:
     socket.setdefaulttimeout(timeout)
-    socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
+    socket.create_connection((host,port))
     return True
   except:
     return False

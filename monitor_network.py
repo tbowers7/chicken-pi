@@ -65,7 +65,7 @@ def wifi_on(host='192.168.0.1'):
     return False
   
 
-def internet_on(host='8.8.8.8', port=53, timeout=3):
+def internet_on(host='8.8.8.8', port=80, timeout=3):
   """
   Host: 8.8.8.8 (google-public-dns-a.google.com)
   OpenPort: 53/tcp
