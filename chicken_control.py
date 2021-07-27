@@ -82,8 +82,8 @@ class ControlWindow():
         
 
         ### SWITCHED OUTLETS
-        self.outlet = []
         names = [OUT1STR, OUT2STR, OUT3STR, OUT4STR]
+        self.outlet = []
         for i, name in enumerate(names):
             self.outlet.append(OutletControl(self.frame, name, i))
 
