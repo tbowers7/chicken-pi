@@ -21,7 +21,9 @@ import numpy as np         # Numpy!
 # […]
 
 # Libs
-# […]
+import urllib3
+import socket
+from requests import get
 
 # Own modules
 #from {path} import {class}
@@ -43,8 +45,11 @@ TK_HEADER  = 25
 WIDGET_WIDE  = 600           # Width of the "Status Window"
 WIDGET_HIGH  = 300           # Height of the "Status Window"
 STATBG       = 'black'
-FONTSIZE     = 14
-DATAFIELD    = 10
+FONTSIZE     = 13
+DATAFIELD    = 15
+
+SYSTYPE = (os.popen("/usr/bin/uname -a").read()).split()[0]
+WLAN = 'en0' if SYSTYPE == 'Darwin' else 'wlan0'
 
 class StatusWindow():
     """
@@ -149,7 +154,57 @@ class StatusWindow():
         self.dispTime.config(text=now.strftime("%d-%b-%y %H:%M:%S"))
         #self.frame.after(5000, self.update)
         self.count += 1
-        # self.envstat1.config(text='{:d}\n{:d}\n{:d}'.format(
-        #     self.count,self.count+1,self.count+2))
-        # self.envstat2.config(text='{:d}\n{:d}'.format(
-        #     self.count+3,self.count+4))
+
+        # Write the various network statuses
+        self.netWiFiDat.config(text='ON' if wifi_on() else 'OFF')
+        self.netInetDat.config(text='ON' if internet_on() else 'OFF')
+        self.netLANaDat.config(text=get_local_IP())
+        self.netWANaDat.config(text=get_public_IP())
+
+
+
+# Network checking functions
+def wifi_on(host='192.168.0.1'):
+    """
+    
+    """
+    try:
+        http = urllib3.PoolManager()
+        http.request('GET', host, timeout=3, retries=False)
+        return True
+    except:
+       return False
+
+def internet_on(host='8.8.8.8', port=53, timeout=3):
+  """
+  Host: 8.8.8.8 (google-public-dns-a.google.com)
+  OpenPort: 53/tcp
+  Service: domain (DNS/TCP)
+  """
+  try:
+    socket.setdefaulttimeout(timeout)
+    socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
+    return True
+  except:
+    return False
+
+def get_local_IP():
+    """
+    
+    """
+    return (os.popen(f"/sbin/ifconfig {WLAN} | grep 'inet ' | awk '{{print $2}}'").read()).rstrip()
+
+def get_public_IP():
+    """
+    
+    """
+    try:
+        publicIP = get('https://api.ipify.org').text
+        publicIP.rstrip()
+        # If error message kicked by ipify.org, then publicIP will be longer than
+        #  the maximum 15 characters (xxx.xxx.xxx.xxx).  Set to empty string.
+        if len(publicIP) > 15:
+            publicIP = ''
+    except:
+        publicIP = ''
+    return publicIP
