@@ -44,8 +44,8 @@ OUT3STR      = "Nest Lamp "  # Name of what is plugged into outlet #3
 OUT4STR      = "__________"  # Name of what is plugged into outlet #4
 WIDGET_WIDE  = 600           # Width of the "Control Window"
 WIDGET_HIGH  = 400           # Height of the "Control Window"
-OUTROW       = 0
-DOORROW      = 14
+OUTROW       = 1
+DOORROW      = OUTROW + 14
 CONTBG       = 'lightgreen'
 
 
@@ -82,6 +82,10 @@ class ControlWindow():
         
 
         ### SWITCHED OUTLETS
+        Label(self.frame, text='Relay-Controlled Outlets', fg='darkblue',
+              bg='#ffff80', font=('courier', 14, 'bold')).grid(
+                  row=OUTROW-1, column=0, columnspan=4, sticky=W+E)
+
         names = [OUT1STR, OUT2STR, OUT3STR, OUT4STR]
         self.outlet = []
         for i, name in enumerate(names):
