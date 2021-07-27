@@ -48,11 +48,15 @@ STATBG       = 'black'
 FONTSIZE     = 13
 DATAFIELD    = 15
 
-try:
-    SYSTYPE = (os.popen("/usr/bin/uname -a").read()).split()[0]
-except IndexError:
-    SYSTYPE = (os.popen("/bin/uname -a").read()).split()[0]
+if os.path.exists("/usr/bin/uname"):
+    uname = "/usr/bin/uname"
+elif os.path.exists("/bin/uname"):
+    uname = "/bin/uname"
+else:
+    uname = ""
+SYSTYPE = (os.popen(f"{uname} -a").read()).split()[0]
 WLAN = 'en0' if SYSTYPE == 'Darwin' else 'wlan0'
+
 
 class StatusWindow():
     """
@@ -163,7 +167,8 @@ class StatusWindow():
         self.netInetDat.config(text='ON' if internet_on() else 'OFF')
         self.netLANaDat.config(text=get_local_IP())
         self.netWANaDat.config(text=get_public_IP())
-
+        self.envCPUTDat.config(text=f"{get_cpu_temp():0.1f}\xb0C [< 85\xb0C]" if \
+            get_cpu_temp() is not None else "-----")
 
 
 # Network checking functions
@@ -211,3 +216,14 @@ def get_public_IP():
     except:
         publicIP = ''
     return publicIP
+
+def get_cpu_temp():
+    """
+    
+    """
+    # Check Pi CPU Temp:
+    if SYSTYPE == 'Linux':
+        cputemp_fn = "/sys/class/thermal/thermal_zone0/temp"
+        with open(cputemp_fn,"r") as f:
+            return float(f.read())/1000.
+    return None
