@@ -81,17 +81,22 @@ class ControlWindow():
         self.nupdate = 0            # Keep a running count of update cycles
         
 
-        ### SWITCHED OUTLETS
+        #===== SWITCHED OUTLETS =====#
         Label(self.frame, text='Relay-Controlled Outlets', fg='darkblue',
               bg='#ffff80', font=('courier', 14, 'bold')).grid(
                   row=OUTROW-1, column=0, columnspan=4, sticky=W+E)
 
-        names = [OUT1STR, OUT2STR, OUT3STR, OUT4STR]
         self.outlet = []
-        for i, name in enumerate(names):
+        for i, name in enumerate([OUT1STR, OUT2STR, OUT3STR, OUT4STR]):
             self.outlet.append(OutletControl(self.frame, name, i))
 
-        ### DOOR
+        #===== DOOR =====#
+        Label(self.frame, text=' - '*40,fg='darkblue').grid(
+            row=DOORROW-1, column=0, columnspan=4, sticky=W+E)
+        Label(self.frame, text='Automated Chicken Door', fg='darkblue',
+              bg='#ffff80', font=('courier', 14, 'bold')).grid(
+                  row=DOORROW, column=0, columnspan=4, sticky=W+E)
+
         self.door = DoorControl(self.frame)
     
 
@@ -295,12 +300,6 @@ class DoorControl(_BaseControl):
         _BaseControl.__init__(self)
         slider_size = (WIDGET_WIDE - 5*5) / 4   # Scale slider width to window
 
-        ## Create the labels
-        Label(frame, text=' - '*40,fg='darkblue').grid(
-            row=DOORROW-1, column=0, columnspan=4, sticky=W+E)
-        Label(frame, text='Automated Chicken Door', fg='darkblue',
-              bg='#ffff80', font=('courier', 14, 'bold')).grid(
-                  row=DOORROW, column=0, columnspan=4, sticky=W+E)
 
         # Column 0: ENABLE
         self.doorEnable = Checkbutton(frame, text='Enable', onvalue=True,
