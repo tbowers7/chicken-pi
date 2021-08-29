@@ -27,7 +27,11 @@ from requests import get
 
 # Own modules
 #from {path} import {class}
-
+try:
+    from chicken_relay import *
+    relay = Relay   # Instantiate class
+except:
+    pass
 
 ## Boilerplate variables
 __author__ = 'Timothy P. Ellsworth Bowers'
@@ -62,6 +66,8 @@ SYSTYPE = (os.popen(f"{uname} -a").read()).split()[0]
 WLAN = 'en0' if SYSTYPE == 'Darwin' else 'wlan0'
 
 
+
+
 class StatusWindow():
     """
     StatusWindow class
@@ -90,16 +96,16 @@ class StatusWindow():
         self.dispTime.grid(row=0, columnspan=4)
         
         # Create the various section labels
-        self.envLabel = self.make_sect_label('Environmental Status', row=ENVROW)
-        self.netLabel = self.make_sect_label('Network Status', row=NETROW)
-        self.devLabel = self.make_sect_label('Device Status', row=DEVROW)
+        self.make_sect_label('Environmental Status', row=ENVROW)
+        self.make_sect_label('Network Status', row=NETROW)
+        self.make_sect_label('Device Status', row=DEVROW)
 
         # Environmental Status Labels
-        self.envOutsLab = self.make_stat_label('    Outside:', row=ENVROW+1, column=0)
-        self.envInsiLab = self.make_stat_label('Inside Coop:', row=ENVROW+2, column=0)
-        self.envLighLab = self.make_stat_label('Light Level:', row=ENVROW+3, column=0)
-        self.envChPiLab = self.make_stat_label('  Inside Pi:', row=ENVROW+1, column=2)
-        self.envCPUTLab = self.make_stat_label('CPU (< 185):', row=ENVROW+2, column=2)
+        self.make_stat_label('    Outside:', row=ENVROW+1, column=0)
+        self.make_stat_label('Inside Coop:', row=ENVROW+2, column=0)
+        self.make_stat_label('Light Level:', row=ENVROW+3, column=0)
+        self.make_stat_label('  Inside Pi:', row=ENVROW+1, column=2)
+        self.make_stat_label('CPU (< 185):', row=ENVROW+2, column=2)
 
         # Environmental Status Data
         self.envOutsDat = self.make_stat_data(row=ENVROW+1, column=1)
@@ -109,10 +115,10 @@ class StatusWindow():
         self.envCPUTDat = self.make_stat_data(row=ENVROW+2, column=3)
 
         # Network Status Labels
-        self.netWiFiLab = self.make_stat_label('WiFi Status:', row=NETROW+1, column=0)
-        self.netInetLab = self.make_stat_label('WLAN Status:', row=NETROW+2, column=0)
-        self.netLANaLab = self.make_stat_label('   Local IP:', row=NETROW+1, column=2)
-        self.netWANaLab = self.make_stat_label('    WLAN IP:', row=NETROW+2, column=2)
+        self.make_stat_label('WiFi Status:', row=NETROW+1, column=0)
+        self.make_stat_label('WLAN Status:', row=NETROW+2, column=0)
+        self.make_stat_label('   Local IP:', row=NETROW+1, column=2)
+        self.make_stat_label('    WLAN IP:', row=NETROW+2, column=2)
         
         # Network Status Data
         self.netWiFiDat = self.make_stat_data(row=NETROW+1, column=1)
@@ -121,17 +127,18 @@ class StatusWindow():
         self.netWANaDat = self.make_stat_data(row=NETROW+2, column=3)
 
         # Device Status Labels
-        self.devOut1Lab = self.make_stat_label('   Outlet 1:', row=DEVROW+1, column=0)
-        self.devOut2Lab = self.make_stat_label('   Outlet 2:', row=DEVROW+2, column=0)
-        self.devOut3Lab = self.make_stat_label('   Outlet 3:', row=DEVROW+1, column=2)
-        self.devOut4Lab = self.make_stat_label('   Outlet 4:', row=DEVROW+2, column=2)
-        self.devDoorLab = self.make_stat_label('       Door:', row=DEVROW+3, column=0)
+        self.make_stat_label('   Outlet 1:', row=DEVROW+1, column=0)
+        self.make_stat_label('   Outlet 2:', row=DEVROW+2, column=0)
+        self.make_stat_label('   Outlet 3:', row=DEVROW+1, column=2)
+        self.make_stat_label('   Outlet 4:', row=DEVROW+2, column=2)
+        self.make_stat_label('       Door:', row=DEVROW+3, column=0)
 
         # Device Status Data
-        self.devOut1Dat = self.make_stat_data(row=DEVROW+1, column=1)
-        self.devOut2Dat = self.make_stat_data(row=DEVROW+2, column=1)
-        self.devOut3Dat = self.make_stat_data(row=DEVROW+1, column=3)
-        self.devOut4Dat = self.make_stat_data(row=DEVROW+2, column=3)
+        self.devOutDat = []
+        self.devOutDat.append(self.make_stat_data(row=DEVROW+1, column=1))
+        self.devOutDat.append(self.make_stat_data(row=DEVROW+2, column=1))
+        self.devOutDat.append(self.make_stat_data(row=DEVROW+1, column=3))
+        self.devOutDat.append(self.make_stat_data(row=DEVROW+2, column=3))
         self.devDoorDat = self.make_stat_data(row=DEVROW+3, column=1)
 
 
@@ -160,10 +167,21 @@ class StatusWindow():
 
 
     def update(self):
+        self.count += 1
+
+        # Get the current time, and write
         now = datetime.datetime.now()
         self.dispTime.config(text=now.strftime("%d-%b-%y %H:%M:%S"))
-        #self.frame.after(5000, self.update)
-        self.count += 1
+
+
+        # Write the various environment statuses
+        self.envCPUTDat.config(text =
+            f"{get_cpu_temp():0.1f}\xb0F" if get_cpu_temp() is not None
+            else "-----")
+
+        # Write the various device statuses
+        for dev, stat in zip(self.devOutDat, get_outlet_status()):
+            dev.config(text = 'OFF' if stat == 0x00 else 'ON')
 
         # Write the various network statuses
         self.netWiFiDat.config(text =
@@ -172,14 +190,12 @@ class StatusWindow():
             'ON' if contact_server('1.1.1.1') else 'OFF')
         self.netLANaDat.config(text = get_local_IP())
         self.netWANaDat.config(text = get_public_IP())
-        self.envCPUTDat.config(text =
-            f"{get_cpu_temp():0.1f}\xb0F" if get_cpu_temp() is not None
-            else "-----")
 
 
-# Network checking functions
+
+# Network Checking Functions
 def contact_server(host='192.168.0.1'):
-    """contact_server Check whether we can contact a server
+    """contact_server Check whether a server is reachable
 
     [extended_summary]
 
@@ -191,14 +207,14 @@ def contact_server(host='192.168.0.1'):
     Returns
     -------
     `bool`
-        Whether server is accessible
+        Whether server is reachable
     """
     try:
         http = urllib3.PoolManager()
         http.request('GET', host, timeout=3, retries=False)
         return True
     except:
-       return False
+        return False
 
 
 def get_local_IP():
@@ -213,7 +229,7 @@ def get_local_IP():
         LAN IP address
     """
     cmd = f"/sbin/ifconfig {WLAN} | grep 'inet ' | awk '{{print $2}}'"
-    return (os.popen(cmd).read()).rstrip()
+    return (os.popen(cmd).read()).strip()
 
 
 def get_public_IP():
@@ -232,7 +248,7 @@ def get_public_IP():
         Public IP address
     """
     try:
-        publicIP = (get('https://api.ipify.org').text).rstrip()
+        publicIP = (get('https://api.ipify.org').text).strip()
         # If response is longer than the maximum 15 characters, return '---'.
         if len(publicIP) > 15:
             publicIP = '-----'
@@ -241,6 +257,7 @@ def get_public_IP():
     return publicIP
 
 
+# Environmental Checking Functions
 def get_cpu_temp():
     """get_cpu_temp Read the CPU temperature from system file
 
@@ -257,3 +274,12 @@ def get_cpu_temp():
         with open(cputemp_fn,"r") as f:
             return (float(f.read()) /1000.) * 9./5. + 32.
     return None
+
+
+# Status Checking Functions
+def get_outlet_status():
+    try:
+        # Read the relay_status
+        return relay.read()
+    except:
+        return [0x00, 0x00, 0x00, 0x00]

@@ -9,8 +9,7 @@ _RELAY_ADDR        = const(0x10)
 _RELAY_COMMAND_BIT = const(0x01)
 
 class Relay:
-    """Relay Board
-    :param busio.I2C i2c: The I2C bus connected to the sensor
+    """Relay Board CLASS
     :param int address: The address of the sensor
     """
 
@@ -19,34 +18,48 @@ class Relay:
     _READ_BUF  = bytearray(5)
     _WRITE_BUF = bytearray(5)
     
-    def __init__(self, i2c, address=_RELAY_ADDR):
+    def __init__(self, address=_RELAY_ADDR):
+        """__init__ Class Initialization
+
+        [extended_summary]
+
+        Parameters
+        ----------
+        address : `const`, optional
+            I2C address of this relay board [Default: _RELAY_ADDR]
+        """
+        i2c = busio.I2C(board.SCL, board.SDA)
         self._device = I2CDevice(i2c, address)
         
 
     def read(self):
+        """read Read the status of the 4 relays from the board
+
+        [extended_summary]
+
+        Returns
+        -------
+        `list` of `byetarray`
+            List of the values from the 4 relays
+        """
         # Read the current state of the relays
         with self._device as i2c:
             i2c.readinto(self._READ_BUF)
             return self._READ_BUF
 
-    def write(self, r1, r2, r3, r4):
+
+    def write(self, rel):
+        """write Write the desired state of thr 4 relays to the board
+
+        [extended_summary]
+
+        Parameters
+        ----------
+        r : `list` of `bool`
+            List of the 4 T/F values to set on the relay board
+        """
         self._WRITE_BUF[0] = _RELAY_COMMAND_BIT
-        self._WRITE_BUF[1] = 0xff if r1 else 0x00
-        self._WRITE_BUF[2] = 0xff if r2 else 0x00
-        self._WRITE_BUF[3] = 0xff if r3 else 0x00
-        self._WRITE_BUF[4] = 0xff if r4 else 0x00
+        for i, r in enumerate(rel, 1):
+            self._WRITE_BUF[i] = 0xff if r else 0x00
         with self._device as i2c:
             i2c.write_then_readinto(self._WRITE_BUF, self._READ_BUF)
-
-
-### User-facing functions
-
-def read_relay():
-    i2c = busio.I2C(board.SCL, board.SDA)
-    sensor = Relay(i2c)
-    return sensor.read()
-
-def write_relay(r1, r2, r3, r4):      ### r1 - r4 are type BOOL
-    i2c = busio.I2C(board.SCL, board.SDA)
-    sensor = Relay(i2c)
-    sensor.write(r1, r2, r3, r4)
