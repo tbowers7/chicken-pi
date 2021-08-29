@@ -17,10 +17,10 @@ import datetime            # date & time
 import os,sys              # Search for file on disk
 import csv                 # For CSV output
 import atexit              # Register cleanup functions
-import numpy as np         # Numpy!
 # […]
 
 # Libs
+import numpy as np         # Numpy!
 import urllib3
 import socket
 from requests import get
@@ -31,12 +31,12 @@ from requests import get
 
 ## Boilerplate variables
 __author__ = 'Timothy P. Ellsworth Bowers'
-__copyright__ = 'Copyright 2019-2020, chicken-pi'
+__copyright__ = 'Copyright 2019-2021, chicken-pi'
 __credits__ = ['Stephen Bowers']
 __license__ = 'LGPL-3.0'
 __version__ = '0.2.0'
 __email__ = 'chickenpi.flag@gmail.com'
-__status__ = 'Development Status :: 2 - Pre-Alpha'
+__status__ = 'Development Status :: 3 - Alpha'
 
 PI_TOOLBAR = 36
 TK_HEADER  = 25
@@ -51,6 +51,7 @@ ENVROW       = 1
 DEVROW       = 5
 NETROW       = 9
 
+# Enable testing on both Raspberry Pi and Mac
 if os.path.exists("/usr/bin/uname"):
     uname = "/usr/bin/uname"
 elif os.path.exists("/bin/uname"):
@@ -95,16 +96,16 @@ class StatusWindow():
 
         # Environmental Status Labels
         self.envOutsLab = self.make_stat_label('    Outside:', row=ENVROW+1, column=0)
-        self.envNestLab = self.make_stat_label('      Nests:', row=ENVROW+2, column=0)
-        self.envRoosLab = self.make_stat_label('     Roosts:', row=ENVROW+3, column=0)
-        self.envLighLab = self.make_stat_label('      Light:', row=ENVROW+1, column=2)
+        self.envInsiLab = self.make_stat_label('Inside Coop:', row=ENVROW+2, column=0)
+        self.envLighLab = self.make_stat_label('Light Level:', row=ENVROW+3, column=0)
+        self.envChPiLab = self.make_stat_label('  Inside Pi:', row=ENVROW+1, column=2)
         self.envCPUTLab = self.make_stat_label('CPU (< 185):', row=ENVROW+2, column=2)
 
         # Environmental Status Data
         self.envOutsDat = self.make_stat_data(row=ENVROW+1, column=1)
-        self.envNestDat = self.make_stat_data(row=ENVROW+2, column=1)
-        self.envRoosDat = self.make_stat_data(row=ENVROW+3, column=1)
-        self.envLighDat = self.make_stat_data(row=ENVROW+1, column=3)
+        self.envInsiDat = self.make_stat_data(row=ENVROW+2, column=1)
+        self.envLighDat = self.make_stat_data(row=ENVROW+3, column=1)
+        self.envChPiDat = self.make_stat_data(row=ENVROW+1, column=3)
         self.envCPUTDat = self.make_stat_data(row=ENVROW+2, column=3)
 
         # Network Status Labels
@@ -121,18 +122,17 @@ class StatusWindow():
 
         # Device Status Labels
         self.devOut1Lab = self.make_stat_label('   Outlet 1:', row=DEVROW+1, column=0)
-        self.devOut2Lab = self.make_stat_label('   Outlet 2:', row=DEVROW+1, column=2)
-        self.devOut3Lab = self.make_stat_label('   Outlet 3:', row=DEVROW+2, column=0)
+        self.devOut2Lab = self.make_stat_label('   Outlet 2:', row=DEVROW+2, column=0)
+        self.devOut3Lab = self.make_stat_label('   Outlet 3:', row=DEVROW+1, column=2)
         self.devOut4Lab = self.make_stat_label('   Outlet 4:', row=DEVROW+2, column=2)
         self.devDoorLab = self.make_stat_label('       Door:', row=DEVROW+3, column=0)
 
         # Device Status Data
         self.devOut1Dat = self.make_stat_data(row=DEVROW+1, column=1)
-        self.devOut2Dat = self.make_stat_data(row=DEVROW+1, column=3)
-        self.devOut3Dat = self.make_stat_data(row=DEVROW+2, column=1)
+        self.devOut2Dat = self.make_stat_data(row=DEVROW+2, column=1)
+        self.devOut3Dat = self.make_stat_data(row=DEVROW+1, column=3)
         self.devOut4Dat = self.make_stat_data(row=DEVROW+2, column=3)
         self.devDoorDat = self.make_stat_data(row=DEVROW+3, column=1)
-
 
 
     # Label Creator Methods
@@ -157,8 +157,8 @@ class StatusWindow():
 
     def close_window(self):
         self.master.destroy()
-        
-        
+
+
     def update(self):
         now = datetime.datetime.now()
         self.dispTime.config(text=now.strftime("%d-%b-%y %H:%M:%S"))
@@ -166,18 +166,32 @@ class StatusWindow():
         self.count += 1
 
         # Write the various network statuses
-        self.netWiFiDat.config(text='ON' if wifi_on() else 'OFF')
-        self.netInetDat.config(text='ON' if internet_on() else 'OFF')
-        self.netLANaDat.config(text=get_local_IP())
-        self.netWANaDat.config(text=get_public_IP())
-        self.envCPUTDat.config(text=f"{get_cpu_temp():0.1f}\xb0F" if \
-            get_cpu_temp() is not None else "-----")
+        self.netWiFiDat.config(text =
+            'ON' if contact_server('192.168.0.1') else 'OFF')
+        self.netInetDat.config(text =
+            'ON' if contact_server('1.1.1.1') else 'OFF')
+        self.netLANaDat.config(text = get_local_IP())
+        self.netWANaDat.config(text = get_public_IP())
+        self.envCPUTDat.config(text =
+            f"{get_cpu_temp():0.1f}\xb0F" if get_cpu_temp() is not None
+            else "-----")
 
 
 # Network checking functions
-def wifi_on(host='192.168.0.1'):
-    """
-    
+def contact_server(host='192.168.0.1'):
+    """contact_server Check whether we can contact a server
+
+    [extended_summary]
+
+    Parameters
+    ----------
+    host : `str`, optional
+        Name or IP address of server to contact [Default: '192.168.0.1']
+
+    Returns
+    -------
+    `bool`
+        Whether server is accessible
     """
     try:
         http = urllib3.PoolManager()
@@ -186,47 +200,60 @@ def wifi_on(host='192.168.0.1'):
     except:
        return False
 
-def internet_on(host='1.1.1.1', port=80, timeout=3):
-  """
-  Host: 8.8.8.8 (google-public-dns-a.google.com)
-  OpenPort: 53/tcp
-  Service: domain (DNS/TCP)
-  """
-  try:
-    socket.setdefaulttimeout(timeout)
-    socket.create_connection((host,port))
-    return True
-  except:
-    return False
 
 def get_local_IP():
+    """get_local_IP Return the local (LAN) IP address for the Pi
+
+    Use `ifconfig` to read the local IP address assigned to the Pi by the
+    local DHCP server.
+
+    Returns
+    -------
+    `str`
+        LAN IP address
     """
-    
-    """
-    return (os.popen(f"/sbin/ifconfig {WLAN} | grep 'inet ' | awk '{{print $2}}'").read()).rstrip()
+    cmd = f"/sbin/ifconfig {WLAN} | grep 'inet ' | awk '{{print $2}}'"
+    return (os.popen(cmd).read()).rstrip()
+
 
 def get_public_IP():
-    """
-    
+    """get_public_IP Return the public-facing IP address for the Pi
+
+    Query ipify.org to return the public (WAN) IP address for the network
+    appliance to which the Chicken-Pi is attached.
+
+    If an error message is kicked by ipify.org, then the response will be
+    longer than the maximum 15 characters (xxx.xxx.xxx.xxx).  In this case,
+    the function will return '-----' rather than an IP address.
+
+    Returns
+    -------
+    `str`
+        Public IP address
     """
     try:
-        publicIP = get('https://api.ipify.org').text
-        publicIP.rstrip()
-        # If error message kicked by ipify.org, then publicIP will be longer than
-        #  the maximum 15 characters (xxx.xxx.xxx.xxx).  Set to empty string.
+        publicIP = (get('https://api.ipify.org').text).rstrip()
+        # If response is longer than the maximum 15 characters, return '---'.
         if len(publicIP) > 15:
-            publicIP = ''
+            publicIP = '-----'
     except:
-        publicIP = ''
+        publicIP = '-----'
     return publicIP
 
+
 def get_cpu_temp():
-    """
-    
+    """get_cpu_temp Read the CPU temperature from system file
+
+    [extended_summary]
+
+    Returns
+    -------
+    `float`
+        CPU temperature in ºF
     """
     # Check Pi CPU Temp:
     if SYSTYPE == 'Linux':
         cputemp_fn = "/sys/class/thermal/thermal_zone0/temp"
         with open(cputemp_fn,"r") as f:
-            return (float(f.read())/1000.)*9./5. + 32.
+            return (float(f.read()) /1000.) * 9./5. + 32.
     return None
