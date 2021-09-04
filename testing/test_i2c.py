@@ -12,36 +12,42 @@ _COMMAND_BIT = const(0x01)  # Apparent command bit of relay board
 
 
 with busio.I2C(board.SCL, board.SDA) as i2c:
-    device = I2CDevice(i2c, _ADDR)
+    device = I2CDevice(i2c, _ADDR, probe=True)
     bytes_read = bytearray(5)
     bytes_read2 = bytearray(5)
     bytes_write = bytearray(5)
-    with device:
-        bytes_read[0] = 0x00
-        device.readinto(bytes_read)
-        print(bytes_read)
+    with device as i2c:
+        bytes_read[0] = const(0x00)
+        i2c.readinto(bytes_read)
+        print(f"I read this: {bytes_read}")
         for i in range(1,5):
-            print(bytes_read[i] != 0x00)
+            print(f"Position {i} is {bytes_read[i] != 0x00}")
 
             
-        # Add command bit
-        bytes_write[0] = _COMMAND_BIT
-        for jj in range(0,16):
-            print(jj, jj&1, jj&2, jj&4, jj&8)
-            bytes_write[1] = jj & 1
-            bytes_write[2] = jj & 2
-            bytes_write[3] = jj & 4
-            bytes_write[4] = jj & 8
-            print(bytes_write)
-            for i in range(1,5):
-                print(bytes_write[i] != 0x00)
+    # Add command bit
+    bytes_write[0] = _COMMAND_BIT
+    for jj in range(0,16):
+        print(f"\nDecimal value to write: {jj}, Binary bits to write: {jj&1}, {jj&2}, {jj&4}, {jj&8}")
+        for kk in range(4):
+            bytes_write[kk+1] = jj & int(2**kk)
+        print(f"I will write this: {bytes_write}")
+        for i in range(1,5):
+            print(f"Writing position {i} as {bytes_write[i] != 0x00}")
 
+        with device as i2c:
             # Write this back to the I2C device
-            print(bytes_write)
-            device.write_then_readinto(bytes_write, bytes_read2)
-            print(bytes_read2)
-            time.sleep(1)
-    
+            bytes_read[0] = const(0x00)
+            i2c.readinto(bytes_read)
+            print(f"Before writing, I read this: {bytes_read}")
+
+        with device as i2c:
+            print(f"Here's what will be sent to the relay: {bytes_write}")
+            i2c.write_then_readinto(bytes_write, bytes_read2)
+            print(f"This is what the relay says was written: {bytes_read2}")
+            print(f"This is the device address: {hex(device.device_address)}")   
+        time.sleep(1)
+        
+
 
 #while not i2c.try_lock():
  #    pass 

@@ -29,7 +29,7 @@ from requests import get
 #from {path} import {class}
 try:
     from chicken_relay import *
-    relay = Relay   # Instantiate class
+    relay = Relay()   # Instantiate class
 except:
     pass
 
@@ -181,7 +181,7 @@ class StatusWindow():
 
         # Write the various device statuses
         for dev, stat in zip(self.devOutDat, get_outlet_status()):
-            dev.config(text = 'OFF' if stat == 0x00 else 'ON')
+            dev.config(text = 'ON' if stat else 'OFF')
 
         # Write the various network statuses
         self.netWiFiDat.config(text =
@@ -280,6 +280,6 @@ def get_cpu_temp():
 def get_outlet_status():
     try:
         # Read the relay_status
-        return relay.read()
+        return relay.status()
     except:
-        return [0x00, 0x00, 0x00, 0x00]
+        return [False] * 4
