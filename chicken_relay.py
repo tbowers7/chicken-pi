@@ -40,7 +40,8 @@ class Relay:
     def read(self):
         """read Read the status of the 4 relays from the board
 
-        [extended_summary]
+        [Doesn't really work... not sure why.  Usually just returns
+         an array of zeroes.]
 
         Returns
         -------
@@ -53,6 +54,17 @@ class Relay:
 
 
     def status(self):
+        """status Return the current status of the relays
+
+        Method writes the current state to ensure the relays match what
+        the internal variables say they should be.  Then this method
+        returns the current status.
+
+        Returns
+        -------
+        `list` of `bool`
+            The True/False state of each relay
+        """        
         self.write()
         return self.relays
 
@@ -61,10 +73,7 @@ class Relay:
         """write Write the desired state of thr 4 relays to the board
 
         [extended_summary]
-
-        Parameters
-        ----------
-        """
+        """        
         self._WRITE_BUF[0] = _RELAY_COMMAND_BIT
         for i, r in enumerate(self.relays, 1):
             self._WRITE_BUF[i] = 0xff if r else 0x00
