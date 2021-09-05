@@ -1,5 +1,11 @@
-numpy
-noaa_sdk
 adafruit-circuitpython-tsl2561
-adafruit-circuitpython-dht
+adafruit-circuitpython-ahtx0
+adafruit-circuitpython-sht31d
 adafruit-circuitpython-motorkit
+matplotlib
+micropython
+noaa_sdk
+numpy
+requests
+threading
+urllib3
