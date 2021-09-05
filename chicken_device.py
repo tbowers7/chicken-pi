@@ -170,3 +170,28 @@ class Relay:
             self._WRITE_BUF[i] = 0xff if r else 0x00
         with self._device as i2c:
             i2c.write_then_readinto(self._WRITE_BUF, self._READ_BUF)
+
+
+class AHT10:
+
+    def __init__(self):
+        self.i2c = busio.I2C(board.SCL, board.SDA)
+        self.sensor = adafruit_ahtx0.AHTx0(self.i2c)
+
+
+class SHT30:
+
+    def __init__(self):
+        self.i2c = busio.I2C(board.SCL, board.SDA)
+        self.sensor = adafruit_sht31d.SHT31D(self.i2c)
+
+
+class ChickenDoor:
+
+    def __init__(self):
+        self.kit = MotorKit()
+
+    def test_motor(self):
+        self.kit.motor1.throttle = 1.0
+        time.sleep(0.5)
+        self.kit.motor1.throttle = 0.0
