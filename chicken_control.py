@@ -233,12 +233,12 @@ class OutletControl(_BaseControl):
         self.andorFrame = Frame(frame)
         self.andButton = Radiobutton(self.andorFrame, indicatoron=0, value=True,
                                      text='   AND   ', variable=self.bool_var,
-                                     command=self.update_andor, bg='#c0c0c0', 
-                                     selectcolor='#ffaa00')
+                                     command=self.update_andor, bg='#e0e0e0',
+                                     selectcolor='#50C878')
         self.orButton = Radiobutton(self.andorFrame, indicatoron=0, value=False,
                                     text='   OR   ', variable=self.bool_var,
-                                    command=self.update_andor, bg='#c0c0c0', 
-                                    selectcolor='#ffaa00')
+                                    command=self.update_andor, bg='#e0e0e0',
+                                    selectcolor='#50C878')
 
         # Temperature Direction Radio Buttons
         self.noTempButton = Radiobutton(frame, fg='blue', bg='#f0f0ff', value=0,
