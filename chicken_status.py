@@ -57,12 +57,12 @@ NETROW       = 9
 
 # Enable testing on both Raspberry Pi and Mac
 if os.path.exists("/usr/bin/uname"):
-    uname = "/usr/bin/uname"
+    _UNAME = "/usr/bin/uname"
 elif os.path.exists("/bin/uname"):
-    uname = "/bin/uname"
+    _UNAME = "/bin/uname"
 else:
-    uname = ""
-SYSTYPE = (os.popen(f"{uname} -a").read()).split()[0]
+    _UNAME = ""
+SYSTYPE = (os.popen(f"{_UNAME} -a").read()).split()[0]
 WLAN = 'en0' if SYSTYPE == 'Darwin' else 'wlan0'
 
 

@@ -24,6 +24,7 @@ import numpy as np         # Numpy!
 #from {path} import {class}
 from chicken_status import *
 from chicken_graphs import *
+from chicken_device import *
 
 ## Boilerplate variables
 __author__ = 'Timothy P. Ellsworth Bowers'
