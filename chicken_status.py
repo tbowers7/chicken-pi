@@ -73,7 +73,7 @@ class StatusWindow():
     StatusWindow class
     Creates the status window and (supposedly) updates it from time to time.
     """
-    def __init__(self, master, CONTROL_WIDTH):
+    def __init__(self, master, CONTROL_WIDTH, sensors):
         """
         __init__ method: initializes the Status Window
         """
@@ -104,8 +104,8 @@ class StatusWindow():
         self.make_stat_label('    Outside:', row=ENVROW+1, column=0)
         self.make_stat_label('Inside Coop:', row=ENVROW+2, column=0)
         self.make_stat_label('Light Level:', row=ENVROW+3, column=0)
-        self.make_stat_label('  Inside Pi:', row=ENVROW+1, column=2)
-        self.make_stat_label('CPU (< 185):', row=ENVROW+2, column=2)
+        self.make_stat_label(' Inside Box:', row=ENVROW+1, column=2)
+        self.make_stat_label('   RPi4 CPU:', row=ENVROW+2, column=2)
 
         # Environmental Status Data
         self.envOutsDat = self.make_stat_data(row=ENVROW+1, column=1)
@@ -161,27 +161,36 @@ class StatusWindow():
         label.grid(row=row, column=column)
         return label
 
+    def format_th_str(self, temp, humid):
+        return f"{temp:.1f}\xb0F, {humid:.1f}%"
 
     def close_window(self):
         self.master.destroy()
 
 
-    def update(self):
+    def update(self, sensors):
         self.count += 1
 
         # Get the current time, and write
         now = datetime.datetime.now()
-        self.dispTime.config(text=now.strftime("%d-%b-%y %H:%M:%S"))
+        self.dispTime.config(text = 
+            now.strftime("%A, %B %-d, %Y    %-I:%M:%S %p"))
 
 
         # Write the various environment statuses
         self.envCPUTDat.config(text =
-            f"{get_cpu_temp():0.1f}\xb0F" if get_cpu_temp() is not None
-            else "-----")
+            f"{get_cpu_temp():0.0f}\xb0F (<185\xb0F)" if get_cpu_temp() is not None
+            else "----- (<185\xb0F)")
+        self.envInsiDat.config(text = 
+            self.format_th_str(sensors['inside'].temp, sensors['inside'].humid))
+        self.envOutsDat.config(text =
+            self.format_th_str(sensors['outside'].temp, sensors['outside'].humid))
+        self.envChPiDat.config(text =
+            self.format_th_str(sensors['box'].temp, sensors['box'].humid))
 
         # Write the various device statuses
         for dev, stat in zip(self.devOutDat, get_outlet_status()):
-            dev.config(text = 'ON' if stat else 'OFF')
+            dev.config(text = 'ENERGIZED' if stat else 'OFF')
 
         # Write the various network statuses
         self.netWiFiDat.config(text =

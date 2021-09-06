@@ -61,12 +61,16 @@ class ControlWindow():
         __init__: initializes the class, including geometry and spawning
         display windows
         """
+        self.use_nws = False
+        self.sensors = set_up_sensors()
+
         ## Define the MASTER for the window, and spawn the other two windows
         self.master = master
         self.newStatus = Toplevel(self.master)
-        self.win1 = StatusWindow(self.newStatus, WIDGET_WIDE)
-        self.newGraphs = Toplevel(self.master, bg='forestgreen')
-        self.win2 = GraphsWindow(self.newGraphs)
+        self.win1 = StatusWindow(self.newStatus, WIDGET_WIDE, self.sensors)
+        if self.use_nws:
+            self.newGraphs = Toplevel(self.master, bg='forestgreen')
+            self.win2 = GraphsWindow(self.newGraphs)
 
         ## Define the geometry and title for the control window
         self.master.geometry(f"{WIDGET_WIDE}x{WIDGET_HIGH}+0+{PI_TOOLBAR}")
@@ -107,12 +111,12 @@ class ControlWindow():
         update: method for updating the display windows
         """
         self.nupdate += 1
-        self.win1.update()
+        self.win1.update(self.sensors)
         print(self.nupdate)
-        if (self.nupdate % 5) == 0:
+        if (self.nupdate % 5) == 0 and self.use_nws:
             self.win2.update()
-        print("Waiting for next call...")
-        self.master.after(5000, self.update)
+        print("Waiting for next call (15 s delay)...")
+        self.master.after(15*1000, self.update)
 
 
 

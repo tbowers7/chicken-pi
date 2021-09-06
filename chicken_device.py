@@ -15,6 +15,7 @@ import time
 import board
 import busio
 from adafruit_bus_device.i2c_device import I2CDevice
+from adafruit_extended_bus import ExtendedI2C as EI2C
 from micropython import const
 # […]
 
@@ -44,18 +45,42 @@ _RELAY_ADDR        = const(0x10)
 _RELAY_COMMAND_BIT = const(0x01)
 
 
-# implementation of the TSL2591 for the chicken-pi
+def set_up_sensors():
+
+    # Use a dictionary for holding the sensor instances
+    sensors = {}
+
+    # Inside the Pi box -- AHT10 temp/humid sensor to monitor conditions
+    sensors['box'] = TempHumid('AHT10', bus=1)
+
+    # Inside the coop -- SHT30 temp/humid sensor on I2C bus #1
+    sensors['inside'] = TempHumid('SHT30', bus=1)
+
+    # Outside the coop -- SHT30 temp/humid sensor on I2C bus #3
+    sensors['outside'] = TempHumid('SHT30', bus=3)
+
+    # Outside the coop -- TSL2591 light sensor
+    sensors['light'] = TSL2591()
+
+    return sensors
+
+
+#=============================================================================#
+
+# Device classes:
+
+# Implementation of the TSL2591 for the chicken-pi
 class TSL2591:
 
     def __init__(self):
         # Initialize the I2C bus.
-        self.i2c = busio.I2C(board.SCL, board.SDA)
+        self._i2c = busio.I2C(board.SCL, board.SDA)
 
         # Initialize the sensor.
         try:
-            self.sensor = adafruit_tsl2591.TSL2591(self.i2c)
+            self._sensor = adafruit_tsl2591.TSL2591(self._i2c)
         except ValueError:
-            self.sensor = None
+            self._sensor = None
         
         self.goodRead = 0
 
@@ -81,16 +106,17 @@ class TSL2591:
         while self.goodRead == 0:
             try:
                 # Infrared levels range from 0-65535 (16-bit)
-                infrared = self.sensor.infrared
+                infrared = self._sensor.infrared
                 # Visible-only levels range from 0-2147483647 (32-bit)
-                visible = self.sensor.visible
+                visible = self._sensor.visible
                 if infrared < 256 and visible < 256:
-                    self.increase_gain(self.sensor)
+                    self.increase_gain(self._sensor)
                 else:
-                    self.lux = self.sensor.lux
+                    self.lux = self._sensor.lux
                     self.goodRead = 1
             except RuntimeError as e:
-                self.decrease_gain(self.sensor)
+                # print(f"Error kicked: {e}")
+                self.decrease_gain(self._sensor)
             except AttributeError:
                 self.lux = None
                 self.goodRead = 1
@@ -172,18 +198,40 @@ class Relay:
             i2c.write_then_readinto(self._WRITE_BUF, self._READ_BUF)
 
 
-class AHT10:
+class TempHumid:
 
-    def __init__(self):
-        self.i2c = busio.I2C(board.SCL, board.SDA)
-        self.sensor = adafruit_ahtx0.AHTx0(self.i2c)
+    def __init__(self, senstyp, bus=1):
 
+        # Load the appropriate I2C Bus
+        self.i2c = EI2C(bus)
 
-class SHT30:
+        # Load the appropriate sensor class
+        if senstyp == 'SHT30':
+            self.sensor = adafruit_sht31d.SHT31D(self.i2c)
+        elif senstyp == 'AHT10':
+            self.sensor = adafruit_ahtx0.AHTx0(self.i2c)
+        else:
+            raise ValueError('Sensor type must be either SHT30 or AHT10')
 
-    def __init__(self):
-        self.i2c = busio.I2C(board.SCL, board.SDA)
-        self.sensor = adafruit_sht31d.SHT31D(self.i2c)
+        # Internal variables
+        self._temp = 0
+        self._relh = 0        
+
+    @property
+    def temp(self):
+        try:
+            self._temp = self.sensor.temperature * 9./5. + 32.
+        except:
+            pass
+        return self._temp
+
+    @property
+    def humid(self):
+        try:
+            self._relh = self.sensor.relative_humidity
+        except:
+            pass
+        return self._relh
 
 
 class ChickenDoor:

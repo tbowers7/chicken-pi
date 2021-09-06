@@ -2,6 +2,7 @@ adafruit-circuitpython-tsl2561
 adafruit-circuitpython-ahtx0
 adafruit-circuitpython-sht31d
 adafruit-circuitpython-motorkit
+adafruit-extended-bus
 matplotlib
 micropython
 noaa_sdk
