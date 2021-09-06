@@ -49,7 +49,7 @@ OUT4STR      = "__________"  # Name of what is plugged into outlet #4
 WIDGET_WIDE  = 600           # Width of the "Control Window"
 WIDGET_HIGH  = 400           # Height of the "Control Window"
 OUTROW       = 1
-DOORROW      = OUTROW + 14
+DOORROW      = OUTROW + 14 + 1
 CONTBG       = 'lightgreen'
 
 
@@ -101,7 +101,7 @@ class ControlWindow():
 
         self.outlet = []
         for i, name in enumerate([OUT1STR, OUT2STR, OUT3STR, OUT4STR]):
-            self.outlet.append(OutletControl(self.frame, name, i))
+            self.outlet.append(OutletControl(self.frame, name, i, self.sensors))
 
         #===== DOOR =====#
         Label(self.frame, text=' - '*40,fg='darkblue').grid(
@@ -123,6 +123,8 @@ class ControlWindow():
         # print(self.nupdate)
         if (self.nupdate % 5) == 0 and self.use_nws:
             self.win2.update()
+        for o in self.outlet:
+            o.cmdTxt.configure(text=f"CMD: {o.demand}")
         # print("Waiting for next call (15 s delay)...")
         self.master.after(500, self.update)
 
@@ -147,6 +149,7 @@ class _BaseControl():
         self.en_var = BooleanVar()  # Variable needed for ENABLE boxes
         self.int_var = IntVar()     # Variables needed for temp radio button
         self.bool_var = BooleanVar()
+        self.TimeCycle = 0          # Time cycle: ON or ON-OFF-ON or OFF-ON-OFF
 
         # Set change state
         self.changedState = False
@@ -161,13 +164,23 @@ class _BaseControl():
         self.ONtime = float(seltime)
         self.onLabel.config(text=f" ON {self.string_time(self.ONtime)}")
         self.changedState = True
+        self.update_time_cycle()
         #print(self.ONtime)
 
-    def update_off_time(self,seltime):
+    def update_off_time(self, seltime):
         self.OFFtime = float(seltime)
         self.offLabel.config(text=f" OFF {self.string_time(self.OFFtime)}")
         self.changedState = True
+        self.update_time_cycle()
         #print(self.OFFtime)
+
+    def update_time_cycle(self):
+        if self.ONtime == self.OFFtime or abs(self.ONtime - self.OFFtime) == 24:
+            self.TimeCycle = 0                    # ON always
+        elif self.ONtime > self.OFFtime:
+            self.TimeCycle = 1                    # ON - OFF - ON
+        else:
+            self.TimeCycle = 2                    # OFF - ON - OFF
 
     ### This method makes the string for display of time above slider bar
     def string_time(self,inTime):
@@ -199,7 +212,7 @@ class OutletControl(_BaseControl):
     
     """
 
-    def __init__(self, frame, name, column):
+    def __init__(self, frame, name, column, sensors):
         """Initialize Class
 
         Inputs:
@@ -209,6 +222,10 @@ class OutletControl(_BaseControl):
         """
         _BaseControl.__init__(self)
         slider_size = (WIDGET_WIDE - 5*5) / 4   # Scale slider width to window
+
+        # Relay commanded state -- Initialize as False = OFF
+        self.RelayCmd = False
+        self.sensors = sensors
 
         # Column Label for this outlet
         Label(frame, text=f"{name} (#{column+1})",
@@ -266,6 +283,8 @@ class OutletControl(_BaseControl):
                                         variable=self.int_var, anchor=W,
                                         text='Turn ON below:')
 
+        self.cmdTxt = Label(frame, '', fg='black', bg='#f0f0f0', text='CMD: OFF')
+
         # Set everything to the grid
         self.onLabel.grid(row=OUTROW+3, column=column, sticky=W+E)
         self.offLabel.grid(row=OUTROW+5, column=column, sticky=W+E)
@@ -280,6 +299,7 @@ class OutletControl(_BaseControl):
         self.noTempButton.grid(row=OUTROW+8, column=column, sticky=W+E)
         self.upTempButton.grid(row=OUTROW+9, column=column, sticky=W+E)
         self.dnTempButton.grid(row=OUTROW+10, column=column, sticky=W+E)
+        self.cmdTxt.grid(row=OUTROW+13, column=column, sticky=W+E)
 
     def update_temp_trigger(self,seltemp):
         self.SWCHtmp = int(seltemp)
@@ -297,7 +317,49 @@ class OutletControl(_BaseControl):
         self.changedState = True
         #print(self.TD)
 
+    def cmd_state(self, nowobj):
 
+        # If 'ENABLE' box not checked, keep off
+        if not self.ENABLE:
+            return False
+
+        # Get time commanded state
+        nowh = nowobj.hour + nowobj.minute/60. + nowobj.second/3600.
+        # ON-OFF-ON
+        if self.TimeCycle == 1:
+            timecmd = \
+                False if nowh > self.OFFtime and nowh < self.ONtime else True
+        # OFF-ON-OFF
+        elif self.TimeCycle == 2:
+            timecmd = \
+                True if nowh > self.ONtime and nowh < self.OFFtime else False
+        # Always ON
+        else:
+            timecmd = True
+        
+        # Get temperature commanded state
+        intemp = self.sensors['inside'].temp
+        # ON above
+        if self.TD == 1:
+            tempcmd = True if intemp > self.SWCHtmp else False
+        # ON below
+        elif self.TD == -1:
+            tempcmd = True if intemp < self.SWCHtmp else False
+        # Temperature Independent
+        else:
+            tempcmd = None
+
+        # Combine using AND/OR
+        if tempcmd is None:
+            return timecmd
+        else:
+            return timecmd and tempcmd if self.ANDOR else timecmd or tempcmd
+
+    @property
+    def demand(self):
+        now = datetime.datetime.now()
+        self._demand = self.cmd_state(now)
+        return self._demand
 
 class DoorControl(_BaseControl):
     """Door Control Class
