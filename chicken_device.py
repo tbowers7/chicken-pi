@@ -213,8 +213,8 @@ class TempHumid:
             raise ValueError('Sensor type must be either SHT30 or AHT10')
 
         # Internal variables
-        self._temp = 0
-        self._relh = 0        
+        self._temp = -99
+        self._relh = -99
 
     @property
     def temp(self):

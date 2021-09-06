@@ -24,7 +24,10 @@ import numpy as np         # Numpy!
 #from {path} import {class}
 from chicken_status import *
 from chicken_graphs import *
-from chicken_device import *
+try:
+    from chicken_device import *
+except:
+    pass    # Allow pass for testing not on a RPi
 
 ## Boilerplate variables
 __author__ = 'Timothy P. Ellsworth Bowers'
@@ -62,7 +65,12 @@ class ControlWindow():
         display windows
         """
         self.use_nws = False
-        self.sensors = set_up_sensors()
+        # Try/Except to allow for testing not on a RPi
+        try:
+            self.sensors = set_up_sensors()
+        except:
+            self.sensors = setup_dummy_sensor()
+
 
         ## Define the MASTER for the window, and spawn the other two windows
         self.master = master
@@ -112,7 +120,7 @@ class ControlWindow():
         """
         self.nupdate += 1
         self.win1.update(self.sensors)
-        print(self.nupdate)
+        # print(self.nupdate)
         if (self.nupdate % 5) == 0 and self.use_nws:
             self.win2.update()
         # print("Waiting for next call (15 s delay)...")
@@ -354,3 +362,21 @@ class DoorControl(_BaseControl):
         self.doorLightLabel.config(text=f" LIGHT {self.string_light(self.SWCHtmp)}")
         self.changedState = True
         #print(self.SWCHtmp)
+
+
+
+#=========================================================#
+# Dummy Sensors for testing of the code NOT on a RPi
+def setup_dummy_sensor():
+    sensors = {}
+    sensors['box'] = DummySensor()
+    sensors['inside'] = DummySensor()
+    sensors['outside'] = DummySensor()
+    sensors['light'] = DummySensor()
+    return sensors
+
+class DummySensor:
+    def __init__(self):
+        self.temp = -99
+        self.humid = -99
+        self.lux = -99
