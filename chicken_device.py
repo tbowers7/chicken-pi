@@ -16,7 +16,6 @@ import board
 import busio
 from adafruit_bus_device.i2c_device import I2CDevice
 from adafruit_extended_bus import ExtendedI2C as EI2C
-from micropython import const
 # […]
 
 # Libs
@@ -40,10 +39,6 @@ __version__ = '0.2.0'
 __email__ = 'chickenpi.flag@gmail.com'
 __status__ = 'Development Status :: 3 - Alpha'
 
-# Internal constants:
-_RELAY_ADDR        = const(0x10)
-_RELAY_COMMAND_BIT = const(0x01)
-
 
 def set_up_sensors():
 
@@ -51,7 +46,7 @@ def set_up_sensors():
     sensors = {}
 
     # Inside the Pi box -- AHT10 temp/humid sensor to monitor conditions
-    sensors['box'] = TempHumid('AHT10', bus=1)
+    sensors['box'] = TempHumid('AHT10')
 
     # Inside the coop -- SHT30 temp/humid sensor on I2C bus #1
     sensors['inside'] = TempHumid('SHT30', bus=1)
@@ -72,9 +67,9 @@ def set_up_sensors():
 # Implementation of the TSL2591 for the chicken-pi
 class TSL2591:
 
-    def __init__(self):
+    def __init__(self, bus=3):
         # Initialize the I2C bus.
-        self._i2c = busio.I2C(board.SCL, board.SDA)
+        self._i2c = EI2C(bus)
 
         # Initialize the sensor.
         try:
@@ -130,11 +125,15 @@ class Relay:
     :param int address: The address of the sensor
     """
 
+    # Internal constants:
+    _RELAY_ADDR        = 0x10
+    _RELAY_COMMAND_BIT = 0x01
+
     # Class-level buffer to reduce memory usage and allocations.
     # Note this is NOT thread-safe or re-entrant by design
     _READ_BUF  = bytearray(5)
     _WRITE_BUF = bytearray(5)
-    
+
     def __init__(self, address=_RELAY_ADDR):
         """__init__ Class Initialization
 
@@ -191,7 +190,7 @@ class Relay:
 
         [extended_summary]
         """        
-        self._WRITE_BUF[0] = _RELAY_COMMAND_BIT
+        self._WRITE_BUF[0] = self._RELAY_COMMAND_BIT
         for i, r in enumerate(self.relays, 1):
             self._WRITE_BUF[i] = 0xff if r else 0x00
         with self._device as i2c:
@@ -203,13 +202,13 @@ class TempHumid:
     def __init__(self, senstyp, bus=1):
 
         # Load the appropriate I2C Bus
-        self.i2c = EI2C(bus)
+        self._i2c = EI2C(bus)
 
         # Load the appropriate sensor class
         if senstyp == 'SHT30':
-            self.sensor = adafruit_sht31d.SHT31D(self.i2c)
+            self.sensor = adafruit_sht31d.SHT31D(self._i2c)
         elif senstyp == 'AHT10':
-            self.sensor = adafruit_ahtx0.AHTx0(self.i2c)
+            self.sensor = adafruit_ahtx0.AHTx0(self._i2c)
         else:
             raise ValueError('Sensor type must be either SHT30 or AHT10')
 
