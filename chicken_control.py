@@ -115,8 +115,8 @@ class ControlWindow():
         print(self.nupdate)
         if (self.nupdate % 5) == 0 and self.use_nws:
             self.win2.update()
-        print("Waiting for next call (15 s delay)...")
-        self.master.after(15*1000, self.update)
+        # print("Waiting for next call (15 s delay)...")
+        self.master.after(500, self.update)
 
 
 

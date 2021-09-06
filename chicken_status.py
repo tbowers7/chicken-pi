@@ -177,28 +177,33 @@ class StatusWindow():
             now.strftime("%A, %B %-d, %Y    %-I:%M:%S %p"))
 
 
-        # Write the various environment statuses
-        self.envCPUTDat.config(text =
-            f"{get_cpu_temp():0.0f}\xb0F (<185\xb0F)" if get_cpu_temp() is not None
-            else "----- (<185\xb0F)")
-        self.envInsiDat.config(text = 
-            self.format_th_str(sensors['inside'].temp, sensors['inside'].humid))
-        self.envOutsDat.config(text =
-            self.format_th_str(sensors['outside'].temp, sensors['outside'].humid))
-        self.envChPiDat.config(text =
-            self.format_th_str(sensors['box'].temp, sensors['box'].humid))
+        # Write the various environment statuses at different intervals
+        if now.seconds % 15 == 0:
+            self.envCPUTDat.config(text =
+                f"{get_cpu_temp():0.0f}\xb0F (<185\xb0F)" if get_cpu_temp() is not None
+                else "----- (<185\xb0F)")
+        if now.seconds % 60 == 0:
+            self.envInsiDat.config(text = 
+                self.format_th_str(sensors['inside'].temp, sensors['inside'].humid))
+            self.envOutsDat.config(text =
+                self.format_th_str(sensors['outside'].temp, sensors['outside'].humid))
+            self.envChPiDat.config(text =
+                self.format_th_str(sensors['box'].temp, sensors['box'].humid))
 
-        # Write the various device statuses
-        for dev, stat in zip(self.devOutDat, get_outlet_status()):
-            dev.config(text = 'ENERGIZED' if stat else 'OFF')
+        # Write the various device statuses at different intervals
+        if now.seconds % 60 == 0:
+            for dev, stat in zip(self.devOutDat, get_outlet_status()):
+                dev.config(text = 'ENERGIZED' if stat else 'OFF')
 
         # Write the various network statuses
-        self.netWiFiDat.config(text =
-            'ON' if contact_server('192.168.0.1') else 'OFF')
-        self.netInetDat.config(text =
-            'ON' if contact_server('1.1.1.1') else 'OFF')
-        self.netLANaDat.config(text = get_local_IP())
-        self.netWANaDat.config(text = get_public_IP())
+        if now.seconds % 15 == 0:
+            self.netLANaDat.config(text = get_local_IP())
+            self.netWiFiDat.config(text =
+                'ON' if contact_server('192.168.0.1') else 'OFF')
+        if now.seconds % 60 == 0:
+            self.netInetDat.config(text =
+                'ON' if contact_server('1.1.1.1') else 'OFF')
+            self.netWANaDat.config(text = get_public_IP())
 
 
 
