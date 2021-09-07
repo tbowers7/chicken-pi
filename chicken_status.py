@@ -73,7 +73,7 @@ class StatusWindow():
     StatusWindow class
     Creates the status window and (supposedly) updates it from time to time.
     """
-    def __init__(self, master, CONTROL_WIDTH, sensors):
+    def __init__(self, master, CONTROL_WIDTH):
         """
         __init__ method: initializes the Status Window
         """
@@ -168,7 +168,7 @@ class StatusWindow():
         self.master.destroy()
 
 
-    def update(self, sensors):
+    def update(self, sensors, outlet):
         self.count += 1
 
         # Get the current time, and write
@@ -191,9 +191,9 @@ class StatusWindow():
                 self.format_th_str(sensors['box'].temp, sensors['box'].humid))
 
         # Write the various device statuses at different intervals
-        if now.second % 60 == 0:
-            for dev, stat in zip(self.devOutDat, get_outlet_status()):
-                dev.config(text = 'ENERGIZED' if stat else 'OFF')
+        if now.second % 15 == 0:
+            for i, dev in enumerate(self.devOutDat):
+                dev.config(text = 'ENERGIZED' if outlet[i].demand else 'OFF')
 
         # Write the various network statuses
         if now.second % 15 == 0:

@@ -220,16 +220,24 @@ class TempHumid:
     def temp(self):
         try:
             self._temp = self.sensor.temperature * 9./5. + 32.
+            return self._temp
         except:
-            pass
-        return self._temp
+            return self.cache_temp
 
     @property
     def humid(self):
         try:
             self._relh = self.sensor.relative_humidity
+            return self._relh
         except:
-            pass
+            return self.cache_humid
+
+    @property
+    def cache_temp(self):
+        return self._temp
+
+    @property
+    def cache_humid(self):
         return self._relh
 
 

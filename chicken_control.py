@@ -75,7 +75,7 @@ class ControlWindow():
         ## Define the MASTER for the window, and spawn the other two windows
         self.master = master
         self.newStatus = Toplevel(self.master)
-        self.win1 = StatusWindow(self.newStatus, WIDGET_WIDE, self.sensors)
+        self.win1 = StatusWindow(self.newStatus, WIDGET_WIDE)
         if self.use_nws:
             self.newGraphs = Toplevel(self.master, bg='forestgreen')
             self.win2 = GraphsWindow(self.newGraphs)
@@ -119,12 +119,12 @@ class ControlWindow():
         update: method for updating the display windows
         """
         self.nupdate += 1
-        self.win1.update(self.sensors)
+        self.win1.update(self.sensors, self.outlet)
         # print(self.nupdate)
         if (self.nupdate % 5) == 0 and self.use_nws:
             self.win2.update()
         for o in self.outlet:
-            o.cmdTxt.configure(text=f"CMD: {o.demand}")
+            o.cmdTxt.configure(text=f"CMD: {o.state}")
         # print("Waiting for next call (15 s delay)...")
         self.master.after(500, self.update)
 
@@ -226,6 +226,7 @@ class OutletControl(_BaseControl):
         # Relay commanded state -- Initialize as False = OFF
         self.RelayCmd = False
         self.sensors = sensors
+        self._demand = False
 
         # Column Label for this outlet
         Label(frame, text=f"{name} (#{column+1})",
@@ -317,7 +318,7 @@ class OutletControl(_BaseControl):
         self.changedState = True
         #print(self.TD)
 
-    def cmd_state(self, nowobj):
+    def cmd_state(self, nowobj, use_cache=False):
 
         # If 'ENABLE' box not checked, keep off
         if not self.ENABLE:
@@ -338,7 +339,8 @@ class OutletControl(_BaseControl):
             timecmd = True
         
         # Get temperature commanded state
-        intemp = self.sensors['inside'].temp
+        intemp = self.sensors['inside'].temp if not use_cache else \
+            self.sensors['inside'].cache_temp
         # ON above
         if self.TD == 1:
             tempcmd = True if intemp > self.SWCHtmp else False
@@ -360,6 +362,12 @@ class OutletControl(_BaseControl):
         now = datetime.datetime.now()
         self._demand = self.cmd_state(now)
         return self._demand
+
+    @property
+    def state(self):
+        now = datetime.datetime.now()
+        return self.cmd_state(now, use_cache = True)
+
 
 class DoorControl(_BaseControl):
     """Door Control Class
