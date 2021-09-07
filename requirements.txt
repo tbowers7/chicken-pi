@@ -4,7 +4,6 @@ adafruit-circuitpython-sht31d
 adafruit-circuitpython-motorkit
 adafruit-extended-bus
 matplotlib
-micropython
 noaa_sdk
 numpy
 requests
