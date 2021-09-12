@@ -387,7 +387,7 @@ class DoorControl(_BaseControl):
         # Column 0: ENABLE
         self.doorEnable = Checkbutton(frame, text='Enable', onvalue=True,
                                       offvalue=False, variable=self.en_var,
-                                      command=self.update_enable)
+                                      command=self.update_enable, state=DISABLED)
         
         # Column 1: Open Time
         self.onLabel = Label(frame, fg='green', bg='#e0ffe0',
