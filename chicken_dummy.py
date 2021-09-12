@@ -17,15 +17,6 @@ Control classes for the hardware devices on the Chicken Pi
 # Own modules
 #from {path} import {class}
 
-## Boilerplate variables
-__author__ = 'Timothy P. Ellsworth Bowers'
-__copyright__ = 'Copyright 2019-2021, chicken-pi'
-__credits__ = ['Stephen Bowers']
-__license__ = 'LGPL-3.0'
-__version__ = '0.2.0'
-__email__ = 'chickenpi.flag@gmail.com'
-__status__ = 'Development Status :: 3 - Alpha'
-
 
 def set_up_sensors():
 

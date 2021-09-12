@@ -34,15 +34,6 @@ from matplotlib.dates import DateFormatter, DayLocator, HourLocator
 #from {path} import {class}
 
 
-## Boilerplate variables
-__author__ = 'Timothy P. Ellsworth Bowers'
-__copyright__ = 'Copyright 2019-2020, chicken-pi'
-__credits__ = ['Stephen Bowers']
-__license__ = 'LGPL-3.0'
-__version__ = '0.2.0'
-__email__ = 'chickenpi.flag@gmail.com'
-__status__ = 'Development Status :: 2 - Pre-Alpha'
-
 PI_TOOLBAR = 36
 TK_HEADER  = 25
 

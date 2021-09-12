@@ -24,7 +24,7 @@ __author__ = 'Timothy P. Ellsworth Bowers'
 __copyright__ = 'Copyright 2019-2021, chicken-pi'
 __credits__ = ['Stephen Bowers']
 __license__ = 'LGPL-3.0'
-__version__ = '0.2.0'
+__version__ = '0.5.0'
 __email__ = 'chickenpi.flag@gmail.com'
 __status__ = 'Development Status :: 3 - Alpha'
 
