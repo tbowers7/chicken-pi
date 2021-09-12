@@ -132,7 +132,7 @@ class GraphsWindow():
 
         
     ### UPDATE METHOD ###
-    def update(self):
+    def update(self, now):
         x = threading.Thread(target=self.get_forecast, daemon=True)
         x.start()
         print(self.have_forecast)

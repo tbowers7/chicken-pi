@@ -170,10 +170,9 @@ class StatusWindow():
         self.master.destroy()
 
 
-    def update(self, sensors, outlet):
+    def update(self, now, sensors, outlet):
 
         # Get the current time, and write
-        now = datetime.datetime.now()
         self.dispTime.config(text = 
             now.strftime("%A, %B %-d, %Y    %-I:%M:%S %p"))
 

@@ -68,8 +68,10 @@ class ControlWindow():
         # Try/Except to allow for testing not on a RPi
         try:
             self.sensors = set_up_sensors()
+            self.relays = Relay()
         except:
             self.sensors = setup_dummy_sensor()
+            self.relays = DummyRelay()
 
 
         ## Define the MASTER for the window, and spawn the other two windows
@@ -108,6 +110,9 @@ class ControlWindow():
 
         self.door = DoorControl(self.frame)
     
+    def set_relays(self):
+        pass
+
 
     ### Update Method ###
     def update(self):
@@ -115,16 +120,23 @@ class ControlWindow():
         update: method for updating the display windows
         """
 
+        # This is the official time for Chicken Pi
+        now = datetime.datetime.now()
+
         # Update status window on 0.5s cadence
-        self.win1.update(self.sensors, self.outlet)
+        self.win1.update(now, self.sensors, self.outlet)
 
         # Update the NWS Graph window, if enableed
         if self.use_nws:
-            self.win2.update()
+            self.win2.update(now)
 
         # Update the command tags in the Control Window
         for o in self.outlet:
             o.cmdTxt.configure(text=f"CMD: {o.state}")
+        
+        # Every 15 seconds, write changes in relay comand to relays
+        if now.second % 15 == 0:
+            self.set_relays()
 
         # Wait 0.5 seconds and repeat
         self.master.after(500, self.update)
@@ -433,3 +445,12 @@ class DummySensor:
         self.temp = -99
         self.humid = -99
         self.lux = -99
+
+class DummyRelay:
+    _WRITE_BUF = bytearray(5)
+    def __init__(self):
+        self.state = [False] * 4
+    def write(self):
+        self._WRITE_BUF[0] = 0x01
+        for i, r in enumerate(self.state, 1):
+            self._WRITE_BUF[i] = 0xff if r else 0x00
