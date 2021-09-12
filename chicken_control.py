@@ -27,7 +27,7 @@ from chicken_graphs import *
 try:
     from chicken_device import *
 except:
-    pass    # Allow pass for testing not on a RPi
+    from chicken_dummy import *
 
 ## Boilerplate variables
 __author__ = 'Timothy P. Ellsworth Bowers'
@@ -65,14 +65,8 @@ class ControlWindow():
         display windows
         """
         self.use_nws = False
-        # Try/Except to allow for testing not on a RPi
-        try:
-            self.sensors = set_up_sensors()
-            self.relays = Relay()
-        except:
-            self.sensors = setup_dummy_sensor()
-            self.relays = DummyRelay()
-
+        self.sensors = set_up_sensors()
+        self.relays = Relay()
 
         ## Define the MASTER for the window, and spawn the other two windows
         self.master = master
@@ -427,30 +421,3 @@ class DoorControl(_BaseControl):
     def update_door_light(self, seltime):
         self.SWCHtmp = float(seltime)
         self.doorLightLabel.config(text=f" LIGHT {self.string_light(self.SWCHtmp)}")
-
-
-
-#=========================================================#
-# Dummy Sensors for testing of the code NOT on a RPi
-def setup_dummy_sensor():
-    sensors = {}
-    sensors['box'] = DummySensor()
-    sensors['inside'] = DummySensor()
-    sensors['outside'] = DummySensor()
-    sensors['light'] = DummySensor()
-    return sensors
-
-class DummySensor:
-    def __init__(self):
-        self.temp = 74.2
-        self.humid = 42.3
-        self.lux = 502
-
-class DummyRelay:
-    _WRITE_BUF = bytearray(5)
-    def __init__(self):
-        self.state = [False] * 4
-    def write(self):
-        self._WRITE_BUF[0] = 0x01
-        for i, r in enumerate(self.state, 1):
-            self._WRITE_BUF[i] = 0xff if r else 0x00
