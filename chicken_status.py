@@ -88,8 +88,6 @@ class StatusWindow():
         self.frame = Frame(self.master, bg=STATBG)
         self.frame.pack(expand=0)
 
-        self.count = 0
-
         # Put the time at the top of the window
         self.dispTime = Label(self.frame, font=('courier', FONTSIZE, 'bold'),
                               bg=STATBG, fg='skyblue')
@@ -164,25 +162,29 @@ class StatusWindow():
     def format_th_str(self, temp, humid):
         return f"{temp:.1f}\xb0F, {humid:.1f}%"
 
+    def format_cpu_str(self, cputemp):
+        return f"{cputemp:0.0f}\xb0F (<185\xb0F)" if cputemp is not None \
+            else "----- (<185\xb0F)"
+
     def close_window(self):
         self.master.destroy()
 
 
     def update(self, sensors, outlet):
-        self.count += 1
 
         # Get the current time, and write
         now = datetime.datetime.now()
         self.dispTime.config(text = 
             now.strftime("%A, %B %-d, %Y    %-I:%M:%S %p"))
 
+        # Set data update intervals
+        short_interval = True if now.second % 15 == 0 else False
+        long_interval = True if now.second % 60 == 0 else False
 
         # Write the various environment statuses at different intervals
-        if now.second % 15 == 0:
-            self.envCPUTDat.config(text =
-                f"{get_cpu_temp():0.0f}\xb0F (<185\xb0F)" if get_cpu_temp() is not None
-                else "----- (<185\xb0F)")
-        if now.second % 60 == 0:
+        if short_interval:
+            self.envCPUTDat.config(text = self.format_cpu_str(get_cpu_temp()))
+        if long_interval:
             self.envInsiDat.config(text = 
                 self.format_th_str(sensors['inside'].temp, sensors['inside'].humid))
             self.envOutsDat.config(text =
@@ -191,19 +193,23 @@ class StatusWindow():
                 self.format_th_str(sensors['box'].temp, sensors['box'].humid))
 
         # Write the various device statuses at different intervals
-        if now.second % 15 == 0:
+        if short_interval:
             for i, dev in enumerate(self.devOutDat):
                 dev.config(text = 'ENERGIZED' if outlet[i].demand else 'OFF')
 
         # Write the various network statuses
-        if now.second % 15 == 0:
+        if short_interval:
             self.netLANaDat.config(text = get_local_IP())
             self.netWiFiDat.config(text =
                 'ON' if contact_server('192.168.0.1') else 'OFF')
-        if now.second % 60 == 0:
+        if long_interval:
             self.netInetDat.config(text =
                 'ON' if contact_server('1.1.1.1') else 'OFF')
             self.netWANaDat.config(text = get_public_IP())
+
+        # For short update interval, wait an additional 0.5 s before returning
+        if short_interval:
+            time.sleep(0.5)
 
 
 

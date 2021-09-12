@@ -7,21 +7,16 @@ Control classes for the hardware devices on the Chicken Pi
 
 """
 
-# Futures
-# […]
-
 # Built-in/Generic Imports
 import time
-import board
-import busio
-from adafruit_bus_device.i2c_device import I2CDevice
-from adafruit_extended_bus import ExtendedI2C as EI2C
 # […]
 
 # Libs
 import numpy as np         # Numpy!
 
 # Hardware Libs
+from adafruit_bus_device.i2c_device import I2CDevice
+from adafruit_extended_bus import ExtendedI2C as EI2C
 import adafruit_tsl2591                 # Outside light sensor
 import adafruit_sht31d                  # Inside/outside temp/humid sensors (x2)
 import adafruit_ahtx0                   # Internal (box) temp/humid sensor
@@ -145,8 +140,8 @@ class Relay:
             I2C address of this relay board [Default: _RELAY_ADDR]
         """
         # Initialize the I2C device
-        self.i2c = busio.I2C(board.SCL, board.SDA)
-        self._device = I2CDevice(self.i2c, address)
+        self._i2c = EI2C(1)
+        self._device = I2CDevice(self._i2c, address)
 
         # Make instance variable, and write 0's to relay HAT
         self.relays = [False] * 4
