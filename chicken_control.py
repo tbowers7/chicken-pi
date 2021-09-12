@@ -104,8 +104,20 @@ class ControlWindow():
 
         self.door = DoorControl(self.frame)
     
+
     def set_relays(self):
-        pass
+        change = False
+
+        # Check to see if any states have changed
+        for i,o in enumerate(self.outlet):
+            if self.relays.state[i] != o.demand:
+                self.relays.state[i] = o.demand
+                change = True
+
+        # If so, write
+        if change:
+            self.relays.write()
+
 
 
     ### Update Method ###
@@ -117,8 +129,12 @@ class ControlWindow():
         # This is the official time for Chicken Pi
         now = datetime.datetime.now()
 
+        # Every 60 seconds, write changes in relay command to relays
+        if now.second % 60 == 0:
+            self.set_relays()
+
         # Update status window on 0.5s cadence
-        self.win1.update(now, self.sensors, self.outlet)
+        self.win1.update(now, self.sensors, self.relays)
 
         # Update the NWS Graph window, if enableed
         if self.use_nws:
@@ -128,10 +144,6 @@ class ControlWindow():
         for o in self.outlet:
             o.cmdTxt.configure(text=f"CMD: {o.state}")
         
-        # Every 15 seconds, write changes in relay comand to relays
-        if now.second % 15 == 0:
-            self.set_relays()
-
         # Wait 0.5 seconds and repeat
         self.master.after(500, self.update)
 
@@ -221,10 +233,8 @@ class OutletControl(_BaseControl):
         _BaseControl.__init__(self)
         slider_size = (WIDGET_WIDE - 5*5) / 4   # Scale slider width to window
 
-        # Relay commanded state -- Initialize as False = OFF
-        self.RelayCmd = False
+        # Init variable
         self.sensors = sensors
-        self._demand = False
 
         # Column Label for this outlet
         Label(frame, text=f"{name} (#{column+1})",
@@ -320,11 +330,11 @@ class OutletControl(_BaseControl):
         # ON-OFF-ON
         if self.TimeCycle == 1:
             timecmd = \
-                False if nowh > self.OFFtime and nowh < self.ONtime else True
+                False if nowh >= self.OFFtime and nowh < self.ONtime else True
         # OFF-ON-OFF
         elif self.TimeCycle == 2:
             timecmd = \
-                True if nowh > self.ONtime and nowh < self.OFFtime else False
+                True if nowh >= self.ONtime and nowh < self.OFFtime else False
         # Always ON
         else:
             timecmd = True
@@ -351,8 +361,7 @@ class OutletControl(_BaseControl):
     @property
     def demand(self):
         now = datetime.datetime.now()
-        self._demand = self.cmd_state(now)
-        return self._demand
+        return self.cmd_state(now)
 
     @property
     def state(self):

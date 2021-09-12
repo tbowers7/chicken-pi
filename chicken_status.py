@@ -170,7 +170,7 @@ class StatusWindow():
         self.master.destroy()
 
 
-    def update(self, now, sensors, outlet):
+    def update(self, now, sensors, relays):
 
         # Get the current time, and write
         self.dispTime.config(text = 
@@ -194,7 +194,7 @@ class StatusWindow():
         # Write the various device statuses at different intervals
         if short_interval:
             for i, dev in enumerate(self.devOutDat):
-                dev.config(text = 'ENERGIZED' if outlet[i].demand else 'OFF')
+                dev.config(text = 'ENERGIZED' if relays.state[i] else 'OFF')
 
         # Write the various network statuses
         if short_interval:
