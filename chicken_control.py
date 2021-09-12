@@ -442,9 +442,9 @@ def setup_dummy_sensor():
 
 class DummySensor:
     def __init__(self):
-        self.temp = -99
-        self.humid = -99
-        self.lux = -99
+        self.temp = 74.2
+        self.humid = 42.3
+        self.lux = 502
 
 class DummyRelay:
     _WRITE_BUF = bytearray(5)
