@@ -88,11 +88,7 @@ class ControlWindow():
         ## A "frame" holds the various GUI controls
         self.frame = Frame(self.master)
         self.frame.pack(expand=1, fill=BOTH)
-        
-        ## Initialize the various variables required
-        self.changedState = False   # Trigger for updating relay state
-        self.nupdate = 0            # Keep a running count of update cycles
-        
+
 
         #===== SWITCHED OUTLETS =====#
         Label(self.frame, text='Relay-Controlled Outlets', fg='darkblue',
@@ -118,14 +114,19 @@ class ControlWindow():
         """
         update: method for updating the display windows
         """
-        self.nupdate += 1
+
+        # Update status window on 0.5s cadence
         self.win1.update(self.sensors, self.outlet)
-        # print(self.nupdate)
-        if (self.nupdate % 5) == 0 and self.use_nws:
+
+        # Update the NWS Graph window, if enableed
+        if self.use_nws:
             self.win2.update()
+
+        # Update the command tags in the Control Window
         for o in self.outlet:
             o.cmdTxt.configure(text=f"CMD: {o.state}")
-        # print("Waiting for next call (15 s delay)...")
+
+        # Wait 0.5 seconds and repeat
         self.master.after(500, self.update)
 
 
@@ -151,28 +152,19 @@ class _BaseControl():
         self.bool_var = BooleanVar()
         self.TimeCycle = 0          # Time cycle: ON or ON-OFF-ON or OFF-ON-OFF
 
-        # Set change state
-        self.changedState = False
-
     # Various Update Methods
     def update_enable(self):
         self.ENABLE = self.en_var.get()
-        self.changedState = True
-        #print(self.ENABLE)
 
     def update_on_time(self, seltime):
         self.ONtime = float(seltime)
         self.onLabel.config(text=f" ON {self.string_time(self.ONtime)}")
-        self.changedState = True
         self.update_time_cycle()
-        #print(self.ONtime)
 
     def update_off_time(self, seltime):
         self.OFFtime = float(seltime)
         self.offLabel.config(text=f" OFF {self.string_time(self.OFFtime)}")
-        self.changedState = True
         self.update_time_cycle()
-        #print(self.OFFtime)
 
     def update_time_cycle(self):
         if self.ONtime == self.OFFtime or abs(self.ONtime - self.OFFtime) == 24:
@@ -305,21 +297,14 @@ class OutletControl(_BaseControl):
     def update_temp_trigger(self,seltemp):
         self.SWCHtmp = int(seltemp)
         self.tmpLabel.config(text=f" Coop Temp {self.string_temp(self.SWCHtmp)}")
-        self.changedState = True
-        #print(self.SWCHtmp)
 
     def update_andor(self):
         self.ANDOR = self.bool_var.get()
-        self.changedState = True
-        #print(self.ANDOR)
 
     def update_temp_direction(self):
         self.TD = self.int_var.get()
-        self.changedState = True
-        #print(self.TD)
 
     def cmd_state(self, nowobj, use_cache=False):
-
         # If 'ENABLE' box not checked, keep off
         if not self.ENABLE:
             return False
@@ -366,7 +351,7 @@ class OutletControl(_BaseControl):
     @property
     def state(self):
         now = datetime.datetime.now()
-        return self.cmd_state(now, use_cache = True)
+        return self.cmd_state(now, use_cache=True)
 
 
 class DoorControl(_BaseControl):
@@ -430,8 +415,6 @@ class DoorControl(_BaseControl):
     def update_door_light(self, seltime):
         self.SWCHtmp = float(seltime)
         self.doorLightLabel.config(text=f" LIGHT {self.string_light(self.SWCHtmp)}")
-        self.changedState = True
-        #print(self.SWCHtmp)
 
 
 
