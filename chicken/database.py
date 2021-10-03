@@ -104,7 +104,8 @@ class ChickenDatabase():
 
         # Before appending the row to the end of the table, check new day
         #  If so, write out existing table and start a new one
-        if row['date'] != self.table['date'][-1]:
+        if 'date' in self.table.colnames and \
+            row['date'] != self.table['date'][-1]:
             self.write_table_to_fits()
             self.table = Table()
 
