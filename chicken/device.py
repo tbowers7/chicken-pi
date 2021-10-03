@@ -270,7 +270,7 @@ class TempHumid:
         try:
             self._temp = self.sensor.temperature * 9./5. + 32.
             return self._temp
-        except OSError:
+        except (RuntimeError, OSError):
             return self.cache_temp
 
     @property
@@ -287,7 +287,7 @@ class TempHumid:
         try:
             self._relh = self.sensor.relative_humidity
             return self._relh
-        except OSError:
+        except (RuntimeError, OSError):
             return self.cache_humid
 
     @property
