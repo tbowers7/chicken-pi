@@ -7,14 +7,13 @@ Control classes for the hardware devices on the Chicken Pi
 
 """
 
-# Built-in/Generic Imports
+# Built-In Libraries
 import time
-# […]
 
-# Libs
-import numpy as np         # Numpy!
 
-# Hardware Libs
+# 3rd Party Libraries
+
+# Hardware Libraries
 from adafruit_bus_device.i2c_device import I2CDevice
 from adafruit_extended_bus import ExtendedI2C as EI2C
 import adafruit_tsl2591                 # Outside light sensor
@@ -22,12 +21,19 @@ import adafruit_sht31d                  # Inside/outside temp/humid sensors (x2)
 import adafruit_ahtx0                   # Internal (box) temp/humid sensor
 from adafruit_motorkit import MotorKit  # Motor HAT
 
-# Own modules
-#from {path} import {class}
+# Internal Imports
 
 
 def set_up_sensors():
+    """set_up_sensors Set up the sensors
 
+    [extended_summary]
+
+    Returns
+    -------
+    `dict`
+        Dictionary containing the sensor objects
+    """
     # Use a dictionary for holding the sensor instances
     sensors = {}
 
@@ -52,7 +58,10 @@ def set_up_sensors():
 
 # Implementation of the TSL2591 for the chicken-pi
 class TSL2591:
+    """ Chicken-Pi Class for the TSL2591 luminosity sensor
 
+    [extended_summary]
+    """
     def __init__(self, bus=3):
         # Initialize the I2C bus.
         self._i2c = EI2C(bus)
@@ -63,8 +72,20 @@ class TSL2591:
         except ValueError:
             self._sensor = None
 
+        # Define the attribute here
+        self.lux = None
+
     # Define functions to increase or decrease the gain
-    def decrease_gain(sensor):
+    def decrease_gain(self, sensor):
+        """decrease_gain Decrease the gain of the TSL2591 sensor
+
+        [extended_summary]
+
+        Parameters
+        ----------
+        sensor : `adafruit_tsl2591.TSL2591`
+            The sensor instance
+        """
         if sensor.gain == adafruit_tsl2591.GAIN_MAX:
             sensor.gain = adafruit_tsl2591.GAIN_HIGH
         elif sensor.gain == adafruit_tsl2591.GAIN_HIGH:
@@ -72,7 +93,16 @@ class TSL2591:
         elif sensor.gain == adafruit_tsl2591.GAIN_MED:
             sensor.gain = adafruit_tsl2591.GAIN_LOW
 
-    def increase_gain(sensor):
+    def increase_gain(self, sensor):
+        """increase_gain Increase the gain of the TSL2591 sensor
+
+        [extended_summary]
+
+        Parameters
+        ----------
+        sensor : `adafruit_tsl2591.TSL2591`
+            The sensor instance
+        """
         if sensor.gain == adafruit_tsl2591.GAIN_HIGH:
             sensor.gain = adafruit_tsl2591.GAIN_MAX
         elif sensor.gain == adafruit_tsl2591.GAIN_MED:
@@ -81,6 +111,15 @@ class TSL2591:
             sensor.gain = adafruit_tsl2591.GAIN_MED
 
     def read(self):
+        """read Read the TSL2591 sensor
+
+        [extended_summary]
+
+        Returns
+        -------
+        `float`
+            The calculated light level in LUX
+        """
         good_read = False
 
         # Read and calculate the light level in lux.
@@ -95,7 +134,7 @@ class TSL2591:
                 else:
                     self.lux = self._sensor.lux
                     good_read = True
-            except RuntimeError as e:
+            except RuntimeError:
                 self.decrease_gain(self._sensor)
             except AttributeError:
                 self.lux = None
@@ -105,14 +144,23 @@ class TSL2591:
 
     @property
     def level(self):
+        """level Return the light level as a class attribute
+
+        [extended_summary]
+
+        Returns
+        -------
+        `float`
+            The calculated light level in LUX
+        """
         return self.read()
 
 
 class Relay:
-    """Relay Board CLASS
-    :param int address: The address of the sensor
-    """
+    """ Chicken-Pi Class for the _____ Relay Board
 
+    [extended_summary]
+    """
     # Internal constants:
     _RELAY_ADDR        = 0x10
     _RELAY_COMMAND_BIT = 0x01
@@ -168,7 +216,7 @@ class Relay:
         -------
         `list` of `bool`
             The True/False state of each relay
-        """        
+        """
         self.write()
         return self.state
 
@@ -177,16 +225,19 @@ class Relay:
         """write Write the desired state of thr 4 relays to the board
 
         [extended_summary]
-        """        
+        """
         self._WRITE_BUF[0] = self._RELAY_COMMAND_BIT
-        for i, r in enumerate(self.state, 1):
-            self._WRITE_BUF[i] = 0xff if r else 0x00
+        for i, relay in enumerate(self.state, 1):
+            self._WRITE_BUF[i] = 0xff if relay else 0x00
         with self._device as i2c:
             i2c.write_then_readinto(self._WRITE_BUF, self._READ_BUF)
 
 
 class TempHumid:
+    """ Chicken-Pi Class for the TSL2591 luminosity sensor
 
+    [extended_summary]
+    """
     def __init__(self, senstyp, bus=1):
 
         # Load the appropriate I2C Bus
@@ -206,35 +257,74 @@ class TempHumid:
 
     @property
     def temp(self):
+        """temp Returns the sensor temperature as a class attribute
+
+        [extended_summary]
+
+        Returns
+        -------
+        `float`
+            The requested temperature (ºF)
+        """
         try:
             self._temp = self.sensor.temperature * 9./5. + 32.
             return self._temp
-        except:
+        except ValueError:
             return self.cache_temp
 
     @property
     def humid(self):
+        """humid Returns the sensor humidity as a class attribute
+
+        [extended_summary]
+
+        Returns
+        -------
+        `float`
+            The requested humidity (%)
+        """
         try:
             self._relh = self.sensor.relative_humidity
             return self._relh
-        except:
+        except ValueError:
             return self.cache_humid
 
     @property
     def cache_temp(self):
+        """cache_temp Return the cached temperature as a class attribute
+
+        Returns
+        -------
+        `float`
+            The cached temperature (ºF)
+        """
         return self._temp
 
     @property
     def cache_humid(self):
+        """cache_humid Return the cached humidity as a class attribute
+
+        Returns
+        -------
+        `float`
+            The cached humidity (%)
+        """
         return self._relh
 
 
 class ChickenDoor:
+    """ Chicken-Pi Class for the yet-to-be-built chicken door
 
+    [extended_summary]
+    """
     def __init__(self):
         self.kit = MotorKit()
 
     def test_motor(self):
+        """test_motor Test the Motor!
+
+        [extended_summary]
+        """
         self.kit.motor1.throttle = 1.0
         time.sleep(0.5)
         self.kit.motor1.throttle = 0.0
