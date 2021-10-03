@@ -8,16 +8,13 @@ Main driver routine for the integrated Chicken-Pi setup.
 
 """
 
-# Built-in/Generic Imports
+# Built-In Libraries
 from tkinter import Tk      # Tk for display window
-# […]
 
-# Libs
-# […]
+# 3rd Party Libraries
 
-# Own modules
-#from {path} import {class}
-from chicken_control import *
+# Internal Imports
+from chicken_control import ControlWindow
 
 ## Boilerplate variables
 __author__ = 'Timothy P. Ellsworth Bowers'
@@ -29,8 +26,11 @@ __email__ = 'chickenpi.flag@gmail.com'
 __status__ = 'Development Status :: 3 - Alpha'
 
 
-### Main Routine ###
+#===================================================================#
 def main():
+    """
+    Main function
+    """
     root = Tk()
     app = ControlWindow(root)
     try:
@@ -38,6 +38,7 @@ def main():
         root.mainloop()
     finally:
         print("Exiting...")
+
 
 if __name__ == '__main__':
     main()

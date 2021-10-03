@@ -7,36 +7,27 @@ Status display window, updates frequently with current values
 
 """
 
-# Futures
-# […]
+# Built-In Libraries
+from tkinter import *
+import time
+import os
 
-# Built-in/Generic Imports
-from tkinter import *      # Tk for display window
-import time                # for the sleep() function
-import datetime            # date & time
-import os,sys              # Search for file on disk
-import csv                 # For CSV output
-import atexit              # Register cleanup functions
-# […]
-
-# Libs
-import numpy as np         # Numpy!
-import urllib3
-import socket
+# 3rd Party Libraries
 from requests import get
+import urllib3
 
-# Own modules
-#from {path} import {class}
+# Internal Imports
 try:
-    from chicken_relay import *
+    from chicken_device import Relay
     relay = Relay()   # Instantiate class
-except:
+except ModuleNotFoundError:
     pass
 
+# Geometry
 PI_TOOLBAR = 36
 TK_HEADER  = 25
 
-### Constants
+# Constants
 WIDGET_WIDE  = 600           # Width of the "Status Window"
 WIDGET_HIGH  = 300           # Height of the "Status Window"
 STATBG       = 'black'
@@ -55,8 +46,6 @@ else:
     _UNAME = ""
 SYSTYPE = (os.popen(f"{_UNAME} -a").read()).split()[0]
 WLAN = 'en0' if SYSTYPE == 'Darwin' else 'wlan0'
-
-
 
 
 class StatusWindow():
@@ -83,7 +72,7 @@ class StatusWindow():
         self.dispTime = Label(self.frame, font=('courier', FONTSIZE, 'bold'),
                               bg=STATBG, fg='skyblue')
         self.dispTime.grid(row=0, columnspan=4)
-        
+
         # Create the various section labels
         self.make_sect_label('Environmental Status', row=ENVROW)
         self.make_sect_label('Network Status', row=NETROW)
@@ -108,7 +97,7 @@ class StatusWindow():
         self.make_stat_label('WLAN Status:', row=NETROW+2, column=0)
         self.make_stat_label('   Local IP:', row=NETROW+1, column=2)
         self.make_stat_label('    WLAN IP:', row=NETROW+2, column=2)
-        
+
         # Network Status Data
         self.netWiFiDat = self.make_stat_data(row=NETROW+1, column=1)
         self.netInetDat = self.make_stat_data(row=NETROW+2, column=1)
@@ -129,7 +118,6 @@ class StatusWindow():
         self.devOutDat.append(self.make_stat_data(row=DEVROW+1, column=3))
         self.devOutDat.append(self.make_stat_data(row=DEVROW+2, column=3))
         self.devDoorDat = self.make_stat_data(row=DEVROW+3, column=1)
-
 
     # Label Creator Methods
     def make_sect_label(self, text, row):
@@ -169,11 +157,10 @@ class StatusWindow():
     def close_window(self):
         self.master.destroy()
 
-
     def update(self, now, sensors, relays):
 
         # Get the current time, and write
-        self.dispTime.config(text = 
+        self.dispTime.config(text =
             now.strftime("%A, %B %-d, %Y    %-I:%M:%S %p"))
 
         # Set data update intervals
@@ -213,8 +200,7 @@ class StatusWindow():
             time.sleep(0.5)
 
 
-
-# Network Checking Functions
+# Network Checking Functions =======================================#
 def contact_server(host='192.168.0.1'):
     """contact_server Check whether a server is reachable
 
