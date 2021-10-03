@@ -16,12 +16,12 @@ from tkinter import Toplevel, Frame, Label, Checkbutton, Scale, Radiobutton, \
 import numpy as np
 
 # Internal Imports
-from chicken_status import StatusWindow
-from chicken_graphs import GraphsWindow
+from chicken.status import StatusWindow
+from chicken.graphs import GraphsWindow
 try:
-    from chicken_device import set_up_sensors, Relay
+    from chicken.device import set_up_sensors, Relay
 except ModuleNotFoundError:
-    from chicken_dummy import set_up_sensors, Relay
+    from chicken.dummy import set_up_sensors, Relay
 
 # Geometry
 PI_TOOLBAR = 36

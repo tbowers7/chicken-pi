@@ -20,7 +20,7 @@ from urllib3.exceptions import NewConnectionError, ConnectTimeoutError
 
 # Internal Imports
 try:
-    from chicken_device import Relay
+    from chicken.device import Relay
     relay = Relay()   # Instantiate class
 except ModuleNotFoundError:
     pass

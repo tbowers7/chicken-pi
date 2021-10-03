@@ -6,3 +6,6 @@ private_emailer.py
 .key.bin
 .gmailuname.bin
 .gmailpasswd.bin
+
+*.code-workspace
+__pycache__/

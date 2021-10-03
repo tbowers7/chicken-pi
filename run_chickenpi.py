@@ -14,7 +14,7 @@ from tkinter import Tk      # Tk for display window
 # 3rd Party Libraries
 
 # Internal Imports
-from chicken_control import ControlWindow
+from chicken.control import ControlWindow
 
 ## Boilerplate variables
 __author__ = 'Timothy P. Ellsworth Bowers'
