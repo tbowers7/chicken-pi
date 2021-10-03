@@ -208,7 +208,7 @@ class StatusWindow():
 
         # Write the various environment statuses at different intervals
         if short_interval:
-            self.env_cpu_data.config(text = format_cpu_str(get_cpu_temp()))
+            self.env_cpu_data.config(text = format_cpu_str(sensors['cpu'].temp))
         if long_interval:
             self.env_inside_data.config(text =
                 format_temp_humid_str(sensors['inside'].temp, sensors['inside'].humid))
@@ -237,25 +237,6 @@ class StatusWindow():
         # For short update interval, wait an additional 0.5 s before returning
         if short_interval:
             time.sleep(0.5)
-
-
-# Environmental Checking Functions
-def get_cpu_temp():
-    """get_cpu_temp Read the CPU temperature from system file
-
-    [extended_summary]
-
-    Returns
-    -------
-    `float`
-        CPU temperature in ºF
-    """
-    # Check Pi CPU Temp:
-    if SYSTYPE == 'Linux':
-        cputemp_fn = "/sys/class/thermal/thermal_zone0/temp"
-        with open(cputemp_fn,"r") as sys_file:
-            return (float(sys_file.read()) /1000.) * 9./5. + 32.
-    return None
 
 
 # String Formatting Functions

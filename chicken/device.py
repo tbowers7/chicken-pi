@@ -9,6 +9,7 @@ Control classes for the hardware devices on the Chicken Pi
 """
 
 # Built-In Libraries
+import os
 import time
 
 
@@ -23,6 +24,15 @@ import adafruit_ahtx0                   # Internal (box) temp/humid sensor
 from adafruit_motorkit import MotorKit  # Motor HAT
 
 # Internal Imports
+
+# Enable testing on both Raspberry Pi and Mac
+if os.path.exists("/usr/bin/uname"):
+    _UNAME = "/usr/bin/uname"
+elif os.path.exists("/bin/uname"):
+    _UNAME = "/bin/uname"
+else:
+    _UNAME = ""
+SYSTYPE = (os.popen(f"{_UNAME} -a").read()).split()[0]
 
 
 def set_up_sensors():
@@ -50,6 +60,9 @@ def set_up_sensors():
     # Outside the coop -- TSL2591 light sensor
     sensors['light'] = TSL2591()
 
+    # Raspberry Pi CPU
+    sensors['cpu'] = RPiCPU()
+
     return sensors
 
 
@@ -58,7 +71,7 @@ def set_up_sensors():
 # Device classes:
 
 # Implementation of the TSL2591 for the chicken-pi
-class TSL2591:
+class TSL2591():
     """ Chicken-Pi Class for the TSL2591 luminosity sensor
 
     [extended_summary]
@@ -183,7 +196,7 @@ class TSL2591:
         return self.cache_level
 
 
-class Relay:
+class Relay():
     """ Chicken-Pi Class for the _____ Relay Board
 
     [extended_summary]
@@ -260,7 +273,7 @@ class Relay:
             i2c.write_then_readinto(self._WRITE_BUF, self._READ_BUF)
 
 
-class TempHumid:
+class TempHumid():
     """ Chicken-Pi Class for the TSL2591 luminosity sensor
 
     [extended_summary]
@@ -352,7 +365,7 @@ class TempHumid:
         return self.cache_temp, self.cache_humid
 
 
-class ChickenDoor:
+class ChickenDoor():
     """ Chicken-Pi Class for the yet-to-be-built chicken door
 
     [extended_summary]
@@ -368,3 +381,56 @@ class ChickenDoor:
         self.kit.motor1.throttle = 1.0
         time.sleep(0.5)
         self.kit.motor1.throttle = 0.0
+
+
+class RPiCPU():
+    """RPiCPU [summary]
+
+    [extended_summary]
+    """
+    def __init__(self):
+        pass
+
+    @property
+    def temp(self):
+        """temp Return the CPU temperature as a class attribute
+
+        [extended_summary]
+
+        Returns
+        -------
+        `float`
+            The CPU temperature in ºF, as reported by the system
+        """
+        return get_cpu_temp()
+
+    @property
+    def data_entry(self):
+        """data_entry Return the DATA_ENTRY object needed for the database
+
+        [extended_summary]
+
+        Returns
+        -------
+        `float`
+            The CPU temperature (ºF)
+        """
+        return self.temp
+
+
+def get_cpu_temp():
+    """get_cpu_temp Read the CPU temperature from system file
+
+    [extended_summary]
+
+    Returns
+    -------
+    `float`
+        CPU temperature in ºF
+    """
+    # Check Pi CPU Temp:
+    if SYSTYPE == 'Linux':
+        cputemp_fn = "/sys/class/thermal/thermal_zone0/temp"
+        with open(cputemp_fn,"r") as sys_file:
+            return (float(sys_file.read()) /1000.) * 9./5. + 32.
+    return None

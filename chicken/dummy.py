@@ -38,6 +38,9 @@ def set_up_sensors():
     # Outside the coop -- TSL2591 light sensor
     sensors['light'] = DummyLux()
 
+    # Raspberry Pi CPU
+    sensors['cpu'] = DummyCPU()
+
     return sensors
 
 
@@ -65,6 +68,17 @@ class DummyLux:
         self.level = 502
         self.cache_level = 6521
         self.data_entry = (self.cache_level)
+
+
+class DummyCPU:
+    """ Dummy RPi CPU Class
+
+    Includes dummy values for testing
+    """
+    def __init__(self):
+        self.temp = None
+        self.cache_temp = None
+        self.data_entry = (self.cache_temp)
 
 
 class Relay:

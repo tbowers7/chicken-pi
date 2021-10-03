@@ -85,12 +85,15 @@ class ChickenDatabase():
             # Retrieve the data from this sensor
             data = sensors[name].data_entry
 
-            # If `data` is a tuple, it's a TH sensor, otherwise a LUX
+            # If `data` is a tuple, it's a TH sensor, otherwise a LUX or CPU
             if isinstance(data, tuple):
                 row[f"{name}_temp"] = data[0]
                 row[f"{name}_humid"] = data[1]
             else:
-                row[f"{name}_lux"] = data
+                if name == 'light':
+                    row[f"{name}_lux"] = data
+                elif name == 'cpu':
+                    row[f"{name}_temp"] = data
 
         # Add the relay status to the row
         for i, state in enumerate(relays.state, 1):
