@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
 """
-  FILE: chicken_devices.py
+    MODULE: chicken-pi
+    FILE: device.py
 
 Control classes for the hardware devices on the Chicken Pi
 

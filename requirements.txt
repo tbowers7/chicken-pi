@@ -3,6 +3,7 @@ adafruit-circuitpython-ahtx0
 adafruit-circuitpython-sht31d
 adafruit-circuitpython-motorkit
 adafruit-extended-bus
+astropy
 matplotlib
 noaa_sdk
 numpy

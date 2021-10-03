@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
 """
-  FILE: chicken_control.py
+    MODULE: chicken-pi
+    FILE: control.py
 
 Control window, with all the shiny knobs and buttons
 
@@ -16,8 +17,9 @@ from tkinter import Toplevel, Frame, Label, Checkbutton, Scale, Radiobutton, \
 import numpy as np
 
 # Internal Imports
-from chicken.status import StatusWindow
+from chicken.database import *
 from chicken.graphs import GraphsWindow
+from chicken.status import StatusWindow
 try:
     from chicken.device import set_up_sensors, Relay
 except ModuleNotFoundError:

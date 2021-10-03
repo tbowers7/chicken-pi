@@ -1,39 +1,34 @@
 # -*- coding: utf-8 -*-
 
 """
-  FILE: chicken_graphs.py
+    MODULE: chicken-pi
+    FILE: graphs.py
 
 Graphs display window, updates occasionally with current values
 
 """
 
-# Futures
-# […]
-
-# Built-in/Generic Imports
-from tkinter import *      # Tk for display window
-import time                # for the sleep() function
+# Built-In Libraries
+import atexit              # Register cleanup functions
+import csv                 # For CSV output
 import datetime            # date & time
 import os,sys              # Search for file on disk
-import csv                 # For CSV output
-import atexit              # Register cleanup functions
-import numpy as np         # Numpy!
 import threading           # Threading to allow for NWS request
-# […]
+import time                # for the sleep() function
+from tkinter import *      # Tk for display window
 
-# Libs
-# […]
+# 3rd Party Libraries
 import matplotlib
 matplotlib.use("TkAgg")
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
+from matplotlib.dates import DateFormatter, DayLocator, HourLocator
 from matplotlib.figure import Figure
 from noaa_sdk import noaa
-from matplotlib.dates import DateFormatter, DayLocator, HourLocator
+import numpy as np
 
-# Own modules
-#from {path} import {class}
+# Internal Imports
 
-
+# Geometry
 PI_TOOLBAR = 36
 TK_HEADER  = 25
 

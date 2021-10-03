@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
 """
-  FILE: chicken_status.py
+    MODULE: chicken-pi
+    FILE: status.py
 
 Status display window, updates frequently with current values
 

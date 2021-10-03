@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 
 """
-  FILE: chicken_devices.py
+    MODULE: chicken-pi
+    FILE: dummy.py
 
-Control classes for the hardware devices on the Chicken Pi
+Dummy classes for the hardware devices on the Chicken Pi (for testing)
 
 """
 
