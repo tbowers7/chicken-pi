@@ -145,10 +145,23 @@ class ControlWindow():
         self.master.after(500, self.update)
 
     def write_to_database(self, now):
+        """write_to_database Write the current readings to the database
+
+        [extended_summary]
+
+        Parameters
+        ----------
+        now : `datetime.datetime`
+            The current time object, for including in the database
+        """
         print("Writing readings to the database...")
         self.data.add_row_to_table(now, self.sensors, self.relays, self.network)
 
     def write_database_to_disk(self):
+        """write_database_to_disk Write the entire database to disk
+
+        [extended_summary]
+        """
         print("Writing the databse to disk...")
         self.write_to_database(datetime.datetime.now())
         self.data.write_table_to_fits()

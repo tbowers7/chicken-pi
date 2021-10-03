@@ -36,10 +36,10 @@ class NetworkStatus():
     [extended_summary]
     """
     def __init__(self):
-        self.lan_ipv4 = None
-        self.wan_ipv4 = None
-        self.wifi_status = None
-        self.inet_status = None
+        self.lan_ipv4 = ''
+        self.wan_ipv4 = ''
+        self.wifi_status = ''
+        self.inet_status = ''
 
     def update_lan(self):
         """update_lan Update the LAN status variables
