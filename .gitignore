@@ -9,3 +9,4 @@ private_emailer.py
 
 *.code-workspace
 __pycache__/
+*temp_value*
