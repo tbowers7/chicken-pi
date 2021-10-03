@@ -27,32 +27,44 @@ def set_up_sensors():
     sensors = {}
 
     # Inside the Pi box -- AHT10 temp/humid sensor to monitor conditions
-    sensors['box'] = DummySensor()
+    sensors['box'] = DummyTH()
 
     # Inside the coop -- SHT30 temp/humid sensor on I2C bus #1
-    sensors['inside'] = DummySensor()
+    sensors['inside'] = DummyTH()
 
     # Outside the coop -- SHT30 temp/humid sensor on I2C bus #3
-    sensors['outside'] = DummySensor()
+    sensors['outside'] = DummyTH()
 
     # Outside the coop -- TSL2591 light sensor
-    sensors['light'] = DummySensor()
+    sensors['light'] = DummyLux()
 
     return sensors
 
 
 #=========================================================#
 # Dummy Sensors for testing of the code NOT on a RPi
-class DummySensor:
-    """ Dummy Sensor Class
+class DummyTH:
+    """ Dummy Temp/Humid Sensor Class
 
     Includes dummy values for testing
     """
     def __init__(self):
         self.temp = 74.2
         self.humid = 42.3
-        self.level = 502
         self.cache_temp = 75.6
+        self.cache_humid = 99.0
+        self.data_entry = (self.cache_temp, self.cache_humid)
+
+
+class DummyLux:
+    """ Dummy Lux Sensor Class
+
+    Includes dummy values for testing
+    """
+    def __init__(self):
+        self.level = 502
+        self.cache_level = 6521
+        self.data_entry = (self.cache_level)
 
 
 class Relay:

@@ -74,7 +74,7 @@ class TSL2591:
             self._sensor = None
 
         # Define the attribute here
-        self.lux = None
+        self._lux = -999
 
     # Define functions to increase or decrease the gain
     def decrease_gain(self, sensor):
@@ -133,15 +133,15 @@ class TSL2591:
                 if infrared < 256 and visible < 256:
                     self.increase_gain(self._sensor)
                 else:
-                    self.lux = self._sensor.lux
+                    self._lux = self._sensor.lux
                     good_read = True
             except RuntimeError:
                 self.decrease_gain(self._sensor)
             except AttributeError:
-                self.lux = None
+                self._lux = None
                 good_read = True
 
-        return self.lux
+        return self._lux
 
     @property
     def level(self):
@@ -155,6 +155,32 @@ class TSL2591:
             The calculated light level in LUX
         """
         return self.read()
+
+    @property
+    def cache_level(self):
+        """cache_level Return the cached light level as a class attribute
+
+        [extended_summary]
+
+        Returns
+        -------
+        `float`
+            The cached light level in LUX
+        """
+        return self._lux
+
+    @property
+    def data_entry(self):
+        """data_entry Return the DATA_ENTRY object needed for the database
+
+        [extended_summary]
+
+        Returns
+        -------
+        `float`
+            Cached sensor values for the database
+        """
+        return self.cache_level
 
 
 class Relay:
@@ -311,6 +337,19 @@ class TempHumid:
             The cached humidity (%)
         """
         return self._relh
+
+    @property
+    def data_entry(self):
+        """data_entry Return the DATA_ENTRY object needed for the database
+
+        [extended_summary]
+
+        Returns
+        -------
+        `float`, `float`
+            Cached sensor values for the database
+        """
+        return self.cache_temp, self.cache_humid
 
 
 class ChickenDoor:

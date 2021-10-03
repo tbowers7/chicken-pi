@@ -14,17 +14,15 @@ import time
 import os
 
 # 3rd Party Libraries
-from requests import get
-from requests import exceptions as rexcept
-import urllib3
-from urllib3.exceptions import NewConnectionError, ConnectTimeoutError
 
-# Internal Imports
-try:
-    from chicken.device import Relay
-    relay = Relay()   # Instantiate class
-except ModuleNotFoundError:
-    pass
+# Enable testing on both Raspberry Pi and Mac
+if os.path.exists("/usr/bin/uname"):
+    _UNAME = "/usr/bin/uname"
+elif os.path.exists("/bin/uname"):
+    _UNAME = "/bin/uname"
+else:
+    _UNAME = ""
+SYSTYPE = (os.popen(f"{_UNAME} -a").read()).split()[0]
 
 # Geometry
 PI_TOOLBAR = 36
@@ -39,16 +37,6 @@ DATAFIELD    = 15
 ENVROW       = 1
 DEVROW       = 5
 NETROW       = 9
-
-# Enable testing on both Raspberry Pi and Mac
-if os.path.exists("/usr/bin/uname"):
-    _UNAME = "/usr/bin/uname"
-elif os.path.exists("/bin/uname"):
-    _UNAME = "/bin/uname"
-else:
-    _UNAME = ""
-SYSTYPE = (os.popen(f"{_UNAME} -a").read()).split()[0]
-WLAN = 'en0' if SYSTYPE == 'Darwin' else 'wlan0'
 
 
 class StatusWindow():
@@ -103,7 +91,7 @@ class StatusWindow():
 
         # Network Status Data
         self.net_wifi_data = self.make_statistic_data(row=NETROW+1, column=1)
-        self.new_internet_data = self.make_statistic_data(row=NETROW+2, column=1)
+        self.net_internet_data = self.make_statistic_data(row=NETROW+2, column=1)
         self.net_lanip_data = self.make_statistic_data(row=NETROW+1, column=3)
         self.net_wanip_data = self.make_statistic_data(row=NETROW+2, column=3)
 
@@ -196,7 +184,7 @@ class StatusWindow():
         """
         self.master.destroy()
 
-    def update(self, now, sensors, relays):
+    def update(self, now, sensors, relays, network):
         """update Update the information in this Window
 
         [extended_summary]
@@ -236,83 +224,19 @@ class StatusWindow():
             for i, dev in enumerate(self.dev_outlet_data):
                 dev.config(text = 'ENERGIZED' if relays.state[i] else 'OFF')
 
-        # Write the various network statuses
+        # Get the various network statuses & write
         if short_interval:
-            self.net_lanip_data.config(text = get_local_ipv4())
-            self.net_wifi_data.config(text =
-                'ON' if contact_server('192.168.0.1') else 'OFF')
+            network.update_lan()
+            self.net_lanip_data.config(text=network.lan_ipv4)
+            self.net_wifi_data.config(text=network.wifi_status)
         if long_interval:
-            self.new_internet_data.config(text =
-                'ON' if contact_server('1.1.1.1') else 'OFF')
-            self.net_wanip_data.config(text = get_public_ipv4())
+            network.update_wan()
+            self.net_internet_data.config(text=network.inet_status)
+            self.net_wanip_data.config(text=network.wan_ipv4)
 
         # For short update interval, wait an additional 0.5 s before returning
         if short_interval:
             time.sleep(0.5)
-
-
-# Network Checking Functions =======================================#
-def contact_server(host='192.168.0.1'):
-    """contact_server Check whether a server is reachable
-
-    [extended_summary]
-
-    Parameters
-    ----------
-    host : `str`, optional
-        Name or IP address of server to contact [Default: '192.168.0.1']
-
-    Returns
-    -------
-    `bool`
-        Whether server is reachable
-    """
-    try:
-        http = urllib3.PoolManager()
-        http.request('GET', host, timeout=3, retries=False)
-        return True
-    except (NewConnectionError, ConnectTimeoutError):
-        return False
-
-
-def get_local_ipv4():
-    """get_local_IP Return the local (LAN) IP address for the Pi
-
-    Use `ifconfig` to read the local IP address assigned to the Pi by the
-    local DHCP server.
-
-    Returns
-    -------
-    `str`
-        LAN IP address
-    """
-    cmd = f"/sbin/ifconfig {WLAN} | grep 'inet ' | awk '{{print $2}}'"
-    return (os.popen(cmd).read()).strip()
-
-
-def get_public_ipv4():
-    """get_public_IP Return the public-facing IP address for the Pi
-
-    Query ipify.org to return the public (WAN) IP address for the network
-    appliance to which the Chicken-Pi is attached.
-
-    If an error message is kicked by ipify.org, then the response will be
-    longer than the maximum 15 characters (xxx.xxx.xxx.xxx).  In this case,
-    the function will return '-----' rather than an IP address.
-
-    Returns
-    -------
-    `str`
-        Public IP address
-    """
-    try:
-        public_ipv4 = (get('https://api.ipify.org', timeout=10).text).strip()
-        # If response is longer than the maximum 15 characters, return '---'.
-        if len(public_ipv4) > 15:
-            public_ipv4 = '-----'
-    except (rexcept.ConnectionError, ConnectionError):
-        public_ipv4 = '-----'
-    return public_ipv4
 
 
 # Environmental Checking Functions
@@ -332,24 +256,6 @@ def get_cpu_temp():
         with open(cputemp_fn,"r") as sys_file:
             return (float(sys_file.read()) /1000.) * 9./5. + 32.
     return None
-
-
-# Status Checking Functions
-def get_outlet_status():
-    """get_outlet_status Get the status of the outlets
-
-    [extended_summary]
-
-    Returns
-    -------
-    `list` of `bool`
-        A list of the True/False states for the 4 relays.
-    """
-    try:
-        # Read the relay_status
-        return relay.status()
-    except ValueError:
-        return [False] * 4
 
 
 # String Formatting Functions

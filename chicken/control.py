@@ -19,6 +19,7 @@ import numpy as np
 # Internal Imports
 from chicken.database import ChickenDatabase
 from chicken.graphs import GraphsWindow
+from chicken.network import NetworkStatus
 from chicken.status import StatusWindow
 try:
     from chicken.device import set_up_sensors, Relay
@@ -55,6 +56,7 @@ class ControlWindow():
         self.use_nws = False
         self.sensors = set_up_sensors()
         self.relays = Relay()
+        self.network = NetworkStatus()
 
         # Set up the database
         self.data = ChickenDatabase()
@@ -123,12 +125,9 @@ class ControlWindow():
         # Every 60 seconds, write changes in relay command to relays
         if now.second % 60 == 0:
             self.set_relays()
-            # Every 5 minutes, write status to database
-            if now.minute % 5 == 0:
-                self.write_database(now)
 
         # Update status window on 0.5s cadence
-        self.status_window.update(now, self.sensors, self.relays)
+        self.status_window.update(now, self.sensors, self.relays, self.network)
 
         # Update the NWS Graph window, if enableed
         if self.use_nws:
@@ -138,16 +137,22 @@ class ControlWindow():
         for outlet in self.outlet:
             outlet.command_text.configure(text=f"CMD: {outlet.state}")
 
+        # Every 5 minutes, write status to database
+        if now.second % 60 == 0 and now.minute % 5 == 0:
+            self.write_to_database(now)
+
         # Wait 0.5 seconds and repeat
         self.master.after(500, self.update)
 
-    def write_database(self, now):
+    def write_to_database(self, now):
         print("Writing readings to the database...")
-        self.data.add_row_to_table(now, self.sensors, self.relays, None)
+        self.data.add_row_to_table(now, self.sensors, self.relays, self.network)
 
     def write_database_to_disk(self):
         print("Writing the databse to disk...")
+        self.write_to_database(datetime.datetime.now())
         self.data.write_table_to_fits()
+
 
 class _BaseControl():
     """Base class for Object Control
