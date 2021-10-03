@@ -62,8 +62,6 @@ class TSL2591:
             self._sensor = adafruit_tsl2591.TSL2591(self._i2c)
         except ValueError:
             self._sensor = None
-        
-        self.goodRead = 0
 
     # Define functions to increase or decrease the gain
     def decrease_gain(sensor):
@@ -83,8 +81,10 @@ class TSL2591:
             sensor.gain = adafruit_tsl2591.GAIN_MED
 
     def read(self):
+        good_read = False
+
         # Read and calculate the light level in lux.
-        while self.goodRead == 0:
+        while not good_read:
             try:
                 # Infrared levels range from 0-65535 (16-bit)
                 infrared = self._sensor.infrared
@@ -94,16 +94,18 @@ class TSL2591:
                     self.increase_gain(self._sensor)
                 else:
                     self.lux = self._sensor.lux
-                    self.goodRead = 1
+                    good_read = True
             except RuntimeError as e:
-                # print(f"Error kicked: {e}")
                 self.decrease_gain(self._sensor)
             except AttributeError:
                 self.lux = None
-                self.goodRead = 1
+                good_read = True
 
         return self.lux
 
+    @property
+    def level(self):
+        return self.read()
 
 
 class Relay:

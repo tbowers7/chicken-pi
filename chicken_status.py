@@ -153,6 +153,15 @@ class StatusWindow():
     def format_th_str(self, temp, humid):
         return f"{temp:.1f}\xb0F, {humid:.1f}%"
 
+    def format_lux_str(self, lux):
+        if lux is None:
+            return '-'*5
+        if lux < 10:
+            return f"{lux:.2f} lux"
+        if lux < 100:
+            return f"{lux:.1f} lux"
+        return f"{lux:.0f} lux"
+
     def format_cpu_str(self, cputemp):
         return f"{cputemp:0.0f}\xb0F (<185\xb0F)" if cputemp is not None \
             else "----- (<185\xb0F)"
@@ -175,12 +184,14 @@ class StatusWindow():
         if short_interval:
             self.envCPUTDat.config(text = self.format_cpu_str(get_cpu_temp()))
         if long_interval:
-            self.envInsiDat.config(text = 
+            self.envInsiDat.config(text =
                 self.format_th_str(sensors['inside'].temp, sensors['inside'].humid))
             self.envOutsDat.config(text =
                 self.format_th_str(sensors['outside'].temp, sensors['outside'].humid))
             self.envChPiDat.config(text =
                 self.format_th_str(sensors['box'].temp, sensors['box'].humid))
+            self.envLighDat.config(text =
+                self.format_lux_str(sensors['light'].level))
 
         # Write the various device statuses at different intervals
         if short_interval:
