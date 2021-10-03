@@ -17,7 +17,7 @@ from tkinter import Toplevel, Frame, Label, Checkbutton, Scale, Radiobutton, \
 import numpy as np
 
 # Internal Imports
-from chicken.database import *
+from chicken.database import ChickenDatabase
 from chicken.graphs import GraphsWindow
 from chicken.status import StatusWindow
 try:
@@ -56,14 +56,17 @@ class ControlWindow():
         self.sensors = set_up_sensors()
         self.relays = Relay()
 
-        ## Define the MASTER for the window, and spawn the other two windows
+        # Set up the database
+        self.data = ChickenDatabase()
+
+        # Define the MASTER for the window, and spawn the other two windows
         self.master = master
         self.status_window = StatusWindow(Toplevel(self.master), WIDGET_WIDE)
         if self.use_nws:
             self.graphs_window = GraphsWindow(Toplevel(self.master,
                                                        bg='forestgreen'))
 
-        ## Define the geometry and title for the control window
+        # Define the geometry and title for the control window
         self.master.geometry(f"{WIDGET_WIDE}x{WIDGET_HIGH}+0+{PI_TOOLBAR}")
         self.master.title("Control Window")
         self.master.configure(bg=CONTBG)
@@ -120,6 +123,9 @@ class ControlWindow():
         # Every 60 seconds, write changes in relay command to relays
         if now.second % 60 == 0:
             self.set_relays()
+            # Every 5 minutes, write status to database
+            if now.minute % 5 == 0:
+                self.write_database(now)
 
         # Update status window on 0.5s cadence
         self.status_window.update(now, self.sensors, self.relays)
@@ -135,6 +141,13 @@ class ControlWindow():
         # Wait 0.5 seconds and repeat
         self.master.after(500, self.update)
 
+    def write_database(self, now):
+        print("Writing readings to the database...")
+        self.data.add_row_to_table(now, self.sensors, self.relays, None)
+
+    def write_database_to_disk(self):
+        print("Writing the databse to disk...")
+        self.data.write_table_to_fits()
 
 class _BaseControl():
     """Base class for Object Control
