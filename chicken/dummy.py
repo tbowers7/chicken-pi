@@ -76,8 +76,8 @@ class DummyCPU:
     Includes dummy values for testing
     """
     def __init__(self):
-        self.temp = None
-        self.cache_temp = None
+        self.temp = -99
+        self.cache_temp = -99
         self.data_entry = (self.cache_temp)
 
 
