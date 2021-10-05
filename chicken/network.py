@@ -13,7 +13,7 @@ import os
 
 # 3rd Party Libraries
 from requests import get
-from requests import exceptions as rexcept
+import requests.exceptions as rexcept
 import urllib3
 from urllib3.exceptions import NewConnectionError, ConnectTimeoutError
 
@@ -117,6 +117,6 @@ def get_public_ipv4():
         # If response is longer than the maximum 15 characters, return '---'.
         if len(public_ipv4) > 15:
             public_ipv4 = '-----'
-    except (rexcept.ConnectionError, ConnectionError):
+    except (rexcept.ConnectionError, ConnectionError, rexcept.ReadTimeout):
         public_ipv4 = '-----'
     return public_ipv4
