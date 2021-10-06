@@ -15,7 +15,8 @@ import os
 from requests import get
 import requests.exceptions as rexcept
 import urllib3
-from urllib3.exceptions import NewConnectionError, ConnectTimeoutError
+from urllib3.exceptions import NewConnectionError, ConnectTimeoutError, \
+                               ReadTimeoutError
 
 # Internal Imports
 
@@ -78,7 +79,7 @@ def contact_server(host='192.168.0.1'):
         http = urllib3.PoolManager()
         http.request('GET', host, timeout=3, retries=False)
         return True
-    except (NewConnectionError, ConnectTimeoutError):
+    except (NewConnectionError, ConnectTimeoutError, ReadTimeoutError):
         return False
 
 
