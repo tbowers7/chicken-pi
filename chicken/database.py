@@ -23,14 +23,16 @@ class ChickenDatabase():
 
     [extended_summary]
     """
-    def __init__(self):
+    def __init__(self, base_dir):
         # Set up internal variables
+        self.base_dir = base_dir
+
         now = datetime.datetime.now()
         self.date = now
         print(f"Chicken-Pi database initialized: {now.date()} {now.time()}")
 
         # Check for existing FITS file for today -- read in or create new
-        today_fn = f"data/coop_{now.strftime('%Y%m%d')}.fits"
+        today_fn = f"{self.base_dir}/data/coop_{now.strftime('%Y%m%d')}.fits"
         self.table = self.read_table_file() if exists(today_fn) else Table()
 
     def read_table_file(self, date=None):
@@ -50,7 +52,7 @@ class ChickenDatabase():
         """
         date = datetime.datetime.now().strftime('%Y%m%d') if date is None \
             else date
-        return Table.read(f"data/coop_{date}.fits")
+        return Table.read(f"{self.base_dir}/data/coop_{date}.fits")
 
     def add_row_to_table(self, nowobj, sensors, relays, network, debug=False):
         """add_row_to_table [summary]
@@ -130,7 +132,7 @@ class ChickenDatabase():
         if date is None:
             dt_object = datetime.datetime.now() - datetime.timedelta(minutes=15)
             date = dt_object.strftime('%Y%m%d')
-        self.table.write(f"data/coop_{date}.fits", overwrite=True)
+        self.table.write(f"{self.base_dir}/data/coop_{date}.fits", overwrite=True)
 
     def get_recent_weather(self, time_range=24):
         """get_recent_weather [summary]

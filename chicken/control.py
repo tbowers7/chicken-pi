@@ -48,7 +48,7 @@ class ControlWindow():
     Creates the main control window and also spawns the secondary display
     windows.
     """
-    def __init__(self, master):
+    def __init__(self, master, base_dir):
         """
         __init__: initializes the class, including geometry and spawning
         display windows
@@ -59,7 +59,7 @@ class ControlWindow():
         self.network = NetworkStatus()
 
         # Set up the database
-        self.data = ChickenDatabase()
+        self.data = ChickenDatabase(base_dir)
 
         # Define the MASTER for the window, and spawn the other two windows
         self.master = master

@@ -10,7 +10,7 @@ Main driver routine for the integrated Chicken-Pi setup.
 
 # Built-In Libraries
 import atexit
-import datetime
+import os
 from tkinter import Tk      # Tk for display window
 
 # 3rd Party Libraries
@@ -29,12 +29,14 @@ __status__ = 'Development Status :: 3 - Alpha'
 
 
 #===================================================================#
-def main():
+def main(args):
     """
     Main function
     """
+    base_dir = os.path.abspath(os.path.dirname(args[0]))
+
     root = Tk()
-    app = ControlWindow(root)
+    app = ControlWindow(root, base_dir)
     atexit.register(app.write_database_to_disk)
 
     # Begin the loop
@@ -46,4 +48,5 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    import sys
+    main(sys.argv)
