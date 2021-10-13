@@ -17,7 +17,7 @@ from tkinter import Toplevel, Frame, Label, Checkbutton, Scale, Radiobutton, \
 import numpy as np
 
 # Internal Imports
-from chicken.database import ChickenDatabase
+from chicken.database import ChickenDatabase, OperationalSettings
 from chicken.graphs import GraphsWindow
 from chicken.network import NetworkStatus
 from chicken.status import StatusWindow
@@ -94,7 +94,10 @@ class ControlWindow():
               bg='#ffff80', font=('courier', 14, 'bold')).grid(
                   row=DOORROW, column=0, columnspan=4, sticky=W+E)
 
-        self.door = DoorControl(self.frame)
+        self.door = DoorControl(self.frame, self.sensors)
+
+        # Set up the 'SaveSettings' object
+        self.settings = OperationalSettings(base_dir, self.outlet, self.door)
 
     def set_relays(self):
         """set_relays Write the relay commands to the Relay HAT
@@ -121,6 +124,9 @@ class ControlWindow():
         """
         # This is the official time for Chicken Pi
         now = datetime.datetime.now()
+
+        # Check for changed in the GUI settings
+        self.settings.check_for_change(self.outlet, self.door)
 
         # Every 60 seconds, write changes in relay command to relays
         if now.second % 60 == 0:
@@ -184,8 +190,8 @@ class _BaseControl():
         self.switch_temp = 20        # Temp / Light trigger for switch
         self.temp_direction = 0      # Temperature direction for trigger
         self.en_var = BooleanVar()   # Variable needed for ENABLE boxes
-        self.int_var = IntVar()      # Variable needed for temp radio button
-        self.bool_var = BooleanVar() # Variable needed for the ... ?
+        self.tempsel_var = IntVar()  # Variable needed for temp radio button
+        self.andor_var = BooleanVar() # Variable needed for the ... ?
         self.time_cycle = 0          # Time cycle: ON or ON-OFF-ON or OFF-ON-OFF
         self.on_label = None         # Dummy -- To be created by inheriting class
         self.off_label = None        # Dummy -- To be created by inheriting class
@@ -291,27 +297,27 @@ class OutletControl(_BaseControl):
 
         # AND/OR Buttons
         self.and_or_frame = Frame(frame)
-        self.and_button = Radiobutton(self.and_or_frame, indicatoron=0, value=True,
-                                      text='   AND   ', variable=self.bool_var,
+        self.and_button = Radiobutton(self.and_or_frame, indicatoron=0, value=False,
+                                      text='   AND   ', variable=self.andor_var,
                                       command=self.update_andor, bg='#e0e0e0',
                                       selectcolor='#50C878')
-        self.or_button = Radiobutton(self.and_or_frame, indicatoron=0, value=False,
-                                     text='   OR   ', variable=self.bool_var,
+        self.or_button = Radiobutton(self.and_or_frame, indicatoron=0, value=True,
+                                     text='   OR   ', variable=self.andor_var,
                                      command=self.update_andor, bg='#e0e0e0',
                                      selectcolor='#50C878')
 
         # Temperature Direction Radio Buttons
         self.no_temp_button = Radiobutton(frame, fg='blue', bg='#f0f0ff', value=0,
                                           command=self.update_temp_direction,
-                                          variable=self.int_var, anchor=W,
+                                          variable=self.tempsel_var, anchor=W,
                                           text='Temp independent', font=('',9))
         self.up_temp_button = Radiobutton(frame, fg='blue', bg='#f0f0ff', value=1,
                                           command=self.update_temp_direction,
-                                          variable=self.int_var, anchor=W,
+                                          variable=self.tempsel_var, anchor=W,
                                           text='Turn ON above: ')
         self.down_temp_button = Radiobutton(frame, fg='blue', bg='#f0f0ff', value=-1,
                                             command=self.update_temp_direction,
-                                            variable=self.int_var, anchor=W,
+                                            variable=self.tempsel_var, anchor=W,
                                             text='Turn ON below:')
 
         self.command_text = Label(frame, '', fg='black', bg='#f0f0f0', text='CMD: OFF')
@@ -350,14 +356,14 @@ class OutletControl(_BaseControl):
 
         [extended_summary]
         """
-        self.and_or = self.bool_var.get()
+        self.and_or = self.andor_var.get()
 
     def update_temp_direction(self):
         """update_temp_direction Update the temperature trigger direction
 
         [extended_summary]
         """
-        self.temp_direction = self.int_var.get()
+        self.temp_direction = self.tempsel_var.get()
 
     def cmd_state(self, nowobj, use_cache=False):
         """cmd_state Construct the commanded state from the control knobs
@@ -438,7 +444,7 @@ class DoorControl(_BaseControl):
 
     """
 
-    def __init__(self, frame):
+    def __init__(self, frame, sensors):
         """Initialize Class
 
         Inputs:
@@ -447,6 +453,8 @@ class DoorControl(_BaseControl):
         _BaseControl.__init__(self)
         slider_size = (WIDGET_WIDE - 5*5) / 4   # Scale slider width to window
 
+        # Init variable
+        self.sensors = sensors
 
         # Column 0: ENABLE
         self.door_enable = Checkbutton(frame, text='Enable', onvalue=True,

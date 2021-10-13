@@ -9,6 +9,7 @@ Database routines for saving readings from the chicken-pi
 """
 
 # Built-In Libraries
+import csv
 import datetime
 from os.path import exists
 
@@ -158,3 +159,130 @@ Provide routines to:
     Write out the Table to FITS
     Retrieve information from the Table for graphing routines
 '''
+
+class OperationalSettings():
+
+    def __init__(self, base_dir, outlets, door):
+
+        # Set up internal variables
+        self.file = f"{base_dir}/data/operational_state.csv"
+
+        # Read in state file, if exists
+        if exists(self.file):
+            self.read_settings(outlets, door)
+
+        # Internal Record of Settings
+        self.settings = {}
+        self.update_internal_record(outlets, door)
+
+    def read_settings(self, outlets, door):
+
+        # Read in the settings file
+        with open(self.file, 'r') as statefile:
+            state_reader = csv.reader(statefile, delimiter=',')
+
+            # Should be 5 lines: one for each outlet, one for the door
+            for states, outlet in zip(state_reader, outlets):
+
+                # Read states from file
+                # Enable CheckBox
+                if states[0]:
+                    outlet.enable_box.select()
+                else:
+                    outlet.enable_box.deselect()
+                outlet.update_enable()
+
+                # Time & Temp Sliders
+                outlet.on_slider.set(states[1])
+                outlet.update_on_time(states[1])
+
+                outlet.off_slider.set(states[2])
+                outlet.update_off_time(states[2])
+
+                outlet.temp_slider.set(states[5])
+                outlet.update_temp_trigger(states[5])
+
+                # Radio Buttons
+                outlet.andor_var.set(bool(states[3]))
+                outlet.update_andor()
+
+                outlet.tempsel_var.set(states[4])
+                outlet.update_temp_direction()
+
+            # Door
+            if states[0]:
+                door.door_enable.select()
+            else:
+                door.door_enable.deselect()
+            door.update_enable()
+
+            # Time & Temp Sliders
+            door.door_open_slider.set(states[1])
+            door.update_on_time(states[1])
+
+            door.door_closed_slider.set(states[2])
+            door.update_off_time(states[2])
+
+            door.door_light_slider.set(states[3])
+            door.update_door_light(states[3])
+
+
+    def write_settings(self, outlets, door):
+
+        # Create a list of the operational settings
+        # Go through the GUI, outlet by outlet -- top to bottom -- then door
+        with open(self.file, 'w') as statefile:
+            state_writer = csv.writer(statefile, delimiter=',')
+
+            # Write each outlet and door as a separate line
+            for outlet in outlets:
+                settings = []
+                settings.append(int(outlet.enable))
+                settings.append(outlet.on_time)
+                settings.append(outlet.off_time)
+                settings.append(int(outlet.and_or))
+                settings.append(outlet.temp_direction)
+                settings.append(outlet.switch_temp)
+                state_writer.writerow(settings)
+
+            settings = []
+            settings.append(int(door.enable))
+            settings.append(door.on_time)
+            settings.append(door.off_time)
+            settings.append(door.switch_temp)
+            state_writer.writerow(settings)
+
+    def check_for_change(self, outlets, door):
+
+        # Check the outlets against saved values
+        tt = []
+        for i, outlet in enumerate(outlets,1):
+            tt.append(self.settings[f"outlet_{i}"]['enable'] == outlet.enable)
+            tt.append(self.settings[f"outlet_{i}"]['on_time'] == outlet.on_time)
+            tt.append(self.settings[f"outlet_{i}"]['off_time'] == outlet.off_time)
+            tt.append(self.settings[f"outlet_{i}"]['and_or'] == outlet.and_or)
+            tt.append(self.settings[f"outlet_{i}"]['temp_direction'] == outlet.temp_direction)
+            tt.append(self.settings[f"outlet_{i}"]['switch_temp'] == outlet.switch_temp)
+        tt.append(self.settings['door']['enable'] == door.enable)
+        tt.append(self.settings['door']['on_time'] == door.on_time)
+        tt.append(self.settings['door']['off_time'] == door.off_time)
+        tt.append(self.settings['door']['switch_temp'] == door.switch_temp)
+
+        if not all(tt):
+            print("Something changed!!!!")
+            self.update_internal_record(outlets, door)
+            self.write_settings(outlets, door)
+
+    def update_internal_record(self, outlets, door):
+
+        for i, outlet in enumerate(outlets,1):
+            self.settings[f"outlet_{i}"] = {'enable': outlet.enable,
+                                            'on_time': outlet.on_time,
+                                            'off_time': outlet.off_time,
+                                            'and_or': outlet.and_or,
+                                            'temp_direction': outlet.temp_direction,
+                                            'switch_temp': outlet.switch_temp}
+        self.settings['door'] = {'enable': door.enable,
+                                 'on_time': door.on_time,
+                                 'off_time': door.off_time,
+                                 'switch_temp': door.switch_temp}
