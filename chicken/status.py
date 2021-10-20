@@ -208,8 +208,10 @@ class StatusWindow():
 
         # Write the various environment statuses at different intervals
         if short_interval:
+            # File read
             self.env_cpu_data.config(text = format_cpu_str(sensors['cpu'].temp))
         if long_interval:
+            # I2C Query
             self.env_inside_data.config(text =
                 format_temp_humid_str(sensors['inside'].temp, sensors['inside'].humid))
             self.env_outside_data.config(text =
@@ -221,6 +223,7 @@ class StatusWindow():
 
         # Write the various device statuses at different intervals
         if short_interval:
+            # Query class object
             for i, dev in enumerate(self.dev_outlet_data):
                 dev.config(text = 'ENERGIZED' if relays.state[i] else 'OFF')
 

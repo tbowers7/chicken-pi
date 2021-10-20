@@ -79,7 +79,6 @@ class ControlWindow():
         self.frame = Frame(self.master)
         self.frame.pack(expand=1, fill=BOTH)
 
-
         #===== SWITCHED OUTLETS =====#
         Label(self.frame, text='Relay-Controlled Outlets', fg='darkblue',
               bg='#ffff80', font=('courier', 14, 'bold')).grid(
@@ -102,17 +101,16 @@ class ControlWindow():
         # Set up the 'SaveSettings' object
         self.settings = OperationalSettings(base_dir, self.outlet, self.door)
 
-    def set_relays(self):
+    def set_relays(self, change=False):
         """set_relays Write the relay commands to the Relay HAT
 
         [extended_summary]
         """
-        change = False
-
         # Check to see if any states have changed
         for i,outlet in enumerate(self.outlet):
-            if self.relays.state[i] != outlet.demand:
-                self.relays.state[i] = outlet.demand
+            demand = outlet.demand     # Call just once, since this queries I2C
+            if self.relays.state[i] != demand:
+                self.relays.state[i] = demand
                 change = True
 
         # If so, write
