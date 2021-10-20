@@ -67,8 +67,9 @@ class ControlWindow():
         self.master = master
         self.status_window = StatusWindow(Toplevel(self.master), WIDGET_WIDE)
         if self.use_nws:
-            self.graphs_window = GraphsWindow(Toplevel(self.master,
-                                                       bg='forestgreen'))
+            self.graphs_window = \
+                GraphsWindow(Toplevel(self.master, bg='forestgreen'), 
+                                      self.data, base_dir)
 
         # Define the geometry and title for the control window
         self.master.geometry(f"{WIDGET_WIDE}x{WIDGET_HIGH}+0+{PI_TOOLBAR}")
@@ -136,9 +137,6 @@ class ControlWindow():
         # Update status window on 0.5s cadence
         self.status_window.update(now, self.sensors, self.relays, self.network)
 
-        # Update the NWS Graph window, if enableed
-        if self.use_nws:
-            self.graphs_window.update(now)
 
         # Update the command tags in the Control Window
         for outlet in self.outlet:
@@ -147,9 +145,12 @@ class ControlWindow():
                 f"{self.led_loc}/green-led-off-th.png")
             outlet.command_led.configure(image=outlet.img)
 
-        # Every 5 minutes, write status to database
-        if now.second % 60 == 0 and now.minute % 5 == 0:
+        # Every minute, write status to database
+        if now.second % 60 == 0:# and now.minute % 1 == 0:
             self.write_to_database(now)
+            # Update the NWS Graph window, if enableed
+            if self.use_nws:
+                self.graphs_window.update(now)
 
         # Wait 0.5 seconds and repeat
         self.master.after(500, self.update)

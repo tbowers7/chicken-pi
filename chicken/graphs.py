@@ -9,22 +9,17 @@ Graphs display window, updates occasionally with current values
 """
 
 # Built-In Libraries
-import atexit              # Register cleanup functions
-import csv                 # For CSV output
-import datetime            # date & time
-import os,sys              # Search for file on disk
-import threading           # Threading to allow for NWS request
-import time                # for the sleep() function
-from tkinter import *      # Tk for display window
+import datetime
+import threading
+from tkinter import Frame, BOTTOM, BOTH, TOP
 
 # 3rd Party Libraries
 import matplotlib
 matplotlib.use("TkAgg")
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
 from matplotlib.dates import DateFormatter, DayLocator, HourLocator
-from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
 from noaa_sdk import noaa
-import numpy as np
 
 # Internal Imports
 
@@ -34,21 +29,23 @@ TK_HEADER  = 25
 
 
 class GraphsWindow():
-    def __init__(self, master):
+    def __init__(self, master, data, base_dir):
         self.master = master
-        self.master.geometry("700x400+600+{:d}".format(200+PI_TOOLBAR+TK_HEADER))
+        self.master.geometry(f"700x400+600+{200+PI_TOOLBAR+TK_HEADER}")
         self.master.title("Graphs Window")
         self.frame = Frame(self.master)
 
+        # The database object
+        self.data = data
+
         # Load the local coordinates from file
-        ABSPATH = os.path.abspath(os.path.dirname(sys.argv[0]))
         try:
-            with open(ABSPATH+'/.lonlat.txt','r') as fileobj:
+            with open(f"{base_dir}/data/lonlat.txt",'r') as fileobj:
                 coords = []
                 for line in fileobj:
                     coords.append(line.rstrip())
         except:
-            print("You must create a file .lonlat.txt containing the coordinates to submit to NOAA")
+            print("You must create a file lonlat.txt containing the coordinates to submit to NOAA")
             exit()
         self.lat = coords[1]
         self.lon = coords[0]
@@ -62,14 +59,9 @@ class GraphsWindow():
         self.quartdays = HourLocator(byhour=[0,6,12,18])
         self.dayFormat = DateFormatter('%a %-m/%d')
         
-      
-        
-        
     def close_window(self):
         self.master.destroy()
-        
 
-    ### GET FORECAST METHOD ###
     def get_forecast(self):
         try:
             forecast = self.n.points_forecast(self.lat,self.lon,hourly=False)
@@ -114,10 +106,7 @@ class GraphsWindow():
         self.lowDate  = lowDate
         
         self.have_forecast = True
-        #print(lowDate)
 
-        
-    ### UPDATE METHOD ###
     def update(self, now):
         x = threading.Thread(target=self.get_forecast, daemon=True)
         x.start()
@@ -125,7 +114,8 @@ class GraphsWindow():
         print("Got here 0?")
         
         if self.have_forecast:
-            f = Figure(figsize=(5,5), dpi=100)
+            plt.close()
+            f = plt.Figure(figsize=(5,5), dpi=100)
             a = f.add_subplot(111)
             # a.xaxis.set_major_locator(self.alldays)
             # a.xaxis.set_minor_locator(self.quartdays)
@@ -148,5 +138,3 @@ class GraphsWindow():
             toolbar = NavigationToolbar2Tk(canvas, self.master)
             toolbar.update()
             canvas._tkcanvas.pack(side=TOP, fill=BOTH, expand=True)
-        
-        
