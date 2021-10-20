@@ -64,7 +64,7 @@ class ControlWindow():
         self.status_window = StatusWindow(Toplevel(self.master), WIDGET_WIDE)
         if self.use_nws:
             self.graphs_window = \
-                GraphsWindow(Toplevel(self.master, bg='forestgreen'), 
+                GraphsWindow(Toplevel(self.master, bg='forestgreen'),
                                       self.data, base_dir)
 
         # Define the geometry and title for the control window
@@ -82,7 +82,7 @@ class ControlWindow():
                   row=OUTROW-1, column=0, columnspan=4, sticky=W+E)
 
         self.outlet = []
-        for i, name in enumerate(self.read_outlet_strings(base_dir)):
+        for i, name in enumerate(read_outlet_strings(base_dir)):
             self.outlet.append(OutletControl(self.frame, name, i,
                                              self.sensors, self.led_loc))
 
@@ -173,14 +173,6 @@ class ControlWindow():
         print("Writing the databse to disk...")
         self.data.write_table_to_fits()
 
-    def read_outlet_strings(self, base_dir):
-        # Try reading in the appropriate file
-        try:
-            with open(f"{base_dir}/data/OUTLET_NAMES.txt") as f:
-                outlet_names = [oname.strip() for oname in f.readlines()]
-        except FileNotFoundError:
-            outlet_names = ["__________"] * 4
-        return outlet_names
 
 class _BaseControl():
     """Base class for Object Control
@@ -586,3 +578,30 @@ def string_light(in_log_lux):
     display_lux = np.round(display_lux / 10.) * 10. if display_lux < 1000 else \
         np.round(display_lux / 100.) * 100.
     return f"{display_lux:,.0f} lux"
+
+
+def read_outlet_strings(base_dir):
+    """read_outlet_strings Read the outlet label names from file
+
+    [extended_summary]
+
+    Parameters
+    ----------
+    base_dir : `str` or `pathlib.Path`
+        Base directory
+
+    Returns
+    -------
+    `list` of `str`
+        The four outlet names to be displayed on the Control Window
+    """
+    # Try reading in the appropriate file
+    try:
+        with open(f"{base_dir}/data/OUTLET_NAMES.txt") as f:
+            outlet_names = [oname.strip() for oname in f.readlines()]
+        if len(outlet_names) < 4:
+            for _ in range(4 - len(outlet_names)):
+                outlet_names.append("__________")
+    except FileNotFoundError:
+        outlet_names = ["__________"] * 4
+    return outlet_names
