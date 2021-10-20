@@ -11,7 +11,8 @@ Control window, with all the shiny knobs and buttons
 # Built-In Libraries
 import datetime
 from tkinter import Toplevel, Frame, Label, Checkbutton, Scale, Radiobutton, \
-    BooleanVar, IntVar, DoubleVar, BOTH, W, E, HORIZONTAL, LEFT, DISABLED
+    PhotoImage, BooleanVar, IntVar, DoubleVar, \
+    BOTH, W, E, HORIZONTAL, LEFT, DISABLED
 
 # 3rd Party Libraries
 import numpy as np
@@ -37,8 +38,8 @@ OUT3STR      = "Nest Lamp "  # Name of what is plugged into outlet #3
 OUT4STR      = "__________"  # Name of what is plugged into outlet #4
 WIDGET_WIDE  = 600           # Width of the "Control Window"
 WIDGET_HIGH  = 400           # Height of the "Control Window"
-OUTROW       = 1
-DOORROW      = OUTROW + 14 + 1
+OUTROW       = 2
+DOORROW      = OUTROW + 14
 CONTBG       = 'lightgreen'
 
 
@@ -57,6 +58,7 @@ class ControlWindow():
         self.sensors = set_up_sensors()
         self.relays = Relay()
         self.network = NetworkStatus()
+        self.led_loc = f"{base_dir}/resources"
 
         # Set up the database
         self.data = ChickenDatabase(base_dir)
@@ -85,7 +87,8 @@ class ControlWindow():
 
         self.outlet = []
         for i, name in enumerate([OUT1STR, OUT2STR, OUT3STR, OUT4STR]):
-            self.outlet.append(OutletControl(self.frame, name, i, self.sensors))
+            self.outlet.append(OutletControl(self.frame, name, i,
+                                             self.sensors, self.led_loc))
 
         #===== DOOR =====#
         Label(self.frame, text=' - '*40,fg='darkblue').grid(
@@ -141,7 +144,10 @@ class ControlWindow():
 
         # Update the command tags in the Control Window
         for outlet in self.outlet:
-            outlet.command_text.configure(text=f"CMD: {outlet.state}")
+            outlet.img = PhotoImage(file=
+                f"{self.led_loc}/green-led-on-th.png" if outlet.state else \
+                f"{self.led_loc}/green-led-off-th.png")
+            outlet.command_led.configure(image=outlet.img)
 
         # Every 5 minutes, write status to database
         if now.second % 60 == 0 and now.minute % 5 == 0:
@@ -168,8 +174,8 @@ class ControlWindow():
 
         [extended_summary]
         """
-        print("Writing the databse to disk...")
         self.write_to_database(datetime.datetime.now())
+        print("Writing the databse to disk...")
         self.data.write_table_to_fits()
 
 
@@ -250,7 +256,7 @@ class OutletControl(_BaseControl):
 
     """
 
-    def __init__(self, frame, name, column, sensors):
+    def __init__(self, frame, name, column, sensors, led_loc):
         """Initialize Class
 
         Inputs:
@@ -297,11 +303,11 @@ class OutletControl(_BaseControl):
 
         # AND/OR Buttons
         self.and_or_frame = Frame(frame)
-        self.and_button = Radiobutton(self.and_or_frame, indicatoron=0, value=False,
+        self.and_button = Radiobutton(self.and_or_frame, indicatoron=0, value=True,
                                       text='   AND   ', variable=self.andor_var,
                                       command=self.update_andor, bg='#e0e0e0',
                                       selectcolor='#50C878')
-        self.or_button = Radiobutton(self.and_or_frame, indicatoron=0, value=True,
+        self.or_button = Radiobutton(self.and_or_frame, indicatoron=0, value=False,
                                      text='   OR   ', variable=self.andor_var,
                                      command=self.update_andor, bg='#e0e0e0',
                                      selectcolor='#50C878')
@@ -320,7 +326,8 @@ class OutletControl(_BaseControl):
                                             variable=self.tempsel_var, anchor=W,
                                             text='Turn ON below:')
 
-        self.command_text = Label(frame, '', fg='black', bg='#f0f0f0', text='CMD: OFF')
+        self.img = PhotoImage(file=f"{led_loc}/green-led-off-th.png")
+        self.command_led = Label(frame, image=self.img)
 
         # Set everything to the grid
         self.on_label.grid(row=OUTROW+3, column=column, sticky=W+E)
@@ -336,7 +343,7 @@ class OutletControl(_BaseControl):
         self.no_temp_button.grid(row=OUTROW+8, column=column, sticky=W+E)
         self.up_temp_button.grid(row=OUTROW+9, column=column, sticky=W+E)
         self.down_temp_button.grid(row=OUTROW+10, column=column, sticky=W+E)
-        self.command_text.grid(row=OUTROW+13, column=column, sticky=W+E)
+        self.command_led.grid(row=OUTROW, column=column, sticky=W+E)
 
     def update_temp_trigger(self,seltemp):
         """update_temp_trigger Update the temperature trigger point

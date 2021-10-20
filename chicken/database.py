@@ -170,6 +170,8 @@ class OperationalSettings():
         # Read in state file, if exists
         if exists(self.file):
             self.read_settings(outlets, door)
+        else:
+            self.default_settings(outlets, door)
 
         # Internal Record of Settings
         self.settings = {}
@@ -182,50 +184,80 @@ class OperationalSettings():
             state_reader = csv.reader(statefile, delimiter=',')
 
             # Should be 5 lines: one for each outlet, one for the door
-            for states, outlet in zip(state_reader, outlets):
+            for i, states in enumerate(state_reader):
 
-                # Read states from file
-                # Enable CheckBox
-                if states[0]:
-                    outlet.enable_box.select()
+                if i < 4:
+                    outlet = outlets[i]
+                    # Read outlet states from file
+                    # Enable CheckBox
+                    if int(states[0]):
+                        outlet.enable_box.select()
+                    else:
+                        outlet.enable_box.deselect()
+                    outlet.update_enable()
+
+                    # Time & Temp Sliders
+                    outlet.on_slider.set(states[1])
+                    outlet.update_on_time(states[1])
+
+                    outlet.off_slider.set(states[2])
+                    outlet.update_off_time(states[2])
+
+                    outlet.temp_slider.set(states[5])
+                    outlet.update_temp_trigger(states[5])
+
+                    # Radio Buttons
+                    outlet.andor_var.set(bool(int(states[3])))
+                    outlet.update_andor()
+
+                    outlet.tempsel_var.set(states[4])
+                    outlet.update_temp_direction()
                 else:
-                    outlet.enable_box.deselect()
-                outlet.update_enable()
+                    # Door
+                    if int(states[0]):
+                        door.door_enable.select()
+                    else:
+                        door.door_enable.deselect()
+                    door.update_enable()
 
-                # Time & Temp Sliders
-                outlet.on_slider.set(states[1])
-                outlet.update_on_time(states[1])
+                    # Time & Temp Sliders
+                    door.door_open_slider.set(states[1])
+                    door.update_on_time(states[1])
 
-                outlet.off_slider.set(states[2])
-                outlet.update_off_time(states[2])
+                    door.door_closed_slider.set(states[2])
+                    door.update_off_time(states[2])
 
-                outlet.temp_slider.set(states[5])
-                outlet.update_temp_trigger(states[5])
+                    door.door_light_slider.set(states[3])
+                    door.update_door_light(states[3])
 
-                # Radio Buttons
-                outlet.andor_var.set(bool(states[3]))
-                outlet.update_andor()
+    def default_settings(self, outlets, door):
 
-                outlet.tempsel_var.set(states[4])
-                outlet.update_temp_direction()
-
-            # Door
-            if states[0]:
-                door.door_enable.select()
-            else:
-                door.door_enable.deselect()
-            door.update_enable()
-
-            # Time & Temp Sliders
-            door.door_open_slider.set(states[1])
-            door.update_on_time(states[1])
-
-            door.door_closed_slider.set(states[2])
-            door.update_off_time(states[2])
-
-            door.door_light_slider.set(states[3])
-            door.update_door_light(states[3])
-
+        for outlet in outlets:
+            # Enable CheckBox -- Deselect
+            outlet.enable_box.deselect()
+            outlet.update_enable()
+            # Time & Temp Sliders -- Times to Noon, Temp to 50º
+            outlet.on_slider.set(12)
+            outlet.update_on_time(12)
+            outlet.off_slider.set(12)
+            outlet.update_off_time(12)
+            outlet.temp_slider.set(50)
+            outlet.update_temp_trigger(50)
+            # Radio Buttons
+            outlet.andor_var.set(False)
+            outlet.update_andor()
+            outlet.tempsel_var.set(0)
+            outlet.update_temp_direction()
+        # Door
+        door.door_enable.deselect()
+        door.update_enable()
+        # Time & Temp Sliders
+        door.door_open_slider.set(12)
+        door.update_on_time(12)
+        door.door_closed_slider.set(12)
+        door.update_off_time(12)
+        door.door_light_slider.set(2.65)
+        door.update_door_light(2.65)
 
     def write_settings(self, outlets, door):
 
@@ -269,7 +301,7 @@ class OperationalSettings():
         tt.append(self.settings['door']['switch_temp'] == door.switch_temp)
 
         if not all(tt):
-            print("Something changed!!!!")
+            #print("Something changed!!!!")
             self.update_internal_record(outlets, door)
             self.write_settings(outlets, door)
 
