@@ -32,15 +32,11 @@ PI_TOOLBAR = 36
 TK_HEADER  = 25
 
 # Constants
-OUT1STR      = "Roost Lamp"  # Name of what is plugged into outlet #1
-OUT2STR      = "Red Light "  # Name of what is plugged into outlet #2
-OUT3STR      = "Nest Lamp "  # Name of what is plugged into outlet #3
-OUT4STR      = "__________"  # Name of what is plugged into outlet #4
 WIDGET_WIDE  = 600           # Width of the "Control Window"
 WIDGET_HIGH  = 400           # Height of the "Control Window"
-OUTROW       = 2
-DOORROW      = OUTROW + 14
-CONTBG       = 'lightgreen'
+OUTROW       = 2             # Start of the Outlet Section
+DOORROW      = OUTROW + 14   # Start of the Door Section
+CONTBG       = 'lightgreen'  # Background color of the Control Window
 
 
 class ControlWindow():
@@ -86,7 +82,7 @@ class ControlWindow():
                   row=OUTROW-1, column=0, columnspan=4, sticky=W+E)
 
         self.outlet = []
-        for i, name in enumerate([OUT1STR, OUT2STR, OUT3STR, OUT4STR]):
+        for i, name in enumerate(self.read_outlet_strings(base_dir)):
             self.outlet.append(OutletControl(self.frame, name, i,
                                              self.sensors, self.led_loc))
 
@@ -177,6 +173,14 @@ class ControlWindow():
         print("Writing the databse to disk...")
         self.data.write_table_to_fits()
 
+    def read_outlet_strings(self, base_dir):
+        # Try reading in the appropriate file
+        try:
+            with open(f"{base_dir}/data/OUTLET_NAMES.txt") as f:
+                outlet_names = [oname.strip() for oname in f.readlines()]
+        except FileNotFoundError:
+            outlet_names = ["__________"] * 4
+        return outlet_names
 
 class _BaseControl():
     """Base class for Object Control
