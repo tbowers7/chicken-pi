@@ -54,7 +54,11 @@ class ControlWindow():
         self.sensors = set_up_sensors()
         self.relays = Relay()
         self.network = NetworkStatus()
+
+        # Indicator LEDs
         self.led_loc = f"{base_dir}/resources"
+        self.led_on = PhotoImage(file=f"{self.led_loc}/green-led-on-th.png")
+        self.led_off = PhotoImage(file=f"{self.led_loc}/green-led-off-th.png")
 
         # Set up the database
         self.data = ChickenDatabase(base_dir)
@@ -84,7 +88,7 @@ class ControlWindow():
         self.outlet = []
         for i, name in enumerate(read_outlet_strings(base_dir)):
             self.outlet.append(OutletControl(self.frame, name, i,
-                                             self.sensors, self.led_loc))
+                                             self.sensors, self.led_off))
 
         #===== DOOR =====#
         Label(self.frame, text=' - '*40,fg='darkblue').grid(
@@ -136,9 +140,7 @@ class ControlWindow():
 
         # Update the command tags in the Control Window
         for outlet in self.outlet:
-            outlet.img = PhotoImage(file=
-                f"{self.led_loc}/green-led-on-th.png" if outlet.state else \
-                f"{self.led_loc}/green-led-off-th.png")
+            outlet.img = self.led_on if outlet.state else self.led_off
             outlet.command_led.configure(image=outlet.img)
 
         # Every minute, write status to database
@@ -151,7 +153,7 @@ class ControlWindow():
         # Wait 0.5 seconds and repeat
         self.master.after(500, self.update)
 
-    def write_to_database(self, now):
+    def write_to_database(self, now, verbose=False):
         """write_to_database Write the current readings to the database
 
         [extended_summary]
@@ -160,8 +162,11 @@ class ControlWindow():
         ----------
         now : `datetime.datetime`
             The current time object, for including in the database
+        verbose : `bool`, optional
+            Provide verbose output?  [Default: False]
         """
-        print("Writing readings to the database...")
+        if verbose:
+            print("Writing readings to the database...")
         self.data.add_row_to_table(now, self.sensors, self.relays, self.network)
 
     def write_database_to_disk(self):
@@ -251,7 +256,7 @@ class OutletControl(_BaseControl):
 
     """
 
-    def __init__(self, frame, name, column, sensors, led_loc):
+    def __init__(self, frame, name, column, sensors, led_off):
         """Initialize Class
 
         Inputs:
@@ -321,7 +326,7 @@ class OutletControl(_BaseControl):
                                             variable=self.tempsel_var, anchor=W,
                                             text='Turn ON below:')
 
-        self.img = PhotoImage(file=f"{led_loc}/green-led-off-th.png")
+        self.img = led_off
         self.command_led = Label(frame, image=self.img)
 
         # Set everything to the grid
