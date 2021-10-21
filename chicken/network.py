@@ -45,7 +45,15 @@ class NetworkStatus():
         [extended_summary]
         """
         self.lan_ipv4 = get_local_ipv4()
-        self.wifi_status = 'ON' if contact_server('192.168.0.1') else 'OFF'
+        if contact_server('192.168.0.1'):
+            self.wifi_status = 'ON'
+
+            # For the Pi, add Link Quality
+            if SYSTYPE != 'Darwin':
+                qual = os.popen("iwconfig wlan0 | grep -i quality").read()
+                self.wifi_status = f"ON - {qual.split('  ')[0]}"
+        else:
+            self.wifi_status = 'OFF'
 
     def update_wan(self):
         """update_wan Update the WAN status variables
