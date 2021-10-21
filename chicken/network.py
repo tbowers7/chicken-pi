@@ -50,8 +50,11 @@ class NetworkStatus():
 
             # For the Pi, add Link Quality
             if SYSTYPE != 'Darwin':
-                qual = os.popen("iwconfig wlan0 | grep -i quality").read()
-                qual = (qual.strip().split('  ')[1]).split("=")[1]
+                try:
+                    qual = os.popen("iwconfig wlan0 | grep -i quality").read()
+                    qual = (qual.strip().split('  ')[1]).split("=")[1]
+                except IndexError:
+                    qual = '-- dBm'
                 self.wifi_status = f"ON: {qual}"
         else:
             self.wifi_status = 'OFF'
