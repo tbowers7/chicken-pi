@@ -51,7 +51,7 @@ class NetworkStatus():
             # For the Pi, add Link Quality
             if SYSTYPE != 'Darwin':
                 try:
-                    qual = os.popen("iwconfig wlan0 | grep -i quality").read()
+                    qual = os.popen("/sbin/iwconfig wlan0 | grep -i quality").read()
                     qual = (qual.strip().split('  ')[1]).split("=")[1]
                 except IndexError:
                     qual = '-- dBm'
