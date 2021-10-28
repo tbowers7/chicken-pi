@@ -115,8 +115,15 @@ class ControlWindow():
                 change = True
 
         # If so, write
+        # NOTE: The relay scheme of state[i] being the canonical knowledge of
+        #  the relay status (read just isn't working) means that the write
+        #  MUST be successful else the actual relay state won't be known to
+        #  the rest of the program.
         if change:
-            self.relays.write()
+            self.relays.good_write = False
+            while not self.relays.good_write:
+                # Warning: This could lead to an infinite loop?
+                self.relays.write()
 
     # Update Method #
     def update(self):

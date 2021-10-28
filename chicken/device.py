@@ -225,6 +225,7 @@ class Relay():
         self._device = I2CDevice(self._i2c, address)
 
         # Make instance variable, and write 0's to relay HAT
+        self.good_write = None
         self.state = [False] * 4
         self.write()
 
@@ -266,12 +267,16 @@ class Relay():
 
         [extended_summary]
         """
-        self._WRITE_BUF[0] = self._RELAY_COMMAND_BIT
-        for i, relay in enumerate(self.state, 1):
-            self._WRITE_BUF[i] = 0xff if relay else 0x00
-        with self._device as i2c:
-            i2c.write_then_readinto(self._WRITE_BUF, self._READ_BUF)
-
+        try:
+            self._WRITE_BUF[0] = self._RELAY_COMMAND_BIT
+            for i, relay in enumerate(self.state, 1):
+                self._WRITE_BUF[i] = 0xff if relay else 0x00
+            with self._device as i2c:
+                i2c.write_then_readinto(self._WRITE_BUF, self._READ_BUF)
+            self.good_write = True
+        except OSError as e:
+            print(f"i2c threw exception: {e}")
+            self.good_write = False
 
 class TempHumid():
     """ Chicken-Pi Class for the TSL2591 luminosity sensor
