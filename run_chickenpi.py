@@ -35,6 +35,7 @@ def main(args):
     """
     base_dir = os.path.abspath(os.path.dirname(args[0]))
 
+
     root = Tk()
     app = ControlWindow(root, base_dir)
     atexit.register(app.write_database_to_disk)
