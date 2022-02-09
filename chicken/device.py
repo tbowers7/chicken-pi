@@ -292,6 +292,7 @@ class TempHumid():
         if senstyp == 'SHT30':
             self.sensor = adafruit_sht31d.SHT31D(self._i2c)
         elif senstyp == 'AHT10':
+            # TODO: AHT10 seems to accumulate weirdly -- see about resetting before each read
             self.sensor = adafruit_ahtx0.AHTx0(self._i2c)
         else:
             raise ValueError('Sensor type must be either SHT30 or AHT10')
