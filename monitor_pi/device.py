@@ -26,7 +26,6 @@ Control classes for the hardware devices on the Chicken Pi
 """
 
 # Built-In Libraries
-import os
 import time
 
 # 3rd Party Libraries
@@ -41,15 +40,7 @@ import adafruit_ahtx0  # Internal (box) temp/humid sensor
 from adafruit_motorkit import MotorKit  # Motor HAT
 
 # Internal Imports
-
-# Enable testing on both Raspberry Pi and Mac
-if os.path.exists("/usr/bin/uname"):
-    _UNAME = "/usr/bin/uname"
-elif os.path.exists("/bin/uname"):
-    _UNAME = "/bin/uname"
-else:
-    _UNAME = ""
-SYSTYPE = (os.popen(f"{_UNAME} -a").read()).split()[0]
+from monitor_pi.utils import SYSTYPE
 
 
 def set_up_sensors():

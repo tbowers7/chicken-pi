@@ -301,7 +301,7 @@ class OutletControl(_BaseControl):
           name:
           column:
         """
-        super().__init__(self)
+        super().__init__()
         slider_size = (WIDGET_WIDE - 5 * 5) / 4  # Scale slider width to window
 
         # Init variable
@@ -567,7 +567,7 @@ class DoorControl(_BaseControl):
         Inputs:
           frame:
         """
-        super().__init__(self)
+        super().__init__()
         slider_size = (WIDGET_WIDE - 5 * 5) / 4  # Scale slider width to window
 
         # Init variable

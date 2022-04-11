@@ -18,38 +18,27 @@
 #  @author: tbowers
 
 """
-  MODULE: monitor_pi.chicken
-  FILE: main.py
+    MODULE: monitor_pi
+    FILE: utils.py
 
-Main driver routine for the integrated Chicken-Pi setup.
+Various network status and email control functions
 
 """
 
 # Built-In Libraries
-import atexit
-import tkinter as tk
+import os
 
 # 3rd Party Libraries
-from pkg_resources import resource_filename
 
 # Internal Imports
-from .control import ControlWindow
 
 
-# ===================================================================#
-def main(args=None):
-    """
-    Main function
-    """
-    base_dir = resource_filename("monitor_pi", ".")
-
-    root = tk.Tk()
-    app = ControlWindow(root, base_dir)
-    atexit.register(app.write_database_to_disk)
-
-    # Begin the loop
-    try:
-        app.update()
-        root.mainloop()
-    finally:
-        print("Exiting...")
+# Enable testing on both Raspberry Pi and Mac
+if os.path.exists("/usr/bin/uname"):
+    _UNAME = "/usr/bin/uname"
+elif os.path.exists("/bin/uname"):
+    _UNAME = "/bin/uname"
+else:
+    _UNAME = ""
+SYSTYPE = (os.popen(f"{_UNAME} -a").read()).split()[0]
+WLAN = "en0" if SYSTYPE == "Darwin" else "wlan0"

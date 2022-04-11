@@ -33,16 +33,7 @@ from requests import get
 import urllib3
 
 # Internal Imports
-
-# Enable testing on both Raspberry Pi and Mac
-if os.path.exists("/usr/bin/uname"):
-    _UNAME = "/usr/bin/uname"
-elif os.path.exists("/bin/uname"):
-    _UNAME = "/bin/uname"
-else:
-    _UNAME = ""
-SYSTYPE = (os.popen(f"{_UNAME} -a").read()).split()[0]
-WLAN = "en0" if SYSTYPE == "Darwin" else "wlan0"
+from monitor_pi.utils import SYSTYPE, WLAN
 
 
 class NetworkStatus:
