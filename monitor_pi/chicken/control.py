@@ -27,6 +27,7 @@ Control window, with all the shiny knobs and buttons
 
 # Built-In Libraries
 import datetime
+import os
 import tkinter as tk
 
 # 3rd Party Libraries
@@ -73,9 +74,12 @@ class ControlWindow:
         self.network = NetworkStatus()
 
         # Indicator LEDs
-        self.led_loc = f"{base_dir}/resources"
-        self.led_on = tk.PhotoImage(file=f"{self.led_loc}/green-led-on-th.png")
-        self.led_off = tk.PhotoImage(file=f"{self.led_loc}/green-led-off-th.png")
+        self.led_on = tk.PhotoImage(
+            file=os.path.join(base_dir, "resources", "green-led-on-th.png")
+        )
+        self.led_off = tk.PhotoImage(
+            file=os.path.join(base_dir, "resources", "green-led-off-th.png")
+        )
 
         # Set up the database
         self.data = ChickenDatabase(base_dir)
@@ -297,7 +301,7 @@ class OutletControl(_BaseControl):
           name:
           column:
         """
-        _BaseControl.__init__(self)
+        super().__init__(self)
         slider_size = (WIDGET_WIDE - 5 * 5) / 4  # Scale slider width to window
 
         # Init variable
@@ -563,7 +567,7 @@ class DoorControl(_BaseControl):
         Inputs:
           frame:
         """
-        _BaseControl.__init__(self)
+        super().__init__(self)
         slider_size = (WIDGET_WIDE - 5 * 5) / 4  # Scale slider width to window
 
         # Init variable
