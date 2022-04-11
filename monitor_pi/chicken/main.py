@@ -28,7 +28,7 @@ Main driver routine for the integrated Chicken-Pi setup.
 # Built-In Libraries
 import atexit
 import os
-from tkinter import Tk      # Tk for display window
+from tkinter import Tk  # Tk for display window
 
 # 3rd Party Libraries
 from pkg_resources import resource_filename
@@ -37,12 +37,12 @@ from pkg_resources import resource_filename
 from .control import ControlWindow
 
 
-#===================================================================#
+# ===================================================================#
 def main(args=None):
     """
     Main function
     """
-    base_dir = resource_filename('monitor_pi','.')
+    base_dir = resource_filename("monitor_pi", ".")
 
     root = Tk()
     app = ControlWindow(root, base_dir)
