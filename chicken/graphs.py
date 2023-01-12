@@ -22,6 +22,7 @@ import matplotlib.pyplot as plt
 from noaa_sdk import noaa
 
 # Internal Imports
+from chicken import utils
 
 # Geometry
 PI_TOOLBAR = 36
@@ -35,7 +36,7 @@ class GraphsWindow:
     _extended_summary_
     """
 
-    def __init__(self, master, data, base_dir):
+    def __init__(self, master, data):
         self.master = master
         self.master.geometry(f"700x400+600+{200+PI_TOOLBAR+TK_HEADER}")
         self.master.title("Graphs Window")
@@ -46,7 +47,7 @@ class GraphsWindow:
 
         # Load the local coordinates from file
         try:
-            with open(f"{base_dir}/data/lonlat.txt", "r", encoding="utf-8") as fileobj:
+            with open(f"{utils.Paths.data}/lonlat.txt", "r", encoding="utf-8") as fileobj:
                 coords = []
                 for line in fileobj:
                     coords.append(line.rstrip())

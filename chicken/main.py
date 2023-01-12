@@ -24,10 +24,8 @@ def main(args):
     """
     Main function
     """
-    base_dir = os.path.abspath(os.path.dirname(args[0]))
-
     root = tk.Tk()
-    app = ControlWindow(root, base_dir)
+    app = ControlWindow(root)
     atexit.register(app.write_database_to_disk)
 
     # Begin the loop

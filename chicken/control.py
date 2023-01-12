@@ -20,6 +20,7 @@ from chicken.database import ChickenDatabase, OperationalSettings
 from chicken.graphs import GraphsWindow
 from chicken.network import NetworkStatus
 from chicken.status import StatusWindow
+from chicken import utils
 
 try:
     from chicken.device import set_up_sensors, Relay
@@ -45,7 +46,7 @@ class ControlWindow:
     windows.
     """
 
-    def __init__(self, master, base_dir):
+    def __init__(self, master):
         """
         __init__: initializes the class, including geometry and spawning
         display windows
@@ -56,19 +57,19 @@ class ControlWindow:
         self.network = NetworkStatus()
 
         # Indicator LEDs
-        self.led_loc = f"{base_dir}/resources"
+        self.led_loc = utils.Paths.resources
         self.led_on = tk.PhotoImage(file=f"{self.led_loc}/green-led-on-th.png")
         self.led_off = tk.PhotoImage(file=f"{self.led_loc}/green-led-off-th.png")
 
         # Set up the database
-        self.data = ChickenDatabase(base_dir)
+        self.data = ChickenDatabase()
 
         # Define the MASTER for the window, and spawn the other two windows
         self.master = master
         self.status_window = StatusWindow(tk.Toplevel(self.master), WIDGET_WIDE)
         if self.use_nws:
             self.graphs_window = GraphsWindow(
-                tk.Toplevel(self.master, bg="forestgreen"), self.data, base_dir
+                tk.Toplevel(self.master, bg="forestgreen"), self.data
             )
 
         # Define the geometry and title for the control window
@@ -90,7 +91,7 @@ class ControlWindow:
         ).grid(row=OUTROW - 1, column=0, columnspan=4, sticky=tk.W + tk.E)
 
         self.outlet = []
-        for i, name in enumerate(read_outlet_strings(base_dir)):
+        for i, name in enumerate(read_outlet_strings()):
             self.outlet.append(
                 OutletControl(self.frame, name, i, self.sensors, self.led_off)
             )
@@ -110,7 +111,7 @@ class ControlWindow:
         self.door = DoorControl(self.frame, self.sensors)
 
         # Set up the 'SaveSettings' object
-        self.settings = OperationalSettings(base_dir, self.outlet, self.door)
+        self.settings = OperationalSettings(self.outlet, self.door)
 
     def set_relays(self, change=False):
         """set_relays Write the relay commands to the Relay HAT
@@ -705,15 +706,10 @@ def string_light(in_log_lux):
     return f"{display_lux:,.0f} lux"
 
 
-def read_outlet_strings(base_dir):
+def read_outlet_strings():
     """read_outlet_strings Read the outlet label names from file
 
     [extended_summary]
-
-    Parameters
-    ----------
-    base_dir : `str` or `pathlib.Path`
-        Base directory
 
     Returns
     -------
@@ -722,7 +718,7 @@ def read_outlet_strings(base_dir):
     """
     # Try reading in the appropriate file
     try:
-        with open(f"{base_dir}/data/OUTLET_NAMES.txt", encoding="utf-8") as f_obj:
+        with open(f"{utils.Paths.data}/OUTLET_NAMES.txt", encoding="utf-8") as f_obj:
             outlet_names = [oname.strip() for oname in f_obj.readlines()]
         if len(outlet_names) < 4:
             for _ in range(4 - len(outlet_names)):
