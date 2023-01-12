@@ -11,10 +11,10 @@ Database routines for saving readings from the chicken-pi
 # Built-In Libraries
 import csv
 import datetime
-from os.path import exists
+import os
 
 # 3rd Party Libraries
-from astropy.table import Table, vstack
+import astropy.table
 
 # Internal Imports
 
@@ -35,7 +35,7 @@ class ChickenDatabase:
 
         # Check for existing FITS file for today -- read in or create new
         today_fn = f"{self.base_dir}/data/coop_{now.strftime('%Y%m%d')}.fits"
-        self.table = self.read_table_file() if exists(today_fn) else Table()
+        self.table = self.read_table_file() if os.path.exists(today_fn) else astropy.table.Table()
 
     def read_table_file(self, date=None):
         """read_table_file Read the current table in from disk
@@ -53,7 +53,7 @@ class ChickenDatabase:
             The table associated with the date
         """
         date = datetime.datetime.now().strftime("%Y%m%d") if date is None else date
-        return Table.read(f"{self.base_dir}/data/coop_{date}.fits")
+        return astropy.table.Table.read(f"{self.base_dir}/data/coop_{date}.fits")
 
     def add_row_to_table(self, nowobj, sensors, relays, network, debug=False):
         """add_row_to_table [summary]
@@ -112,10 +112,10 @@ class ChickenDatabase:
         #  If so, write out existing table and start a new one
         if "date" in self.table.colnames and row["date"] != self.table["date"][-1]:
             self.write_table_to_fits()
-            self.table = Table()
+            self.table = astropy.table.Table()
 
         # Append the row to the end of the table
-        self.table = vstack([self.table, row])
+        self.table = astropy.table.vstack([self.table, row])
         if debug:
             self.table.pprint()
 
@@ -172,7 +172,7 @@ class OperationalSettings:
         self.file = f"{base_dir}/data/operational_state.csv"
 
         # Read in state file, if exists
-        if exists(self.file):
+        if os.path.exists(self.file):
             self.read_settings(outlets, door)
         else:
             self.default_settings(outlets, door)

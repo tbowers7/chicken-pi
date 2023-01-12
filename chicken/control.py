@@ -10,24 +10,7 @@ Control window, with all the shiny knobs and buttons
 
 # Built-In Libraries
 import datetime
-from tkinter import (
-    Toplevel,
-    Frame,
-    Label,
-    Checkbutton,
-    Scale,
-    Radiobutton,
-    PhotoImage,
-    BooleanVar,
-    IntVar,
-    DoubleVar,
-    BOTH,
-    W,
-    E,
-    HORIZONTAL,
-    LEFT,
-    DISABLED,
-)
+import tkinter as tk
 
 # 3rd Party Libraries
 import numpy as np
@@ -74,18 +57,18 @@ class ControlWindow:
 
         # Indicator LEDs
         self.led_loc = f"{base_dir}/resources"
-        self.led_on = PhotoImage(file=f"{self.led_loc}/green-led-on-th.png")
-        self.led_off = PhotoImage(file=f"{self.led_loc}/green-led-off-th.png")
+        self.led_on = tk.PhotoImage(file=f"{self.led_loc}/green-led-on-th.png")
+        self.led_off = tk.PhotoImage(file=f"{self.led_loc}/green-led-off-th.png")
 
         # Set up the database
         self.data = ChickenDatabase(base_dir)
 
         # Define the MASTER for the window, and spawn the other two windows
         self.master = master
-        self.status_window = StatusWindow(Toplevel(self.master), WIDGET_WIDE)
+        self.status_window = StatusWindow(tk.Toplevel(self.master), WIDGET_WIDE)
         if self.use_nws:
             self.graphs_window = GraphsWindow(
-                Toplevel(self.master, bg="forestgreen"), self.data, base_dir
+                tk.Toplevel(self.master, bg="forestgreen"), self.data, base_dir
             )
 
         # Define the geometry and title for the control window
@@ -94,17 +77,17 @@ class ControlWindow:
         self.master.configure(bg=CONTBG)
 
         ## A "frame" holds the various GUI controls
-        self.frame = Frame(self.master)
-        self.frame.pack(expand=1, fill=BOTH)
+        self.frame = tk.Frame(self.master)
+        self.frame.pack(expand=1, fill=tk.BOTH)
 
         # ===== SWITCHED OUTLETS =====#
-        Label(
+        tk.Label(
             self.frame,
             text="Relay-Controlled Outlets",
             fg="darkblue",
             bg="#ffff80",
             font=("courier", 14, "bold"),
-        ).grid(row=OUTROW - 1, column=0, columnspan=4, sticky=W + E)
+        ).grid(row=OUTROW - 1, column=0, columnspan=4, sticky=tk.W + tk.E)
 
         self.outlet = []
         for i, name in enumerate(read_outlet_strings(base_dir)):
@@ -113,16 +96,16 @@ class ControlWindow:
             )
 
         # ===== DOOR =====#
-        Label(self.frame, text=" - " * 40, fg="darkblue").grid(
-            row=DOORROW - 1, column=0, columnspan=4, sticky=W + E
+        tk.Label(self.frame, text=" - " * 40, fg="darkblue").grid(
+            row=DOORROW - 1, column=0, columnspan=4, sticky=tk.W + tk.E
         )
-        Label(
+        tk.Label(
             self.frame,
             text="Automated Chicken Door",
             fg="darkblue",
             bg="#ffff80",
             font=("courier", 14, "bold"),
-        ).grid(row=DOORROW, column=0, columnspan=4, sticky=W + E)
+        ).grid(row=DOORROW, column=0, columnspan=4, sticky=tk.W + tk.E)
 
         self.door = DoorControl(self.frame, self.sensors)
 
@@ -224,9 +207,9 @@ class _BaseControl:
         self.off_time = 0  # Switch turn off time
         self.switch_temp = 20  # Temp / Light trigger for switch
         self.temp_direction = 0  # Temperature direction for trigger
-        self.en_var = BooleanVar()  # Variable needed for ENABLE boxes
-        self.tempsel_var = IntVar()  # Variable needed for temp radio button
-        self.andor_var = BooleanVar()  # Variable needed for the ... ?
+        self.en_var = tk.BooleanVar()  # Variable needed for ENABLE boxes
+        self.tempsel_var = tk.IntVar()  # Variable needed for temp radio button
+        self.andor_var = tk.BooleanVar()  # Variable needed for the ... ?
         self.time_cycle = 0  # Time cycle: ON or ON-OFF-ON or OFF-ON-OFF
         self.on_label = None  # Dummy -- To be created by inheriting class
         self.off_label = None  # Dummy -- To be created by inheriting class
@@ -298,18 +281,18 @@ class OutletControl(_BaseControl):
         self.sensors = sensors
 
         # Column Label for this outlet
-        Label(frame, text=f"{name} (#{column+1})", bg="#f0f0f0").grid(
-            row=OUTROW + 1, column=column, sticky=W + E
+        tk.Label(frame, text=f"{name} (#{column+1})", bg="#f0f0f0").grid(
+            row=OUTROW + 1, column=column, sticky=tk.W + tk.E
         )
 
         # Individual Labels:
-        self.on_label = Label(
+        self.on_label = tk.Label(
             frame, fg="green", bg="#e0ffe0", text=f" ON {string_time(self.on_time)}"
         )
-        self.off_label = Label(
+        self.off_label = tk.Label(
             frame, fg="red", bg="#ffe0e0", text=f" OFF {string_time(self.off_time)}"
         )
-        self.temp_label = Label(
+        self.temp_label = tk.Label(
             frame,
             fg="blue",
             bg="#e0e0ff",
@@ -317,7 +300,7 @@ class OutletControl(_BaseControl):
         )
 
         # Enable Box
-        self.enable_box = Checkbutton(
+        self.enable_box = tk.Checkbutton(
             frame,
             text="Enable",
             variable=self.en_var,
@@ -327,49 +310,49 @@ class OutletControl(_BaseControl):
         )
 
         # Sliders
-        self.on_slider = Scale(
+        self.on_slider = tk.Scale(
             frame,
             from_=0,
             to=24,
             digits=4,
-            orient=HORIZONTAL,
+            orient=tk.HORIZONTAL,
             resolution=0.25,
             command=self.update_on_time,
-            variable=DoubleVar,
+            variable=tk.DoubleVar,
             length=slider_size,
             showvalue=0,
             troughcolor="#bfd9bf",
         )
-        self.off_slider = Scale(
+        self.off_slider = tk.Scale(
             frame,
             from_=0,
             to=24,
             digits=4,
-            orient=HORIZONTAL,
+            orient=tk.HORIZONTAL,
             resolution=0.25,
             command=self.update_off_time,
-            variable=DoubleVar,
+            variable=tk.DoubleVar,
             length=slider_size,
             showvalue=0,
             troughcolor="#d9bfbf",
         )
-        self.temp_slider = Scale(
+        self.temp_slider = tk.Scale(
             frame,
             from_=20,
             to=80,
             digits=2,
-            orient=HORIZONTAL,
+            orient=tk.HORIZONTAL,
             resolution=5,
             command=self.update_temp_trigger,
-            variable=IntVar,
+            variable=tk.IntVar,
             length=slider_size,
             showvalue=0,
             troughcolor="#bfbfd9",
         )
 
         # AND/OR Buttons
-        self.and_or_frame = Frame(frame)
-        self.and_button = Radiobutton(
+        self.and_or_frame = tk.Frame(frame)
+        self.and_button = tk.Radiobutton(
             self.and_or_frame,
             indicatoron=0,
             value=True,
@@ -379,7 +362,7 @@ class OutletControl(_BaseControl):
             bg="#e0e0e0",
             selectcolor="#50C878",
         )
-        self.or_button = Radiobutton(
+        self.or_button = tk.Radiobutton(
             self.and_or_frame,
             indicatoron=0,
             value=False,
@@ -391,56 +374,56 @@ class OutletControl(_BaseControl):
         )
 
         # Temperature Direction Radio Buttons
-        self.no_temp_button = Radiobutton(
+        self.no_temp_button = tk.Radiobutton(
             frame,
             fg="blue",
             bg="#f0f0ff",
             value=0,
             command=self.update_temp_direction,
             variable=self.tempsel_var,
-            anchor=W,
+            anchor=tk.W,
             text="Temp independent",
             font=("", 9),
         )
-        self.up_temp_button = Radiobutton(
+        self.up_temp_button = tk.Radiobutton(
             frame,
             fg="blue",
             bg="#f0f0ff",
             value=1,
             command=self.update_temp_direction,
             variable=self.tempsel_var,
-            anchor=W,
+            anchor=tk.W,
             text="Turn ON above: ",
         )
-        self.down_temp_button = Radiobutton(
+        self.down_temp_button = tk.Radiobutton(
             frame,
             fg="blue",
             bg="#f0f0ff",
             value=-1,
             command=self.update_temp_direction,
             variable=self.tempsel_var,
-            anchor=W,
+            anchor=tk.W,
             text="Turn ON below:",
         )
 
         self.img = led_off
-        self.command_led = Label(frame, image=self.img)
+        self.command_led = tk.Label(frame, image=self.img)
 
         # Set everything to the grid
-        self.on_label.grid(row=OUTROW + 3, column=column, sticky=W + E)
-        self.off_label.grid(row=OUTROW + 5, column=column, sticky=W + E)
-        self.temp_label.grid(row=OUTROW + 11, column=column, sticky=W + E)
+        self.on_label.grid(row=OUTROW + 3, column=column, sticky=tk.W + tk.E)
+        self.off_label.grid(row=OUTROW + 5, column=column, sticky=tk.W + tk.E)
+        self.temp_label.grid(row=OUTROW + 11, column=column, sticky=tk.W + tk.E)
         self.enable_box.grid(row=OUTROW + 2, column=column)
-        self.on_slider.grid(row=OUTROW + 4, column=column, sticky=W + E)
-        self.off_slider.grid(row=OUTROW + 6, column=column, sticky=W + E)
-        self.temp_slider.grid(row=OUTROW + 12, column=column, sticky=W + E)
-        self.and_or_frame.grid(row=OUTROW + 7, column=column, sticky=W + E)
-        self.and_button.pack(side=LEFT, expand=1)
-        self.or_button.pack(side=LEFT, expand=1)
-        self.no_temp_button.grid(row=OUTROW + 8, column=column, sticky=W + E)
-        self.up_temp_button.grid(row=OUTROW + 9, column=column, sticky=W + E)
-        self.down_temp_button.grid(row=OUTROW + 10, column=column, sticky=W + E)
-        self.command_led.grid(row=OUTROW, column=column, sticky=W + E)
+        self.on_slider.grid(row=OUTROW + 4, column=column, sticky=tk.W + tk.E)
+        self.off_slider.grid(row=OUTROW + 6, column=column, sticky=tk.W + tk.E)
+        self.temp_slider.grid(row=OUTROW + 12, column=column, sticky=tk.W + tk.E)
+        self.and_or_frame.grid(row=OUTROW + 7, column=column, sticky=tk.W + tk.E)
+        self.and_button.pack(side=tk.LEFT, expand=1)
+        self.or_button.pack(side=tk.LEFT, expand=1)
+        self.no_temp_button.grid(row=OUTROW + 8, column=column, sticky=tk.W + tk.E)
+        self.up_temp_button.grid(row=OUTROW + 9, column=column, sticky=tk.W + tk.E)
+        self.down_temp_button.grid(row=OUTROW + 10, column=column, sticky=tk.W + tk.E)
+        self.command_led.grid(row=OUTROW, column=column, sticky=tk.W + tk.E)
 
     def update_temp_trigger(self, seltemp):
         """update_temp_trigger Update the temperature trigger point
@@ -562,82 +545,82 @@ class DoorControl(_BaseControl):
         self.sensors = sensors
 
         # Column 0: ENABLE
-        self.door_enable = Checkbutton(
+        self.door_enable = tk.Checkbutton(
             frame,
             text="Enable",
             onvalue=True,
             offvalue=False,
             variable=self.en_var,
             command=self.update_enable,
-            state=DISABLED,
+            state=tk.DISABLED,
         )
 
         # Column 1: Open Time
-        self.on_label = Label(
+        self.on_label = tk.Label(
             frame, fg="green", bg="#e0ffe0", text=f" OPEN {string_time(self.on_time)}"
         )
-        self.door_open_slider = Scale(
+        self.door_open_slider = tk.Scale(
             frame,
             from_=0,
             to=24,
             digits=4,
-            orient=HORIZONTAL,
+            orient=tk.HORIZONTAL,
             resolution=0.25,
             command=self.update_on_time,
             showvalue=0,
-            variable=DoubleVar,
+            variable=tk.DoubleVar,
             length=slider_size,
             troughcolor="#bfd9bf",
         )
 
         # Column 2: Close Time
-        self.off_label = Label(
+        self.off_label = tk.Label(
             frame, fg="red", bg="#ffe0e0", text=f" CLOSE {string_time(self.off_time)}"
         )
-        self.door_closed_slider = Scale(
+        self.door_closed_slider = tk.Scale(
             frame,
             from_=0,
             to=24,
             digits=4,
-            orient=HORIZONTAL,
+            orient=tk.HORIZONTAL,
             resolution=0.25,
             command=self.update_off_time,
             showvalue=0,
-            variable=DoubleVar,
+            variable=tk.DoubleVar,
             length=slider_size,
             troughcolor="#d9bfbf",
         )
 
         # Column 3: Light Trigger
         self.switch_temp = 2
-        self.door_light_label = Label(
+        self.door_light_label = tk.Label(
             frame,
             fg="#9932cc",
             bg="#f3e6f9",
             text=f" LIGHT {string_light(self.switch_temp)}",
         )
-        self.door_light_slider = Scale(
+        self.door_light_slider = tk.Scale(
             frame,
             from_=2,
             to=4,
             digits=4,
-            orient=HORIZONTAL,
+            orient=tk.HORIZONTAL,
             resolution=0.05,
             command=self.update_door_light,
             showvalue=0,
-            variable=DoubleVar,
+            variable=tk.DoubleVar,
             length=slider_size,
             troughcolor="#cfc4d4",
         )
 
         # Set everything to the grid
         self.door_enable.grid(row=DOORROW + 1, column=0, rowspan=2)
-        self.on_label.grid(row=DOORROW + 1, column=1, sticky=W + E)
-        self.door_open_slider.grid(row=DOORROW + 2, column=1, sticky=W + E)
-        self.off_label.grid(row=DOORROW + 1, column=2, sticky=W + E)
-        self.door_closed_slider.grid(row=DOORROW + 2, column=2, sticky=W + E)
-        self.door_light_label.grid(row=DOORROW + 1, column=3, sticky=W + E)
-        self.door_light_slider.grid(row=DOORROW + 2, column=3, sticky=W + E)
+        self.on_label.grid(row=DOORROW + 1, column=1, sticky=tk.W + tk.E)
+        self.door_open_slider.grid(row=DOORROW + 2, column=1, sticky=tk.W + tk.E)
+        self.off_label.grid(row=DOORROW + 1, column=2, sticky=tk.W + tk.E)
+        self.door_closed_slider.grid(row=DOORROW + 2, column=2, sticky=tk.W + tk.E)
+        self.door_light_label.grid(row=DOORROW + 1, column=3, sticky=tk.W + tk.E)
+        self.door_light_slider.grid(row=DOORROW + 2, column=3, sticky=tk.W + tk.E)
 
     # Light Update Method
     def update_door_light(self, sellux):

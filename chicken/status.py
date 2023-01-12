@@ -9,7 +9,7 @@ Status display window, updates frequently with current values
 """
 
 # Built-In Libraries
-from tkinter import Frame, Label
+import tkinter as tk
 import time
 import os
 
@@ -58,11 +58,11 @@ class StatusWindow:
         self.master.configure(bg=STATBG)
 
         # A "frame" holds the various window contents
-        self.frame = Frame(self.master, bg=STATBG)
+        self.frame = tk.Frame(self.master, bg=STATBG)
         self.frame.pack(expand=0)
 
         # Put the time at the top of the window
-        self.display_time = Label(
+        self.display_time = tk.Label(
             self.frame, font=("courier", FONTSIZE, "bold"), bg=STATBG, fg="skyblue"
         )
         self.display_time.grid(row=0, columnspan=4)
@@ -131,7 +131,7 @@ class StatusWindow:
         `tkinter.Label`
             The Label object
         """
-        label = Label(
+        label = tk.Label(
             self.frame,
             font=("times", FONTSIZE, "bold"),
             bg=STATBG,
@@ -160,7 +160,7 @@ class StatusWindow:
         `tkinter.Label`
             The Label object
         """
-        label = Label(
+        label = tk.Label(
             self.frame,
             font=("courier", FONTSIZE, "bold"),
             bg=STATBG,
@@ -187,7 +187,7 @@ class StatusWindow:
         `tkinter.Label`
             The Label object
         """
-        label = Label(
+        label = tk.Label(
             self.frame,
             font=("courier", FONTSIZE, "bold"),
             bg=STATBG,

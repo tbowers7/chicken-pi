@@ -12,7 +12,7 @@ Graphs display window, updates occasionally with current values
 import datetime
 import sys
 import threading
-from tkinter import Frame, BOTTOM, BOTH, TOP
+import tkinter as tk
 
 # 3rd Party Libraries
 import matplotlib
@@ -39,7 +39,7 @@ class GraphsWindow:
         self.master = master
         self.master.geometry(f"700x400+600+{200+PI_TOOLBAR+TK_HEADER}")
         self.master.title("Graphs Window")
-        self.frame = Frame(self.master)
+        self.frame = tk.Frame(self.master)
 
         # The database object
         self.data = data
@@ -164,9 +164,9 @@ class GraphsWindow:
             print("Got here 1a?")
             canvas.draw()
             print("Got here 1b?")
-            canvas.get_tk_widget().pack(side=BOTTOM, fill=BOTH, expand=True)
+            canvas.get_tk_widget().pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
 
             print("Got here 2?")
             toolbar = NavigationToolbar2Tk(canvas, self.master)
             toolbar.update()
-            canvas._tkcanvas.pack(side=TOP, fill=BOTH, expand=True)
+            canvas._tkcanvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
