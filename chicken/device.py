@@ -9,9 +9,7 @@ Control classes for the hardware devices on the Chicken Pi
 """
 
 # Built-In Libraries
-import os
 import time
-
 
 # 3rd Party Libraries
 
@@ -24,15 +22,7 @@ import adafruit_ahtx0  # Internal (box) temp/humid sensor
 from adafruit_motorkit import MotorKit  # Motor HAT
 
 # Internal Imports
-
-# Enable testing on both Raspberry Pi and Mac
-if os.path.exists("/usr/bin/uname"):
-    _UNAME = "/usr/bin/uname"
-elif os.path.exists("/bin/uname"):
-    _UNAME = "/bin/uname"
-else:
-    _UNAME = ""
-SYSTYPE = (os.popen(f"{_UNAME} -a").read()).split()[0]
+from chicken import utils
 
 
 def set_up_sensors():
@@ -440,7 +430,7 @@ def get_cpu_temp():
         CPU temperature in ºF
     """
     # Check Pi CPU Temp:
-    if SYSTYPE == "Linux":
+    if utils.get_system_type() == "Linux":
         cputemp_fn = "/sys/class/thermal/thermal_zone0/temp"
         with open(cputemp_fn, "r", encoding="utf-8") as sys_file:
             return (float(sys_file.read()) / 1000.0) * 9.0 / 5.0 + 32.0

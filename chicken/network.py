@@ -16,16 +16,10 @@ import requests
 import urllib3
 
 # Internal Imports
+from chicken import utils
 
-# Enable testing on both Raspberry Pi and Mac
-if os.path.exists("/usr/bin/uname"):
-    _UNAME = "/usr/bin/uname"
-elif os.path.exists("/bin/uname"):
-    _UNAME = "/bin/uname"
-else:
-    _UNAME = ""
-SYSTYPE = (os.popen(f"{_UNAME} -a").read()).split()[0]
-WLAN = "en0" if SYSTYPE == "Darwin" else "wlan0"
+
+WLAN = "en0" if utils.get_system_type() == "Darwin" else "wlan0"
 
 
 class NetworkStatus:
@@ -50,7 +44,7 @@ class NetworkStatus:
             self.wifi_status = "ON"
 
             # For the Pi, add Link Quality
-            if SYSTYPE != "Darwin":
+            if utils.get_system_type() != "Darwin":
                 try:
                     qual = os.popen("/sbin/iwconfig wlan0 | grep -i quality").read()
                     qual = (qual.strip().split("  ")[1]).split("=")[1]

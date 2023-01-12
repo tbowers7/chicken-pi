@@ -10,7 +10,6 @@ Main driver routine for the integrated Chicken-Pi setup.
 
 # Built-In Libraries
 import atexit
-import os
 import sys
 import tkinter as tk
 

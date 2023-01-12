@@ -35,9 +35,14 @@ class ChickenDatabase:
 
         # Check for existing FITS file for today -- read in or create new
         today_fn = f"{utils.Paths.data}/coop_{now.strftime('%Y%m%d')}.fits"
-        self.table = self.read_table_file() if os.path.exists(today_fn) else astropy.table.Table()
+        self.table = (
+            self.read_table_file()
+            if os.path.exists(today_fn)
+            else astropy.table.Table()
+        )
 
-    def read_table_file(self, date=None):
+    @staticmethod
+    def read_table_file(date=None):
         """read_table_file Read the current table in from disk
 
         [extended_summary]
@@ -298,7 +303,7 @@ class OperationalSettings:
         """
         # Create a list of the operational settings
         # Go through the GUI, outlet by outlet -- top to bottom -- then door
-        with open(self.file, "w", encoding='utf-8') as statefile:
+        with open(self.file, "w", encoding="utf-8") as statefile:
             state_writer = csv.writer(statefile, delimiter=",")
 
             # Write each outlet and door as a separate line

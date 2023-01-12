@@ -1,0 +1,12 @@
+# Configuration Settings
+---
+machine_name: "MACHINE"
+geography:
+  longitude: -100
+  latitude: 40
+  altitude: 0
+outlets:
+  outlet1: "OUTLET1"
+  outlet2: "OUTLET2"
+  outlet3: "OUTLET3"
+  outlet4: "OUTLET4"

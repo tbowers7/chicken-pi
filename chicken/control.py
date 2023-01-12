@@ -55,6 +55,7 @@ class ControlWindow:
         self.sensors = set_up_sensors()
         self.relays = Relay()
         self.network = NetworkStatus()
+        self.config = utils.load_yaml_config()
 
         # Indicator LEDs
         self.led_loc = utils.Paths.resources
@@ -91,7 +92,7 @@ class ControlWindow:
         ).grid(row=OUTROW - 1, column=0, columnspan=4, sticky=tk.W + tk.E)
 
         self.outlet = []
-        for i, name in enumerate(read_outlet_strings()):
+        for i, name in enumerate(self.config["outlets"].values()):
             self.outlet.append(
                 OutletControl(self.frame, name, i, self.sensors, self.led_off)
             )
@@ -704,25 +705,3 @@ def string_light(in_log_lux):
         else np.round(display_lux / 100.0) * 100.0
     )
     return f"{display_lux:,.0f} lux"
-
-
-def read_outlet_strings():
-    """read_outlet_strings Read the outlet label names from file
-
-    [extended_summary]
-
-    Returns
-    -------
-    `list` of `str`
-        The four outlet names to be displayed on the Control Window
-    """
-    # Try reading in the appropriate file
-    try:
-        with open(f"{utils.Paths.data}/OUTLET_NAMES.txt", encoding="utf-8") as f_obj:
-            outlet_names = [oname.strip() for oname in f_obj.readlines()]
-        if len(outlet_names) < 4:
-            for _ in range(4 - len(outlet_names)):
-                outlet_names.append("__________")
-    except FileNotFoundError:
-        outlet_names = ["__________"] * 4
-    return outlet_names

@@ -10,7 +10,6 @@ Graphs display window, updates occasionally with current values
 
 # Built-In Libraries
 import datetime
-import sys
 import threading
 import tkinter as tk
 
@@ -44,21 +43,11 @@ class GraphsWindow:
 
         # The database object
         self.data = data
+        self.config = utils.load_yaml_config()
 
         # Load the local coordinates from file
-        try:
-            with open(f"{utils.Paths.data}/lonlat.txt", "r", encoding="utf-8") as fileobj:
-                coords = []
-                for line in fileobj:
-                    coords.append(line.rstrip())
-        except Exception as error:
-            print(
-                "You must create a file lonlat.txt containing the coordinates to submit to NOAA"
-            )
-            print(error)
-            sys.exit()
-        self.lat = coords[1]
-        self.lon = coords[0]
+        self.lat = self.config["geography"]["latitude"]
+        self.lon = self.config["geography"]["longitude"]
 
         # Create the NOAA object instance
         self.n = noaa.NOAA()

@@ -11,18 +11,8 @@ Status display window, updates frequently with current values
 # Built-In Libraries
 import tkinter as tk
 import time
-import os
 
 # 3rd Party Libraries
-
-# Enable testing on both Raspberry Pi and Mac
-if os.path.exists("/usr/bin/uname"):
-    _UNAME = "/usr/bin/uname"
-elif os.path.exists("/bin/uname"):
-    _UNAME = "/bin/uname"
-else:
-    _UNAME = ""
-SYSTYPE = (os.popen(f"{_UNAME} -a").read()).split()[0]
 
 # Geometry
 PI_TOOLBAR = 36

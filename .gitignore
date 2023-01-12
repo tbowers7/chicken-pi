@@ -70,6 +70,7 @@ target/
 
 # Don't track the actual, real stuff like passwords and hostnames
 *.conf
+*/config/*.yaml
 
 # Ignore rando code dirs
 .vscode
