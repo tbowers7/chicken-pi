@@ -12,7 +12,7 @@ Various network status and email control functions
 import os
 
 # 3rd Party Libraries
-from requests import get
+import requests
 import urllib3
 
 # Internal Imports
@@ -25,19 +25,20 @@ elif os.path.exists("/bin/uname"):
 else:
     _UNAME = ""
 SYSTYPE = (os.popen(f"{_UNAME} -a").read()).split()[0]
-WLAN = 'en0' if SYSTYPE == 'Darwin' else 'wlan0'
+WLAN = "en0" if SYSTYPE == "Darwin" else "wlan0"
 
 
-class NetworkStatus():
+class NetworkStatus:
     """NetworkStatus Class for network status and update methods
 
     [extended_summary]
     """
+
     def __init__(self):
-        self.lan_ipv4 = ''
-        self.wan_ipv4 = ''
-        self.wifi_status = ''
-        self.inet_status = ''
+        self.lan_ipv4 = ""
+        self.wan_ipv4 = ""
+        self.wifi_status = ""
+        self.inet_status = ""
 
     def update_lan(self):
         """update_lan Update the LAN status variables
@@ -45,31 +46,31 @@ class NetworkStatus():
         [extended_summary]
         """
         self.lan_ipv4 = get_local_ipv4()
-        if contact_server('192.168.0.1'):
-            self.wifi_status = 'ON'
+        if contact_server("192.168.0.1"):
+            self.wifi_status = "ON"
 
             # For the Pi, add Link Quality
-            if SYSTYPE != 'Darwin':
+            if SYSTYPE != "Darwin":
                 try:
                     qual = os.popen("/sbin/iwconfig wlan0 | grep -i quality").read()
-                    qual = (qual.strip().split('  ')[1]).split("=")[1]
+                    qual = (qual.strip().split("  ")[1]).split("=")[1]
                 except IndexError:
-                    qual = '-- dBm'
+                    qual = "-- dBm"
                 self.wifi_status = f"ON: {qual}"
         else:
-            self.wifi_status = 'OFF'
+            self.wifi_status = "OFF"
 
     def update_wan(self):
         """update_wan Update the WAN status variables
 
         [extended_summary]
         """
-        self.inet_status = 'ON' if contact_server('1.1.1.1') else 'OFF'
+        self.inet_status = "ON" if contact_server("1.1.1.1") else "OFF"
         self.wan_ipv4 = get_public_ipv4()
 
 
 # Network Checking Functions =======================================#
-def contact_server(host='192.168.0.1'):
+def contact_server(host="192.168.0.1"):
     """contact_server Check whether a server is reachable
 
     [extended_summary]
@@ -86,10 +87,10 @@ def contact_server(host='192.168.0.1'):
     """
     try:
         http = urllib3.PoolManager()
-        http.request('GET', host, timeout=3, retries=False)
+        http.request("GET", host, timeout=3, retries=False)
         return True
-    except Exception as e:
-        print(f"urllib3 threw exception: {e}")
+    except Exception as error:
+        print(f"urllib3 threw exception: {error}")
         return False
 
 
@@ -124,11 +125,11 @@ def get_public_ipv4():
         Public IP address
     """
     try:
-        public_ipv4 = (get('https://api.ipify.org', timeout=10).text).strip()
+        public_ipv4 = (requests.get("https://api.ipify.org", timeout=10).text).strip()
         # If response is longer than the maximum 15 characters, return '---'.
         if len(public_ipv4) > 15:
-            public_ipv4 = '-----'
-    except Exception as e:
-        print(f"requests threw exception: {e}")
-        public_ipv4 = '-----'
+            public_ipv4 = "-----"
+    except Exception as error:
+        print(f"requests threw exception: {error}")
+        public_ipv4 = "-----"
     return public_ipv4

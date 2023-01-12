@@ -18,9 +18,9 @@ import time
 # Hardware Libraries
 from adafruit_bus_device.i2c_device import I2CDevice
 from adafruit_extended_bus import ExtendedI2C as EI2C
-import adafruit_tsl2591                 # Outside light sensor
-import adafruit_sht31d                  # Inside/outside temp/humid sensors (x2)
-import adafruit_ahtx0                   # Internal (box) temp/humid sensor
+import adafruit_tsl2591  # Outside light sensor
+import adafruit_sht31d  # Inside/outside temp/humid sensors (x2)
+import adafruit_ahtx0  # Internal (box) temp/humid sensor
 from adafruit_motorkit import MotorKit  # Motor HAT
 
 # Internal Imports
@@ -49,33 +49,34 @@ def set_up_sensors():
     sensors = {}
 
     # Inside the Pi box -- AHT10 temp/humid sensor to monitor conditions
-    sensors['box'] = TempHumid('AHT10')
+    sensors["box"] = TempHumid("AHT10")
 
     # Inside the coop -- SHT30 temp/humid sensor on I2C bus #1
-    sensors['inside'] = TempHumid('SHT30', bus=1)
+    sensors["inside"] = TempHumid("SHT30", bus=1)
 
     # Outside the coop -- SHT30 temp/humid sensor on I2C bus #3
-    sensors['outside'] = TempHumid('SHT30', bus=3)
+    sensors["outside"] = TempHumid("SHT30", bus=3)
 
     # Outside the coop -- TSL2591 light sensor
-    sensors['light'] = TSL2591()
+    sensors["light"] = TSL2591()
 
     # Raspberry Pi CPU
-    sensors['cpu'] = RPiCPU()
+    sensors["cpu"] = RPiCPU()
 
     return sensors
 
 
-#=============================================================================#
+# =============================================================================#
 
 # Device classes:
 
 # Implementation of the TSL2591 for the chicken-pi
-class TSL2591():
-    """ Chicken-Pi Class for the TSL2591 luminosity sensor
+class TSL2591:
+    """Chicken-Pi Class for the TSL2591 luminosity sensor
 
     [extended_summary]
     """
+
     def __init__(self, bus=3):
         # Initialize the I2C bus.
         self._i2c = EI2C(bus)
@@ -90,7 +91,8 @@ class TSL2591():
         self._lux = -999
 
     # Define functions to increase or decrease the gain
-    def decrease_gain(self, sensor):
+    @staticmethod
+    def decrease_gain(sensor):
         """decrease_gain Decrease the gain of the TSL2591 sensor
 
         [extended_summary]
@@ -107,7 +109,8 @@ class TSL2591():
         elif sensor.gain == adafruit_tsl2591.GAIN_MED:
             sensor.gain = adafruit_tsl2591.GAIN_LOW
 
-    def increase_gain(self, sensor):
+    @staticmethod
+    def increase_gain(sensor):
         """increase_gain Increase the gain of the TSL2591 sensor
 
         [extended_summary]
@@ -196,18 +199,19 @@ class TSL2591():
         return self.cache_level
 
 
-class Relay():
-    """ Chicken-Pi Class for the _____ Relay Board
+class Relay:
+    """Chicken-Pi Class for the _____ Relay Board
 
     [extended_summary]
     """
+
     # Internal constants:
-    _RELAY_ADDR        = 0x10
+    _RELAY_ADDR = 0x10
     _RELAY_COMMAND_BIT = 0x01
 
     # Class-level buffer to reduce memory usage and allocations.
     # Note this is NOT thread-safe or re-entrant by design
-    _READ_BUF  = bytearray(5)
+    _READ_BUF = bytearray(5)
     _WRITE_BUF = bytearray(5)
 
     def __init__(self, address=_RELAY_ADDR):
@@ -229,7 +233,6 @@ class Relay():
         self.state = [False] * 4
         self.write()
 
-
     def read(self):
         """read Read the status of the 4 relays from the board
 
@@ -244,7 +247,6 @@ class Relay():
         # Read the current state of the relays
         self._device.readinto(self._READ_BUF)
         return self._READ_BUF
-
 
     def status(self):
         """status Return the current status of the relays
@@ -261,7 +263,6 @@ class Relay():
         self.write()
         return self.state
 
-
     def write(self):
         """write Write the desired state of thr 4 relays to the board
 
@@ -270,32 +271,34 @@ class Relay():
         try:
             self._WRITE_BUF[0] = self._RELAY_COMMAND_BIT
             for i, relay in enumerate(self.state, 1):
-                self._WRITE_BUF[i] = 0xff if relay else 0x00
+                self._WRITE_BUF[i] = 0xFF if relay else 0x00
             with self._device as i2c:
                 i2c.write_then_readinto(self._WRITE_BUF, self._READ_BUF)
             self.good_write = True
-        except OSError as e:
-            print(f"i2c threw exception: {e}")
+        except OSError as error:
+            print(f"i2c threw exception: {error}")
             self.good_write = False
 
-class TempHumid():
-    """ Chicken-Pi Class for the TSL2591 luminosity sensor
+
+class TempHumid:
+    """Chicken-Pi Class for the TSL2591 luminosity sensor
 
     [extended_summary]
     """
+
     def __init__(self, senstyp, bus=1):
 
         # Load the appropriate I2C Bus
         self._i2c = EI2C(bus)
 
         # Load the appropriate sensor class
-        if senstyp == 'SHT30':
+        if senstyp == "SHT30":
             self.sensor = adafruit_sht31d.SHT31D(self._i2c)
-        elif senstyp == 'AHT10':
+        elif senstyp == "AHT10":
             # TODO: AHT10 seems to accumulate weirdly -- see about resetting before each read
             self.sensor = adafruit_ahtx0.AHTx0(self._i2c)
         else:
-            raise ValueError('Sensor type must be either SHT30 or AHT10')
+            raise ValueError("Sensor type must be either SHT30 or AHT10")
 
         # Internal variables
         self._temp = -99
@@ -313,7 +316,7 @@ class TempHumid():
             The requested temperature (ºF)
         """
         try:
-            self._temp = self.sensor.temperature * 9./5. + 32.
+            self._temp = self.sensor.temperature * 9.0 / 5.0 + 32.0
             return self._temp
         except (RuntimeError, OSError):
             return self.cache_temp
@@ -371,11 +374,12 @@ class TempHumid():
         return self.cache_temp, self.cache_humid
 
 
-class ChickenDoor():
-    """ Chicken-Pi Class for the yet-to-be-built chicken door
+class ChickenDoor:
+    """Chicken-Pi Class for the yet-to-be-built chicken door
 
     [extended_summary]
     """
+
     def __init__(self):
         self.kit = MotorKit()
 
@@ -389,11 +393,12 @@ class ChickenDoor():
         self.kit.motor1.throttle = 0.0
 
 
-class RPiCPU():
+class RPiCPU:
     """RPiCPU [summary]
 
     [extended_summary]
     """
+
     def __init__(self):
         pass
 
@@ -435,8 +440,8 @@ def get_cpu_temp():
         CPU temperature in ºF
     """
     # Check Pi CPU Temp:
-    if SYSTYPE == 'Linux':
+    if SYSTYPE == "Linux":
         cputemp_fn = "/sys/class/thermal/thermal_zone0/temp"
-        with open(cputemp_fn,"r") as sys_file:
-            return (float(sys_file.read()) /1000.) * 9./5. + 32.
+        with open(cputemp_fn, "r", encoding="utf-8") as sys_file:
+            return (float(sys_file.read()) / 1000.0) * 9.0 / 5.0 + 32.0
     return None
