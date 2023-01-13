@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-    MODULE: chicken-pi
+    MODULE: chicken
     FILE: control.py
 
 Control window, with all the shiny knobs and buttons
@@ -27,56 +27,70 @@ try:
 except ModuleNotFoundError:
     from chicken.dummy import set_up_sensors, Relay
 
-# Geometry
-PI_TOOLBAR = 36
-TK_HEADER = 25
-
-# Constants
-WIDGET_WIDE = 600  # Width of the "Control Window"
-WIDGET_HIGH = 400  # Height of the "Control Window"
-OUTROW = 2  # Start of the Outlet Section
-DOORROW = OUTROW + 14  # Start of the Door Section
-CONTBG = "lightgreen"  # Background color of the Control Window
-
 
 class ControlWindow:
     """
     ControlWindow class
     Creates the main control window and also spawns the secondary display
     windows.
+
+    Parameters
+    ----------
+    master : :obj:`tkinter.Tk`
+        The master Tk object
     """
 
     def __init__(self, master):
-        """
-        __init__: initializes the class, including geometry and spawning
-        display windows
-        """
-        self.use_nws = False
-        self.sensors = set_up_sensors()
-        self.relays = Relay()
-        self.network = NetworkStatus()
+
+        # Set up geometry as a dictionary
+        self.geom = {
+            "PI_TOOLBAR": 36,  # Height of the Pi's toolbar
+            "TK_HEADER": 25,  # Header height
+            "WIDGET_WIDE": 600,  # Width of the "Control Window"
+            "WIDGET_HIGH": 400,  # Height of the "Control Window"
+            "OUTROW": 2,  # Start of the Outlet Section
+            "CONTBG": "lightgreen",  # Background color of the Control Window
+        }
+        self.geom["DOORROW"] = self.geom["OUTROW"] + 14  # Start of the Door Section
+
+        # Load the configuration file
         self.config = utils.load_yaml_config()
 
+        # Initialize sensors and relays
+        self.sensors = set_up_sensors()
+        self.relays = Relay()
+
+        # Set up the database and network status classes
+        self.network = NetworkStatus()
+        self.database = ChickenDatabase()
+
         # Indicator LEDs
-        self.led_loc = utils.Paths.resources
-        self.led_on = tk.PhotoImage(file=f"{self.led_loc}/green-led-on-th.png")
-        self.led_off = tk.PhotoImage(file=f"{self.led_loc}/green-led-off-th.png")
+        self.led = {
+            "on": tk.PhotoImage(
+                file=utils.Paths.resources.joinpath("green-led-on-th.png")
+            ),
+            "off": tk.PhotoImage(
+                file=utils.Paths.resources.joinpath("green-led-off-th.png")
+            ),
+        }
 
-        # Set up the database
-        self.data = ChickenDatabase()
-
-        # Define the MASTER for the window, and spawn the other two windows
+        # Define the MASTER for the CONTROL window, and spawn the other windows
         self.master = master
-        self.status_window = StatusWindow(tk.Toplevel(self.master), WIDGET_WIDE)
-        if self.use_nws:
+        self.status_window = StatusWindow(
+            tk.Toplevel(self.master), self.geom["WIDGET_WIDE"]
+        )
+        if self.config["use_nws"]:
             self.graphs_window = GraphsWindow(
-                tk.Toplevel(self.master, bg="forestgreen"), self.data
+                tk.Toplevel(self.master, bg="forestgreen"), self.database
             )
 
-        # Define the geometry and title for the control window
-        self.master.geometry(f"{WIDGET_WIDE}x{WIDGET_HIGH}+0+{PI_TOOLBAR}")
+        # Define the geometry and title for the CONTROL window
+        self.master.geometry(
+            f"{self.geom['WIDGET_WIDE']}x{self.geom['WIDGET_HIGH']}+"
+            f"0+{self.geom['PI_TOOLBAR']}"
+        )
         self.master.title("Control Window")
-        self.master.configure(bg=CONTBG)
+        self.master.configure(bg=self.geom["CONTBG"])
 
         ## A "frame" holds the various GUI controls
         self.frame = tk.Frame(self.master)
@@ -89,17 +103,23 @@ class ControlWindow:
             fg="darkblue",
             bg="#ffff80",
             font=("courier", 14, "bold"),
-        ).grid(row=OUTROW - 1, column=0, columnspan=4, sticky=tk.W + tk.E)
+        ).grid(row=self.geom["OUTROW"] - 1, column=0, columnspan=4, sticky=tk.W + tk.E)
 
+        # The outlets are held as a list of OutletControl object instances
         self.outlet = []
         for i, name in enumerate(self.config["outlets"].values()):
-            self.outlet.append(
-                OutletControl(self.frame, name, i, self.sensors, self.led_off)
-            )
+            params = {
+                "name": name,
+                "column": i,
+                "sensors": self.sensors,
+                "img": self.led["off"],
+                "geom": self.geom,
+            }
+            self.outlet.append(OutletControl(self.frame, params))
 
         # ===== DOOR =====#
         tk.Label(self.frame, text=" - " * 40, fg="darkblue").grid(
-            row=DOORROW - 1, column=0, columnspan=4, sticky=tk.W + tk.E
+            row=self.geom["DOORROW"] - 1, column=0, columnspan=4, sticky=tk.W + tk.E
         )
         tk.Label(
             self.frame,
@@ -107,41 +127,23 @@ class ControlWindow:
             fg="darkblue",
             bg="#ffff80",
             font=("courier", 14, "bold"),
-        ).grid(row=DOORROW, column=0, columnspan=4, sticky=tk.W + tk.E)
+        ).grid(row=self.geom["DOORROW"], column=0, columnspan=4, sticky=tk.W + tk.E)
 
-        self.door = DoorControl(self.frame, self.sensors)
+        self.door = DoorControl(
+            self.frame, {"sensors": self.sensors, "geom": self.geom}
+        )
 
         # Set up the 'SaveSettings' object
         self.settings = OperationalSettings(self.outlet, self.door)
 
-    def set_relays(self, change=False):
-        """set_relays Write the relay commands to the Relay HAT
-
-        [extended_summary]
-        """
-        # Check to see if any states have changed
-        for i, outlet in enumerate(self.outlet):
-            demand = outlet.demand  # Call just once, since this queries I2C
-            if self.relays.state[i] != demand:
-                self.relays.state[i] = demand
-                change = True
-
-        # If so, write
-        # NOTE: The relay scheme of state[i] being the canonical knowledge of
-        #  the relay status (read just isn't working) means that the write
-        #  MUST be successful else the actual relay state won't be known to
-        #  the rest of the program.
-        if change:
-            self.relays.good_write = False
-            while not self.relays.good_write:
-                # Warning: This could lead to an infinite loop?
-                self.relays.write()
-
-    # Update Method #
     def update(self):
-        """update Update the display windows
+        """Update the display windows
 
-        [extended_summary]
+        This method updates information in all windows, not just the CONTROL
+        window.  To minimize overuse of the I2C bus and spurious switching
+        of the relays, various delays are included here.  For instance:
+            * The relays are only set at the top of every minute
+            * The status is written to the database once a minute
         """
         # This is the official time for Chicken Pi
         now = datetime.datetime.now()
@@ -153,56 +155,89 @@ class ControlWindow:
         if now.second % 60 == 0:
             self.set_relays()
 
-        # Update status window on 0.5s cadence
+        # Update status window each time through the method
         self.status_window.update(now, self.sensors, self.relays, self.network)
 
-        # Update the command tags in the Control Window
+        # Update the LED status indicators in the CONTROL Window
         for outlet in self.outlet:
-            outlet.img = self.led_on if outlet.state else self.led_off
+            outlet.img = self.led["on" if outlet.state else "off"]
             outlet.command_led.configure(image=outlet.img)
 
         # Every minute, write status to database
         if now.second % 60 == 0:  # and now.minute % 1 == 0:
             self.write_to_database(now)
-            # Update the NWS Graph window, if enableed
-            if self.use_nws:
+            # Update the NWS Graph window, if enabeled
+            if self.config["use_nws"]:
                 self.graphs_window.update(now)
 
-        # Wait 0.5 seconds and repeat
+        # Wait 0.5 seconds (500 ms) and repeat
         self.master.after(500, self.update)
 
+    def set_relays(self, change=False):
+        """Write the relay commands to the Relay HAT
+
+        _extended_summary_
+
+        Parameters
+        ----------
+        change : bool, optional
+            Did anything change? (Default: False)
+        """
+        # Check to see if any states have changed
+        for i, outlet in enumerate(self.outlet):
+            demand = outlet.demand  # Call just once, since this queries I2C
+            if self.relays.state[i] != demand:
+                self.relays.state[i] = demand
+                change = True
+
+        # If anything changed, write the new values to the relat HAT
+        # NOTE: The relay scheme of state[i] being the canonical knowledge of
+        #  the relay status (read just isn't working) means that the write
+        #  MUST be successful else the actual relay state won't be known to
+        #  the rest of the program.
+        if change:
+            self.relays.good_write = False
+            while not self.relays.good_write:
+                # Warning: This could lead to an infinite loop?
+                self.relays.write()
+
     def write_to_database(self, now, verbose=False):
-        """write_to_database Write the current readings to the database
+        """Write the current status readings to the database
 
         [extended_summary]
 
         Parameters
         ----------
-        now : `datetime.datetime`
+        now : :obj:`datetime.datetime`
             The current time object, for including in the database
-        verbose : `bool`, optional
-            Provide verbose output?  [Default: False]
+        verbose : bool, optional
+            Provide verbose output?  (Default: False)
         """
         if verbose:
             print("Writing readings to the database...")
-        self.data.add_row_to_table(now, self.sensors, self.relays, self.network)
+        self.database.add_row_to_table(now, self.sensors, self.relays, self.network)
 
     def write_database_to_disk(self):
-        """write_database_to_disk Write the entire database to disk
+        """Write the entire database to disk
 
-        [extended_summary]
+        Write the database from memory onto disk for long-term preservation
         """
+        # Write the current status to the database first
         self.write_to_database(datetime.datetime.now())
         print("Writing the databse to disk...")
-        self.data.write_table_to_fits()
+        self.database.write_table_to_fits()
 
 
 class _BaseControl:
-    """Base class for Object Control"""
+    """Base class for Object Control
+
+    This base class contains the various common components for both the
+    outlets and the door (and possibly other components to be added in
+    the future.)
+    """
 
     def __init__(self):
-        """Initialize Class"""
-        ## Initialize the various variables required
+        # Initialize the various variables required
         self.enable = False  # Switch Enabled
         self.and_or = False  # Time AND/OR Temperature
         self.on_time = 0  # Switch turn on time
@@ -218,44 +253,41 @@ class _BaseControl:
 
     # Various Update Methods
     def update_enable(self):
-        """update_enable Update the ENABLE state for this device
-
-        [extended_summary]
-        """
+        """Update the ENABLE state for this device from the GUI"""
         self.enable = self.en_var.get()
 
     def update_on_time(self, seltime):
-        """update_on_time Update the turn-on time for this device
-
-        [extended_summary]
+        """Update the turn-on time for this device from the GUI
 
         Parameters
         ----------
-        seltime : `string` or `float`
+        seltime : string or float
             The selected time from the Tk widget
         """
         self.on_time = float(seltime)
-        self.on_label.config(text=f" ON {string_time(self.on_time)}")
+        self.on_label.config(text=f" ON {self.string_time(self.on_time)}")
         self.update_time_cycle()
 
     def update_off_time(self, seltime):
-        """update_off_time Update the turn-off time for this device
-
-        [extended_summary]
+        """Update the turn-off time for this device from the GUI
 
         Parameters
         ----------
-        seltime : `string` or `float`
+        seltime : string or float
             The selected time from the Tk widget
         """
         self.off_time = float(seltime)
-        self.off_label.config(text=f" OFF {string_time(self.off_time)}")
+        self.off_label.config(text=f" OFF {self.string_time(self.off_time)}")
         self.update_time_cycle()
 
     def update_time_cycle(self):
-        """update_time_cycle Update the time cycle for this device
+        """Update the time cycle for this device
 
-        [extended_summary]
+        The "time cycle" is a way of parameterizing the cyclic nature of a
+        day onto a linear 24-hour line:
+            0: On time == Off time, always on
+            1: On at midnight, off during the day, on again before midnight
+            2: Off at midnight, on during the day, off again before midnight
         """
         if self.on_time == self.off_time or abs(self.on_time - self.off_time) == 24:
             self.time_cycle = 0  # ON always
@@ -264,41 +296,119 @@ class _BaseControl:
         else:
             self.time_cycle = 2  # OFF - ON - OFF
 
+    @staticmethod
+    def string_time(in_time):
+        """Create a printable time string for the slider bar
+
+        Parameters
+        ----------
+        in_time : float
+            Input time from the Tk widget
+
+        Returns
+        -------
+        str
+            The formatted string
+        """
+        hour, minute = (
+            int(in_time),
+            60 * (in_time % 1),
+        )  # Compute minutes from in_time
+        hour = 0 if hour == 24 else hour  # Catch case of 24:00
+        ampm = "PM" if hour >= 12 else "AM"  # Set PM/AM times
+        if hour >= 12:
+            hour -= 12
+        hour = 12 if hour == 0 else hour  # Catch case of 0:00
+        return f"{hour:2d}:{int(minute):0>2d} {ampm}"
+
+    @staticmethod
+    def string_temp(in_temperature):
+        """Create a printable temperature string for the slider bar
+
+        Parameters
+        ----------
+        in_temperature : float
+            Input temperature from the Tk widget
+
+        Returns
+        -------
+        str
+            The formatted string
+        """
+        return f"{int(in_temperature):2d}\N{DEGREE SIGN} F"
+
+    @staticmethod
+    def string_light(in_log_lux):
+        """Create a printable light level string for the slider bar
+
+        Parameters
+        ----------
+        in_log_lux : float
+            Input log lux from the Tk widget
+
+        Returns
+        -------
+        str
+            The formatted string
+        """
+        display_lux = 10**in_log_lux
+        # Round to make look pretty
+        display_lux = (
+            np.round(display_lux / 10.0) * 10.0
+            if display_lux < 1000
+            else np.round(display_lux / 100.0) * 100.0
+        )
+        return f"{display_lux:,.0f} lux"
+
 
 class OutletControl(_BaseControl):
-    """Outlet Control Class"""
+    """Outlet control class
 
-    def __init__(self, frame, name, column, sensors, led_off):
-        """Initialize Class
+    _extended_summary_
 
-        Inputs:
-          frame:
-          name:
-          column:
-        """
-        _BaseControl.__init__(self)
-        slider_size = (WIDGET_WIDE - 5 * 5) / 4  # Scale slider width to window
+    Parameters
+    ----------
+    frame : :obj:`tkinter.Frame`
+        The frame object into which to place these controls
+    params : dict
+        Dictionary containing the various parameters needed
+    """
 
-        # Init variable
-        self.sensors = sensors
+    def __init__(self, frame, params):
+        super().__init__()
+        self.sensors = params["sensors"]
+
+        # Unpack repeatedly used params members:
+        column = params["column"]
+        outlet_row = params["geom"]["OUTROW"]
+        self.img = params["img"]
+
+        # Scale slider width to window
+        slider_size = (params["geom"]["WIDGET_WIDE"] - 5 * 5) / 4
 
         # Column Label for this outlet
-        tk.Label(frame, text=f"{name} (#{column+1})", bg="#f0f0f0").grid(
-            row=OUTROW + 1, column=column, sticky=tk.W + tk.E
+        tk.Label(frame, text=f"{params['name']} (#{column+1})", bg="#f0f0f0").grid(
+            row=outlet_row + 1, column=column, sticky=tk.W + tk.E
         )
 
         # Individual Labels:
         self.on_label = tk.Label(
-            frame, fg="green", bg="#e0ffe0", text=f" ON {string_time(self.on_time)}"
+            frame,
+            fg="green",
+            bg="#e0ffe0",
+            text=f" ON {self.string_time(self.on_time)}",
         )
         self.off_label = tk.Label(
-            frame, fg="red", bg="#ffe0e0", text=f" OFF {string_time(self.off_time)}"
+            frame,
+            fg="red",
+            bg="#ffe0e0",
+            text=f" OFF {self.string_time(self.off_time)}",
         )
         self.temp_label = tk.Label(
             frame,
             fg="blue",
             bg="#e0e0ff",
-            text=f" Coop Temp {string_temp(self.switch_temp)}",
+            text=f" Coop Temp {self.string_temp(self.switch_temp)}",
         )
 
         # Enable Box
@@ -408,67 +518,60 @@ class OutletControl(_BaseControl):
             text="Turn ON below:",
         )
 
-        self.img = led_off
         self.command_led = tk.Label(frame, image=self.img)
 
         # Set everything to the grid
-        self.on_label.grid(row=OUTROW + 3, column=column, sticky=tk.W + tk.E)
-        self.off_label.grid(row=OUTROW + 5, column=column, sticky=tk.W + tk.E)
-        self.temp_label.grid(row=OUTROW + 11, column=column, sticky=tk.W + tk.E)
-        self.enable_box.grid(row=OUTROW + 2, column=column)
-        self.on_slider.grid(row=OUTROW + 4, column=column, sticky=tk.W + tk.E)
-        self.off_slider.grid(row=OUTROW + 6, column=column, sticky=tk.W + tk.E)
-        self.temp_slider.grid(row=OUTROW + 12, column=column, sticky=tk.W + tk.E)
-        self.and_or_frame.grid(row=OUTROW + 7, column=column, sticky=tk.W + tk.E)
+        self.on_label.grid(row=outlet_row + 3, column=column, sticky=tk.W + tk.E)
+        self.off_label.grid(row=outlet_row + 5, column=column, sticky=tk.W + tk.E)
+        self.temp_label.grid(row=outlet_row + 11, column=column, sticky=tk.W + tk.E)
+        self.enable_box.grid(row=outlet_row + 2, column=column)
+        self.on_slider.grid(row=outlet_row + 4, column=column, sticky=tk.W + tk.E)
+        self.off_slider.grid(row=outlet_row + 6, column=column, sticky=tk.W + tk.E)
+        self.temp_slider.grid(row=outlet_row + 12, column=column, sticky=tk.W + tk.E)
+        self.and_or_frame.grid(row=outlet_row + 7, column=column, sticky=tk.W + tk.E)
         self.and_button.pack(side=tk.LEFT, expand=1)
         self.or_button.pack(side=tk.LEFT, expand=1)
-        self.no_temp_button.grid(row=OUTROW + 8, column=column, sticky=tk.W + tk.E)
-        self.up_temp_button.grid(row=OUTROW + 9, column=column, sticky=tk.W + tk.E)
-        self.down_temp_button.grid(row=OUTROW + 10, column=column, sticky=tk.W + tk.E)
-        self.command_led.grid(row=OUTROW, column=column, sticky=tk.W + tk.E)
+        self.no_temp_button.grid(row=outlet_row + 8, column=column, sticky=tk.W + tk.E)
+        self.up_temp_button.grid(row=outlet_row + 9, column=column, sticky=tk.W + tk.E)
+        self.down_temp_button.grid(
+            row=outlet_row + 10, column=column, sticky=tk.W + tk.E
+        )
+        self.command_led.grid(row=outlet_row, column=column, sticky=tk.W + tk.E)
 
     def update_temp_trigger(self, seltemp):
-        """update_temp_trigger Update the temperature trigger point
-
-        [extended_summary]
+        """Update the temperature trigger point
 
         Parameters
         ----------
-        seltemp : `float`
+        seltemp : float
             Selected temperature from the Tk widget
         """
         self.switch_temp = int(seltemp)
-        self.temp_label.config(text=f" Coop Temp {string_temp(self.switch_temp)}")
+        self.temp_label.config(text=f" Coop Temp {self.string_temp(self.switch_temp)}")
 
     def update_andor(self):
-        """update_andor Update the AND/OR flag for tempature/time
-
-        [extended_summary]
-        """
+        """Update the AND/OR flag for tempature/time"""
         self.and_or = self.andor_var.get()
 
     def update_temp_direction(self):
-        """update_temp_direction Update the temperature trigger direction
-
-        [extended_summary]
-        """
+        """Update the temperature trigger direction"""
         self.temp_direction = self.tempsel_var.get()
 
     def cmd_state(self, nowobj, use_cache=False):
-        """cmd_state Construct the commanded state from the control knobs
+        """Construct the commanded state from the control knobs
 
         [extended_summary]
 
         Parameters
         ----------
-        nowobj : `datetime.datetime`
-            The output of `datetime.datetime.now()`
-        use_cache : `bool`, optional
-            Use the cached sensor values rather thsn checking? [Default: False]
+        nowobj : :obj:`datetime.datetime`
+            The output of ``datetime.datetime.now()``
+        use_cache : bool, optional
+            Use the cached sensor values rather thsn checking? (Default: False)
 
         Returns
         -------
-        `bool`
+        bool
             Should the device be on or off?
         """
         # If 'ENABLE' box not checked, keep off
@@ -510,41 +613,49 @@ class OutletControl(_BaseControl):
 
     @property
     def demand(self):
-        """demand Return the demanded state as a class attribute
+        """Return the demanded state as a class attribute
 
         Returns
         -------
-        `bool`
+        bool
             The current demanded state of the device
         """
         return self.cmd_state(datetime.datetime.now())
 
     @property
     def state(self):
-        """state Returned the cached state as a class attribute
+        """Return the cached state as a class attribute
 
         Returns
         -------
-        `bool`
+        bool
             The current (cached) state of the device
         """
         return self.cmd_state(datetime.datetime.now(), use_cache=True)
 
 
 class DoorControl(_BaseControl):
-    """Door Control Class"""
+    """Door control class
 
-    def __init__(self, frame, sensors):
-        """Initialize Class
+    _extended_summary_
 
-        Inputs:
-          frame:
-        """
-        _BaseControl.__init__(self)
-        slider_size = (WIDGET_WIDE - 5 * 5) / 4  # Scale slider width to window
+    Parameters
+    ----------
+    frame : :obj:`tkinter.Frame`
+        The frame object into which to place these controls
+    params : dict
+        Dictionary containing the various parameters needed
+    """
 
-        # Init variable
-        self.sensors = sensors
+    def __init__(self, frame, params):
+        super().__init__()
+        self.sensors = params["sensors"]
+
+        # Unpack repeatedly used params members:
+        door_row = params["geom"]["DOORROW"]
+
+        # Scale slider width to window
+        slider_size = (params["geom"]["WIDGET_WIDE"] - 5 * 5) / 4
 
         # Column 0: ENABLE
         self.door_enable = tk.Checkbutton(
@@ -559,7 +670,10 @@ class DoorControl(_BaseControl):
 
         # Column 1: Open Time
         self.on_label = tk.Label(
-            frame, fg="green", bg="#e0ffe0", text=f" OPEN {string_time(self.on_time)}"
+            frame,
+            fg="green",
+            bg="#e0ffe0",
+            text=f" OPEN {self.string_time(self.on_time)}",
         )
         self.door_open_slider = tk.Scale(
             frame,
@@ -577,7 +691,10 @@ class DoorControl(_BaseControl):
 
         # Column 2: Close Time
         self.off_label = tk.Label(
-            frame, fg="red", bg="#ffe0e0", text=f" CLOSE {string_time(self.off_time)}"
+            frame,
+            fg="red",
+            bg="#ffe0e0",
+            text=f" CLOSE {self.string_time(self.off_time)}",
         )
         self.door_closed_slider = tk.Scale(
             frame,
@@ -599,7 +716,7 @@ class DoorControl(_BaseControl):
             frame,
             fg="#9932cc",
             bg="#f3e6f9",
-            text=f" LIGHT {string_light(self.switch_temp)}",
+            text=f" LIGHT {self.string_light(self.switch_temp)}",
         )
         self.door_light_slider = tk.Scale(
             frame,
@@ -616,92 +733,24 @@ class DoorControl(_BaseControl):
         )
 
         # Set everything to the grid
-        self.door_enable.grid(row=DOORROW + 1, column=0, rowspan=2)
-        self.on_label.grid(row=DOORROW + 1, column=1, sticky=tk.W + tk.E)
-        self.door_open_slider.grid(row=DOORROW + 2, column=1, sticky=tk.W + tk.E)
-        self.off_label.grid(row=DOORROW + 1, column=2, sticky=tk.W + tk.E)
-        self.door_closed_slider.grid(row=DOORROW + 2, column=2, sticky=tk.W + tk.E)
-        self.door_light_label.grid(row=DOORROW + 1, column=3, sticky=tk.W + tk.E)
-        self.door_light_slider.grid(row=DOORROW + 2, column=3, sticky=tk.W + tk.E)
+        self.door_enable.grid(row=door_row + 1, column=0, rowspan=2)
+        self.on_label.grid(row=door_row + 1, column=1, sticky=tk.W + tk.E)
+        self.door_open_slider.grid(row=door_row + 2, column=1, sticky=tk.W + tk.E)
+        self.off_label.grid(row=door_row + 1, column=2, sticky=tk.W + tk.E)
+        self.door_closed_slider.grid(row=door_row + 2, column=2, sticky=tk.W + tk.E)
+        self.door_light_label.grid(row=door_row + 1, column=3, sticky=tk.W + tk.E)
+        self.door_light_slider.grid(row=door_row + 2, column=3, sticky=tk.W + tk.E)
 
     # Light Update Method
     def update_door_light(self, sellux):
-        """update_door_light Update the door light trigger
-
-        [extended_summary]
+        """Update the door light trigger
 
         Parameters
         ----------
-        sellux : `float`
+        sellux : float
             Selected lux from the Tk widget
         """
         self.switch_temp = float(sellux)
-        self.door_light_label.config(text=f" LIGHT {string_light(self.switch_temp)}")
-
-
-# String Formatting Functions ======================================#
-def string_time(in_time):
-    """string_time Create a printable string for the slider bar
-
-    [extended_summary]
-
-    Parameters
-    ----------
-    in_time : `float`
-        Input time from the Tk widget
-
-    Returns
-    -------
-    `str`
-        The formatted string
-    """
-    hour, minute = (int(in_time), 60 * (in_time % 1))  # Compute minutes from in_time
-    hour = 0 if hour == 24 else hour  # Catch case of 24:00
-    ampm = "PM" if hour >= 12 else "AM"  # Set PM/AM times
-    if hour >= 12:
-        hour -= 12
-    hour = 12 if hour == 0 else hour  # Catch case of 0:00
-    return f"{hour:2d}:{int(minute):0>2d} {ampm}"
-
-
-def string_temp(in_temperature):
-    """string_temp Create a printable string for the slider bar
-
-    [extended_summary]
-
-    Parameters
-    ----------
-    in_temperature : `float`
-        Input temperature from the Tk widget
-
-    Returns
-    -------
-    `str`
-        The formatted string
-    """
-    return f"{int(in_temperature):2d}\N{DEGREE SIGN} F"
-
-
-def string_light(in_log_lux):
-    """string_light Create a printable string for the slider bar
-
-    [extended_summary]
-
-    Parameters
-    ----------
-    in_log_lux : `float`
-        Input log lux from the Tk widget
-
-    Returns
-    -------
-    `str`
-        The formatted string
-    """
-    display_lux = 10**in_log_lux
-    # Round to make look pretty
-    display_lux = (
-        np.round(display_lux / 10.0) * 10.0
-        if display_lux < 1000
-        else np.round(display_lux / 100.0) * 100.0
-    )
-    return f"{display_lux:,.0f} lux"
+        self.door_light_label.config(
+            text=f" LIGHT {self.string_light(self.switch_temp)}"
+        )

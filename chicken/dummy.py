@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-    MODULE: chicken-pi
+    MODULE: chicken
     FILE: dummy.py
 
 Dummy classes for the hardware devices on the Chicken Pi (for testing)

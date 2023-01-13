@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-    MODULE: chicken-pi
+    MODULE: chicken
     FILE: database.py
 
 Database routines for saving readings from the chicken-pi
@@ -43,25 +43,25 @@ class ChickenDatabase:
 
     @staticmethod
     def read_table_file(date=None):
-        """read_table_file Read the current table in from disk
+        """Read the current table in from disk
 
         [extended_summary]
 
         Parameters
         ----------
-        date : `str`, optional
+        date : str, optional
             The YYMMDD string of the date to read in. [Default: None]
 
         Returns
         -------
-        `astropy.table.Table`
+        :obj:`astropy.table.Table`
             The table associated with the date
         """
         date = datetime.datetime.now().strftime("%Y%m%d") if date is None else date
         return astropy.table.Table.read(f"{utils.Paths.data}/coop_{date}.fits")
 
     def add_row_to_table(self, nowobj, sensors, relays, network, debug=False):
-        """add_row_to_table [summary]
+        """Add a row of data to the table
 
         [extended_summary]
 
@@ -125,13 +125,13 @@ class ChickenDatabase:
             self.table.pprint()
 
     def write_table_to_fits(self, date=None):
-        """write_table_to_fits [summary]
+        """Write the table in memory to a FITS file on disk
 
         [extended_summary]
 
         Parameters
         ----------
-        date : `str`, optional
+        date : str, optional
             The YYMMDD string of the date to read in. [Default: None]
         """
         if date is None:
@@ -151,18 +151,18 @@ class ChickenDatabase:
         """
 
 
-"""
-Outline:
-    Daily make a new Table to hold observations
-    Record everything we want to every 5 mintues
-    At end of day (or at exit) write the Table to FITS in data/ directory
+# """
+# Outline:
+#     Daily make a new Table to hold observations
+#     Record everything we want to every 5 mintues
+#     At end of day (or at exit) write the Table to FITS in data/ directory
 
-Provide routines to:
-    Read in extant file for the day
-    Add lines to the table
-    Write out the Table to FITS
-    Retrieve information from the Table for graphing routines
-"""
+# Provide routines to:
+#     Read in extant file for the day
+#     Add lines to the table
+#     Write out the Table to FITS
+#     Retrieve information from the Table for graphing routines
+# """
 
 
 class OperationalSettings:
@@ -174,10 +174,10 @@ class OperationalSettings:
     def __init__(self, outlets, door):
 
         # Set up internal variables
-        self.file = f"{utils.Paths.data}/operational_state.csv"
+        self.file = utils.Paths.data.joinpath("operational_state.csv")
 
         # Read in state file, if exists
-        if os.path.exists(self.file):
+        if self.file.exists():
             self.read_settings(outlets, door)
         else:
             self.default_settings(outlets, door)
@@ -337,22 +337,24 @@ class OperationalSettings:
             _description_
         """
         # Check the outlets against saved values
-        tt = []
+        test = []
         for i, outlet in enumerate(outlets, 1):
-            tt.append(self.settings[f"outlet_{i}"]["enable"] == outlet.enable)
-            tt.append(self.settings[f"outlet_{i}"]["on_time"] == outlet.on_time)
-            tt.append(self.settings[f"outlet_{i}"]["off_time"] == outlet.off_time)
-            tt.append(self.settings[f"outlet_{i}"]["and_or"] == outlet.and_or)
-            tt.append(
+            test.append(self.settings[f"outlet_{i}"]["enable"] == outlet.enable)
+            test.append(self.settings[f"outlet_{i}"]["on_time"] == outlet.on_time)
+            test.append(self.settings[f"outlet_{i}"]["off_time"] == outlet.off_time)
+            test.append(self.settings[f"outlet_{i}"]["and_or"] == outlet.and_or)
+            test.append(
                 self.settings[f"outlet_{i}"]["temp_direction"] == outlet.temp_direction
             )
-            tt.append(self.settings[f"outlet_{i}"]["switch_temp"] == outlet.switch_temp)
-        tt.append(self.settings["door"]["enable"] == door.enable)
-        tt.append(self.settings["door"]["on_time"] == door.on_time)
-        tt.append(self.settings["door"]["off_time"] == door.off_time)
-        tt.append(self.settings["door"]["switch_temp"] == door.switch_temp)
+            test.append(
+                self.settings[f"outlet_{i}"]["switch_temp"] == outlet.switch_temp
+            )
+        test.append(self.settings["door"]["enable"] == door.enable)
+        test.append(self.settings["door"]["on_time"] == door.on_time)
+        test.append(self.settings["door"]["off_time"] == door.off_time)
+        test.append(self.settings["door"]["switch_temp"] == door.switch_temp)
 
-        if not all(tt):
+        if not all(test):
             # print("Something changed!!!!")
             self.update_internal_record(outlets, door)
             self.write_settings(outlets, door)

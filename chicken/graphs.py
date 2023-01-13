@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-    MODULE: chicken-pi
+    MODULE: chicken
     FILE: graphs.py
 
 Graphs display window, updates occasionally with current values

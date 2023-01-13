@@ -1,8 +1,8 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 """
-  FILE: chickenpi.py
+    MODULE: chicken
+    FILE: main.py
 
 Main driver routine for the integrated Chicken-Pi setup.
 

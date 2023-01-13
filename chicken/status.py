@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-    MODULE: chicken-pi
+    MODULE: chicken
     FILE: status.py
 
 Status display window, updates frequently with current values
@@ -14,20 +14,6 @@ import time
 
 # 3rd Party Libraries
 
-# Geometry
-PI_TOOLBAR = 36
-TK_HEADER = 25
-
-# Constants
-WIDGET_WIDE = 600  # Width of the "Status Window"
-WIDGET_HIGH = 300  # Height of the "Status Window"
-STATBG = "black"
-FONTSIZE = 13
-DATAFIELD = 15
-ENVROW = 1
-DEVROW = 5
-NETROW = 9
-
 
 class StatusWindow:
     """
@@ -35,96 +21,120 @@ class StatusWindow:
     Creates the status window and (supposedly) updates it from time to time.
     """
 
-    def __init__(self, master, CONTROL_WIDTH):
+    def __init__(self, master, control_width):
         """
         __init__ method: initializes the Status Window
         """
+        # Set up geometry as a dictionary
+        self.geom = {
+            "PI_TOOLBAR": 36,
+            "TK_HEADER": 25,
+            "CONTROL_WIDTH": control_width,
+            "WIDGET_WIDE": 600,  # Width of the "Status Window"
+            "WIDGET_HIGH": 300,  # Height of the "Status Window"
+            "STATBG": "black",
+            "FONTSIZE": 13,
+            "DATAFIELD": 15,  # Width of a data field
+            "ENVROW": 1,  # Widget row for environmental status
+            "DEVROW": 5,  # Widget row for device status
+            "NETROW": 9,  # Widget row for network status
+        }
+
+        # Because these are used so often...
+        env_row = self.geom["ENVROW"]
+        dev_row = self.geom["DEVROW"]
+        net_row = self.geom["NETROW"]
+
         # Define the MASTER for the window, set geometry
         self.master = master
         self.master.geometry(
-            f"{WIDGET_WIDE}x{WIDGET_HIGH}+{CONTROL_WIDTH+10}+{PI_TOOLBAR}"
+            f"{self.geom['WIDGET_WIDE']}x{self.geom['WIDGET_HIGH']}+"
+            f"{self.geom['CONTROL_WIDTH']+10}+{self.geom['PI_TOOLBAR']}"
         )
         self.master.title("Status Window")
-        self.master.configure(bg=STATBG)
+        self.master.configure(bg=self.geom["STATBG"])
 
         # A "frame" holds the various window contents
-        self.frame = tk.Frame(self.master, bg=STATBG)
+        self.frame = tk.Frame(self.master, bg=self.geom["STATBG"])
         self.frame.pack(expand=0)
 
         # Put the time at the top of the window
         self.display_time = tk.Label(
-            self.frame, font=("courier", FONTSIZE, "bold"), bg=STATBG, fg="skyblue"
+            self.frame,
+            font=("courier", self.geom["FONTSIZE"], "bold"),
+            bg=self.geom["STATBG"],
+            fg="skyblue",
         )
         self.display_time.grid(row=0, columnspan=4)
 
         # Create the various section labels
-        self.make_section_label("Environmental Status", row=ENVROW)
-        self.make_section_label("Network Status", row=NETROW)
-        self.make_section_label("Device Status", row=DEVROW)
+        self.make_section_label("Environmental Status", row=env_row)
+        self.make_section_label("Network Status", row=net_row)
+        self.make_section_label("Device Status", row=dev_row)
 
         # Environmental Status Labels
-        self.make_statistic_label("    Outside:", row=ENVROW + 1, column=0)
-        self.make_statistic_label("Inside Coop:", row=ENVROW + 2, column=0)
-        self.make_statistic_label("Light Level:", row=ENVROW + 3, column=0)
-        self.make_statistic_label(" Inside Box:", row=ENVROW + 1, column=2)
-        self.make_statistic_label("   RPi4 CPU:", row=ENVROW + 2, column=2)
+        self.make_statistic_label("    Outside:", row=env_row + 1, column=0)
+        self.make_statistic_label("Inside Coop:", row=env_row + 2, column=0)
+        self.make_statistic_label("Light Level:", row=env_row + 3, column=0)
+        self.make_statistic_label(" Inside Box:", row=env_row + 1, column=2)
+        self.make_statistic_label("   RPi4 CPU:", row=env_row + 2, column=2)
 
         # Environmental Status Data
-        self.env_outside_data = self.make_statistic_data(row=ENVROW + 1, column=1)
-        self.env_inside_data = self.make_statistic_data(row=ENVROW + 2, column=1)
-        self.env_light_data = self.make_statistic_data(row=ENVROW + 3, column=1)
-        self.env_pi_data = self.make_statistic_data(row=ENVROW + 1, column=3)
-        self.env_cpu_data = self.make_statistic_data(row=ENVROW + 2, column=3)
+        self.env_outside_data = self.make_statistic_data(row=env_row + 1, column=1)
+        self.env_inside_data = self.make_statistic_data(row=env_row + 2, column=1)
+        self.env_light_data = self.make_statistic_data(row=env_row + 3, column=1)
+        self.env_pi_data = self.make_statistic_data(row=env_row + 1, column=3)
+        self.env_cpu_data = self.make_statistic_data(row=env_row + 2, column=3)
 
         # Network Status Labels
-        self.make_statistic_label("WiFi Status:", row=NETROW + 1, column=0)
-        self.make_statistic_label("WLAN Status:", row=NETROW + 2, column=0)
-        self.make_statistic_label("   Local IP:", row=NETROW + 1, column=2)
-        self.make_statistic_label("    WLAN IP:", row=NETROW + 2, column=2)
+        self.make_statistic_label("WiFi Status:", row=net_row + 1, column=0)
+        self.make_statistic_label("WLAN Status:", row=net_row + 2, column=0)
+        self.make_statistic_label("   Local IP:", row=net_row + 1, column=2)
+        self.make_statistic_label("    WLAN IP:", row=net_row + 2, column=2)
 
         # Network Status Data
-        self.net_wifi_data = self.make_statistic_data(row=NETROW + 1, column=1)
-        self.net_internet_data = self.make_statistic_data(row=NETROW + 2, column=1)
-        self.net_lanip_data = self.make_statistic_data(row=NETROW + 1, column=3)
-        self.net_wanip_data = self.make_statistic_data(row=NETROW + 2, column=3)
+        self.net_wifi_data = self.make_statistic_data(row=net_row + 1, column=1)
+        self.net_internet_data = self.make_statistic_data(row=net_row + 2, column=1)
+        self.net_lanip_data = self.make_statistic_data(row=net_row + 1, column=3)
+        self.net_wanip_data = self.make_statistic_data(row=net_row + 2, column=3)
 
         # Device Status Labels
-        self.make_statistic_label("   Outlet 1:", row=DEVROW + 1, column=0)
-        self.make_statistic_label("   Outlet 2:", row=DEVROW + 2, column=0)
-        self.make_statistic_label("   Outlet 3:", row=DEVROW + 1, column=2)
-        self.make_statistic_label("   Outlet 4:", row=DEVROW + 2, column=2)
-        self.make_statistic_label("       Door:", row=DEVROW + 3, column=0)
+        self.make_statistic_label("   Outlet 1:", row=dev_row + 1, column=0)
+        self.make_statistic_label("   Outlet 2:", row=dev_row + 2, column=0)
+        self.make_statistic_label("   Outlet 3:", row=dev_row + 1, column=2)
+        self.make_statistic_label("   Outlet 4:", row=dev_row + 2, column=2)
+        self.make_statistic_label("       Door:", row=dev_row + 3, column=0)
 
         # Device Status Data
         self.dev_outlet_data = []
-        self.dev_outlet_data.append(self.make_statistic_data(row=DEVROW + 1, column=1))
-        self.dev_outlet_data.append(self.make_statistic_data(row=DEVROW + 2, column=1))
-        self.dev_outlet_data.append(self.make_statistic_data(row=DEVROW + 1, column=3))
-        self.dev_outlet_data.append(self.make_statistic_data(row=DEVROW + 2, column=3))
-        self.dev_door_data = self.make_statistic_data(row=DEVROW + 3, column=1)
+        self.dev_outlet_data.append(self.make_statistic_data(row=dev_row + 1, column=1))
+        self.dev_outlet_data.append(self.make_statistic_data(row=dev_row + 2, column=1))
+        self.dev_outlet_data.append(self.make_statistic_data(row=dev_row + 1, column=3))
+        self.dev_outlet_data.append(self.make_statistic_data(row=dev_row + 2, column=3))
+        self.dev_door_data = self.make_statistic_data(row=dev_row + 3, column=1)
 
     # Label Creator Methods
     def make_section_label(self, text, row):
-        """make_section_label Make the Section labels
+        """Make the Section labels
 
         [extended_summary]
 
         Parameters
         ----------
-        text : `str`
+        text : str
             The text for the section label
-        row : `int`
+        row : int
             Which row of the GUI this label should be placed in
 
         Returns
         -------
-        `tkinter.Label`
+        :obj:`tkinter.Label`
             The Label object
         """
         label = tk.Label(
             self.frame,
-            font=("times", FONTSIZE, "bold"),
-            bg=STATBG,
+            font=("times", self.geom["FONTSIZE"], "bold"),
+            bg=self.geom["STATBG"],
             fg="thistle2",
             text=text,
         )
@@ -132,28 +142,28 @@ class StatusWindow:
         return label
 
     def make_statistic_label(self, text, row, column):
-        """make_statistic_label Make a label for a given statistic
+        """Make a label for a given statistic
 
         [extended_summary]
 
         Parameters
         ----------
-        text : `str`
+        text : str
             The text for the statistic label
-        row : `int`
+        row : int
             Which row of the GUI this label should be placed in
-        column : `int`
+        column : int
             Which column of the GUI this label should be placed in
 
         Returns
         -------
-        `tkinter.Label`
+        :obj:`tkinter.Label`
             The Label object
         """
         label = tk.Label(
             self.frame,
-            font=("courier", FONTSIZE, "bold"),
-            bg=STATBG,
+            font=("courier", self.geom["FONTSIZE"], "bold"),
+            bg=self.geom["STATBG"],
             fg="lightgreen",
             text=text,
         )
@@ -161,46 +171,46 @@ class StatusWindow:
         return label
 
     def make_statistic_data(self, row, column):
-        """make_statistic_data Make the data object for a given statistic
+        """Make the data object for a given statistic
 
         [extended_summary]
 
         Parameters
         ----------
-        row : `int`
+        row : int
             Which row of the GUI this data should be placed in
-        column : `int`
+        column : int
             Which column of the GUI this data should be placed in
 
         Returns
         -------
-        `tkinter.Label`
+        :obj:`tkinter.Label`
             The Label object
         """
         label = tk.Label(
             self.frame,
-            font=("courier", FONTSIZE, "bold"),
-            bg=STATBG,
+            font=("courier", self.geom["FONTSIZE"], "bold"),
+            bg=self.geom["STATBG"],
             fg="burlywood1",
-            width=DATAFIELD,
+            width=self.geom["DATAFIELD"],
         )
         label.grid(row=row, column=column)
         return label
 
     def close_window(self):
-        """close_window Close the window"""
+        """Close the window"""
         self.master.destroy()
 
     def update(self, now, sensors, relays, network):
-        """update Update the information in this Window
+        """Update the information in this Window
 
         [extended_summary]
 
         Parameters
         ----------
-        now : `datetime.datetime`
+        now : :obj:`datetime.datetime`
             The current time at the update
-        sensors : `dict`
+        sensors : dict
             The dictionary containing the sensor objects
         relays : `chicken_devices.Relay`
             The Relay class
@@ -215,23 +225,25 @@ class StatusWindow:
         # Write the various environment statuses at different intervals
         if short_interval:
             # File read
-            self.env_cpu_data.config(text=format_cpu_str(sensors["cpu"].temp))
+            self.env_cpu_data.config(text=self.format_cpu_str(sensors["cpu"].temp))
         if long_interval:
             # I2C Query
             self.env_inside_data.config(
-                text=format_temp_humid_str(
+                text=self.format_temp_humid_str(
                     sensors["inside"].temp, sensors["inside"].humid
                 )
             )
             self.env_outside_data.config(
-                text=format_temp_humid_str(
+                text=self.format_temp_humid_str(
                     sensors["outside"].temp, sensors["outside"].humid
                 )
             )
             self.env_pi_data.config(
-                text=format_temp_humid_str(sensors["box"].temp, sensors["box"].humid)
+                text=self.format_temp_humid_str(
+                    sensors["box"].temp, sensors["box"].humid
+                )
             )
-            self.env_light_data.config(text=format_lux_str(sensors["light"].level))
+            self.env_light_data.config(text=self.format_lux_str(sensors["light"].level))
 
         # Write the various device statuses at different intervals
         if short_interval:
@@ -253,63 +265,62 @@ class StatusWindow:
         if short_interval:
             time.sleep(0.5)
 
+    @staticmethod
+    def format_temp_humid_str(temp, humid):
+        """Format the Temperature/Humidity strings
 
-# String Formatting Functions
-def format_temp_humid_str(temp, humid):
-    """format_temp_humid_str Format the Temperature/Humidity strings
+        Parameters
+        ----------
+        temp : float
+            The temperature to be displayed (ºF)
+        humid : float
+            The humidity to be displayed (%)
 
-    Parameters
-    ----------
-    temp : `float`
-        The temperature to be displayed (ºF)
-    humid : `float`
-        The humidity to be displayed (%)
+        Returns
+        -------
+        str
+            The properly formatted string
+        """
+        return f"{temp:.1f}\xb0F, {humid:.1f}%"
 
-    Returns
-    -------
-    `str`
-        The properly formatted string
-    """
-    return f"{temp:.1f}\xb0F, {humid:.1f}%"
+    @staticmethod
+    def format_lux_str(lux):
+        """Formet the Lux strings
 
+        Parameters
+        ----------
+        lux : float
+            The light level to be displayed (lux)
 
-def format_lux_str(lux):
-    """format_lux_str Formet the Lux strings
+        Returns
+        -------
+        str
+            The properly formatted string
+        """
+        if lux is None:
+            return "-" * 5
+        if lux < 10:
+            return f"{lux:.2f} lux"
+        if lux < 100:
+            return f"{lux:.1f} lux"
+        return f"{lux:.0f} lux"
 
-    Parameters
-    ----------
-    lux : `float`
-        The light level to be displayed (lux)
+    @staticmethod
+    def format_cpu_str(cputemp):
+        """Format the CPU temperature string
 
-    Returns
-    -------
-    `str`
-        The properly formatted string
-    """
-    if lux is None:
-        return "-" * 5
-    if lux < 10:
-        return f"{lux:.2f} lux"
-    if lux < 100:
-        return f"{lux:.1f} lux"
-    return f"{lux:.0f} lux"
+        Parameters
+        ----------
+        cputemp : float
+            The CPU temperature to be displayed (ºC)
 
-
-def format_cpu_str(cputemp):
-    """format_cpu_str Format the CPU temperature string
-
-    Parameters
-    ----------
-    cputemp : `float`
-        The CPU temperature to be displayed (ºC)
-
-    Returns
-    -------
-    `str`
-        The properly formatted string
-    """
-    return (
-        f"{cputemp:0.0f}\xb0F (<185\xb0F)"
-        if cputemp is not None
-        else "----- (<185\xb0F)"
-    )
+        Returns
+        -------
+        str
+            The properly formatted string
+        """
+        return (
+            f"{cputemp:0.0f}\xb0F (<185\xb0F)"
+            if cputemp is not None
+            else "----- (<185\xb0F)"
+        )

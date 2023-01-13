@@ -10,3 +10,4 @@ outlets:
   outlet2: "OUTLET2"
   outlet3: "OUTLET3"
   outlet4: "OUTLET4"
+use_nws: True

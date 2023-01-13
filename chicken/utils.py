@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-#
-#  Created on 12-Jan-2023
-#
-#  @author: tbowers
 
 """
-Utility Module
+    MODULE: chicken
+    FILE: utils.py
+
+Utility functions
+
 """
 
 # Built-In Libraries

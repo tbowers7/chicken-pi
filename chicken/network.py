@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-    MODULE: chicken-pi
+    MODULE: chicken
     FILE: network.py
 
 Various network status and email control functions
@@ -23,7 +23,7 @@ WLAN = "en0" if utils.get_system_type() == "Darwin" else "wlan0"
 
 
 class NetworkStatus:
-    """NetworkStatus Class for network status and update methods
+    """Class for network status and update methods
 
     [extended_summary]
     """
@@ -35,7 +35,7 @@ class NetworkStatus:
         self.inet_status = ""
 
     def update_lan(self):
-        """update_lan Update the LAN status variables
+        """Update the LAN status variables
 
         [extended_summary]
         """
@@ -55,7 +55,7 @@ class NetworkStatus:
             self.wifi_status = "OFF"
 
     def update_wan(self):
-        """update_wan Update the WAN status variables
+        """Update the WAN status variables
 
         [extended_summary]
         """
@@ -65,18 +65,18 @@ class NetworkStatus:
 
 # Network Checking Functions =======================================#
 def contact_server(host="192.168.0.1"):
-    """contact_server Check whether a server is reachable
+    """Check whether a server is reachable
 
     [extended_summary]
 
     Parameters
     ----------
-    host : `str`, optional
+    host : str, optional
         Name or IP address of server to contact [Default: '192.168.0.1']
 
     Returns
     -------
-    `bool`
+    bool
         Whether server is reachable
     """
     try:
@@ -89,14 +89,14 @@ def contact_server(host="192.168.0.1"):
 
 
 def get_local_ipv4():
-    """get_local_IP Return the local (LAN) IP address for the Pi
+    """Return the local (LAN) IP address for the Pi
 
-    Use `ifconfig` to read the local IP address assigned to the Pi by the
+    Use ``ifconfig`` to read the local IP address assigned to the Pi by the
     local DHCP server.
 
     Returns
     -------
-    `str`
+    str
         LAN IP address
     """
     cmd = f"/sbin/ifconfig {WLAN} | grep 'inet ' | awk '{{print $2}}'"
@@ -104,7 +104,7 @@ def get_local_ipv4():
 
 
 def get_public_ipv4():
-    """get_public_IP Return the public-facing IP address for the Pi
+    """Return the public-facing IP address for the Pi
 
     Query ipify.org to return the public (WAN) IP address for the network
     appliance to which the Chicken-Pi is attached.
@@ -115,7 +115,7 @@ def get_public_ipv4():
 
     Returns
     -------
-    `str`
+    str
         Public IP address
     """
     try:
