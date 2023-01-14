@@ -11,7 +11,6 @@ Database routines for saving readings from the chicken-pi
 # Built-In Libraries
 import csv
 import datetime
-import os
 
 # 3rd Party Libraries
 import astropy.table
@@ -34,11 +33,9 @@ class ChickenDatabase:
         print(f"Chicken-Pi database initialized: {now.date()} {now.time()}")
 
         # Check for existing FITS file for today -- read in or create new
-        today_fn = f"{utils.Paths.data}/coop_{now.strftime('%Y%m%d')}.fits"
+        today_fn = utils.Paths.data.joinpath(f"coop_{now.strftime('%Y%m%d')}.fits")
         self.table = (
-            self.read_table_file()
-            if os.path.exists(today_fn)
-            else astropy.table.Table()
+            self.read_table_file() if today_fn.exists() else astropy.table.Table()
         )
 
     @staticmethod
@@ -58,7 +55,7 @@ class ChickenDatabase:
             The table associated with the date
         """
         date = datetime.datetime.now().strftime("%Y%m%d") if date is None else date
-        return astropy.table.Table.read(f"{utils.Paths.data}/coop_{date}.fits")
+        return astropy.table.Table.read(utils.Paths.data.joinpath(f"coop_{date}.fits"))
 
     def add_row_to_table(self, nowobj, sensors, relays, network, debug=False):
         """Add a row of data to the table
@@ -137,7 +134,7 @@ class ChickenDatabase:
         if date is None:
             dt_object = datetime.datetime.now() - datetime.timedelta(minutes=15)
             date = dt_object.strftime("%Y%m%d")
-        self.table.write(f"{utils.Paths.data}/coop_{date}.fits", overwrite=True)
+        self.table.write(utils.Paths.data.joinpath(f"coop_{date}.fits"), overwrite=True)
 
     def get_recent_weather(self, time_range=24):
         """get_recent_weather [summary]

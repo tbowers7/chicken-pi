@@ -16,32 +16,25 @@ Dummy classes for the hardware devices on the Chicken Pi (for testing)
 
 
 def set_up_sensors():
-    """set_up_sensors Set up the dummy sensors for testing on Mac
+    """Set up the dummy sensors for testing on Mac
 
     Returns
     -------
-    `dict`
+    dict
         A dictionary containing the dummy sensors
     """
-    # Use a dictionary for holding the sensor instances
-    sensors = {}
-
-    # Inside the Pi box -- AHT10 temp/humid sensor to monitor conditions
-    sensors["box"] = DummyTH()
-
-    # Inside the coop -- SHT30 temp/humid sensor on I2C bus #1
-    sensors["inside"] = DummyTH()
-
-    # Outside the coop -- SHT30 temp/humid sensor on I2C bus #3
-    sensors["outside"] = DummyTH()
-
-    # Outside the coop -- TSL2591 light sensor
-    sensors["light"] = DummyLux()
-
-    # Raspberry Pi CPU
-    sensors["cpu"] = DummyCPU()
-
-    return sensors
+    return {
+        # Inside the Pi box -- AHT10 temp/humid sensor on I2C bus #1
+        "box": DummyTH(),
+        # Inside the coop -- SHT30 temp/humid sensor on I2C bus #1
+        "inside": DummyTH(),
+        # Outside the coop -- SHT30 temp/humid sensor on I2C bus #3
+        "outside": DummyTH(),
+        # Outside the coop -- TSL2591 light sensor on I2C bus #3
+        "light": DummyLux(),
+        # Raspberry Pi CPU
+        "cpu": DummyCPU(),
+    }
 
 
 # =========================================================#
@@ -96,7 +89,7 @@ class Relay:
         self.state = [False] * 4
 
     def write(self):
-        """write Write out something?
+        """Write out something?
 
         [extended_summary]
         """

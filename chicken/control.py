@@ -682,7 +682,7 @@ class DoorControl(_BaseControl):
             digits=4,
             orient=tk.HORIZONTAL,
             resolution=0.25,
-            command=self.update_on_time,
+            command=self.update_open_time,
             showvalue=0,
             variable=tk.DoubleVar,
             length=slider_size,
@@ -703,7 +703,7 @@ class DoorControl(_BaseControl):
             digits=4,
             orient=tk.HORIZONTAL,
             resolution=0.25,
-            command=self.update_off_time,
+            command=self.update_close_time,
             showvalue=0,
             variable=tk.DoubleVar,
             length=slider_size,
@@ -752,5 +752,29 @@ class DoorControl(_BaseControl):
         """
         self.switch_temp = float(sellux)
         self.door_light_label.config(
-            text=f" LIGHT {self.string_light(self.switch_temp)}"
+            text=f" LIGHT > {self.string_light(self.switch_temp)}"
         )
+
+    def update_open_time(self, seltime):
+        """Update the open time for the door from the GUI
+
+        Parameters
+        ----------
+        seltime : string or float
+            The selected time from the Tk widget
+        """
+        self.on_time = float(seltime)
+        self.on_label.config(text=f" OPEN {self.string_time(self.on_time)}")
+        self.update_time_cycle()
+
+    def update_close_time(self, seltime):
+        """Update the close time for the door from the GUI
+
+        Parameters
+        ----------
+        seltime : string or float
+            The selected time from the Tk widget
+        """
+        self.off_time = float(seltime)
+        self.off_label.config(text=f" CLOSE {self.string_time(self.off_time)}")
+        self.update_time_cycle()

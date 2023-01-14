@@ -34,14 +34,16 @@ def main(args):
     finally:
         print("Exiting...")
 
+    return 0
+
 
 def entry_point():
     """entry_point
 
     _extended_summary_
     """
-    main(sys.argv)
+    sys.exit(main(sys.argv))
 
 
 if __name__ == "__main__":
-    main(sys.argv)
+    sys.exit(main(sys.argv))

@@ -26,38 +26,30 @@ from chicken import utils
 
 
 def set_up_sensors():
-    """set_up_sensors Set up the sensors
+    """Set up the sensors
 
     [extended_summary]
 
     Returns
     -------
-    `dict`
+    dict
         Dictionary containing the sensor objects
     """
-    # Use a dictionary for holding the sensor instances
-    sensors = {}
-
-    # Inside the Pi box -- AHT10 temp/humid sensor to monitor conditions
-    sensors["box"] = TempHumid("AHT10")
-
-    # Inside the coop -- SHT30 temp/humid sensor on I2C bus #1
-    sensors["inside"] = TempHumid("SHT30", bus=1)
-
-    # Outside the coop -- SHT30 temp/humid sensor on I2C bus #3
-    sensors["outside"] = TempHumid("SHT30", bus=3)
-
-    # Outside the coop -- TSL2591 light sensor
-    sensors["light"] = TSL2591()
-
-    # Raspberry Pi CPU
-    sensors["cpu"] = RPiCPU()
-
-    return sensors
+    return {
+        # Inside the Pi box -- AHT10 temp/humid sensor on I2C bus #1
+        "box": TempHumid("AHT10", bus=1),
+        # Inside the coop -- SHT30 temp/humid sensor on I2C bus #1
+        "inside": TempHumid("SHT30", bus=1),
+        # Outside the coop -- SHT30 temp/humid sensor on I2C bus #3
+        "outside": TempHumid("SHT30", bus=3),
+        # Outside the coop -- TSL2591 light sensor on I2C bus #3
+        "light": TSL2591(bus=3),
+        # Raspberry Pi CPU
+        "cpu": RPiCPU(),
+    }
 
 
-# =============================================================================#
-
+# ============================================================================#
 # Device classes:
 
 # Implementation of the TSL2591 for the chicken-pi
@@ -81,50 +73,38 @@ class TSL2591:
         self._lux = -999
 
     # Define functions to increase or decrease the gain
-    @staticmethod
-    def decrease_gain(sensor):
-        """decrease_gain Decrease the gain of the TSL2591 sensor
+    def decrease_gain(self):
+        """Decrease the gain of the TSL2591 sensor
 
         [extended_summary]
-
-        Parameters
-        ----------
-        sensor : `adafruit_tsl2591.TSL2591`
-            The sensor instance
         """
-        if sensor.gain == adafruit_tsl2591.GAIN_MAX:
-            sensor.gain = adafruit_tsl2591.GAIN_HIGH
-        elif sensor.gain == adafruit_tsl2591.GAIN_HIGH:
-            sensor.gain = adafruit_tsl2591.GAIN_MED
-        elif sensor.gain == adafruit_tsl2591.GAIN_MED:
-            sensor.gain = adafruit_tsl2591.GAIN_LOW
+        if self._sensor.gain == adafruit_tsl2591.GAIN_MAX:
+            self._sensor.gain = adafruit_tsl2591.GAIN_HIGH
+        elif self._sensor.gain == adafruit_tsl2591.GAIN_HIGH:
+            self._sensor.gain = adafruit_tsl2591.GAIN_MED
+        elif self._sensor.gain == adafruit_tsl2591.GAIN_MED:
+            self._sensor.gain = adafruit_tsl2591.GAIN_LOW
 
-    @staticmethod
-    def increase_gain(sensor):
-        """increase_gain Increase the gain of the TSL2591 sensor
+    def increase_gain(self):
+        """Increase the gain of the TSL2591 sensor
 
         [extended_summary]
-
-        Parameters
-        ----------
-        sensor : `adafruit_tsl2591.TSL2591`
-            The sensor instance
         """
-        if sensor.gain == adafruit_tsl2591.GAIN_HIGH:
-            sensor.gain = adafruit_tsl2591.GAIN_MAX
-        elif sensor.gain == adafruit_tsl2591.GAIN_MED:
-            sensor.gain = adafruit_tsl2591.GAIN_HIGH
-        elif sensor.gain == adafruit_tsl2591.GAIN_LOW:
-            sensor.gain = adafruit_tsl2591.GAIN_MED
+        if self._sensor.gain == adafruit_tsl2591.GAIN_HIGH:
+            self._sensor.gain = adafruit_tsl2591.GAIN_MAX
+        elif self._sensor.gain == adafruit_tsl2591.GAIN_MED:
+            self._sensor.gain = adafruit_tsl2591.GAIN_HIGH
+        elif self._sensor.gain == adafruit_tsl2591.GAIN_LOW:
+            self._sensor.gain = adafruit_tsl2591.GAIN_MED
 
     def read(self):
-        """read Read the TSL2591 sensor
+        """Read the TSL2591 sensor
 
         [extended_summary]
 
         Returns
         -------
-        `float`
+        float
             The calculated light level in LUX
         """
         good_read = False
@@ -137,12 +117,12 @@ class TSL2591:
                 # Visible-only levels range from 0-2147483647 (32-bit)
                 visible = self._sensor.visible
                 if infrared < 256 and visible < 256:
-                    self.increase_gain(self._sensor)
+                    self.increase_gain()
                 else:
                     self._lux = self._sensor.lux
                     good_read = True
             except RuntimeError:
-                self.decrease_gain(self._sensor)
+                self.decrease_gain()
             except AttributeError:
                 self._lux = None
                 good_read = True
@@ -157,33 +137,33 @@ class TSL2591:
 
         Returns
         -------
-        `float`
+        float
             The calculated light level in LUX
         """
         return self.read()
 
     @property
     def cache_level(self):
-        """cache_level Return the cached light level as a class attribute
+        """Return the cached light level as a class attribute
 
         [extended_summary]
 
         Returns
         -------
-        `float`
+        float
             The cached light level in LUX
         """
         return self._lux
 
     @property
     def data_entry(self):
-        """data_entry Return the DATA_ENTRY object needed for the database
+        """Return the DATA_ENTRY object needed for the database
 
         [extended_summary]
 
         Returns
         -------
-        `float`
+        float
             Cached sensor values for the database
         """
         return self.cache_level
@@ -224,14 +204,14 @@ class Relay:
         self.write()
 
     def read(self):
-        """read Read the status of the 4 relays from the board
+        """Read the status of the 4 relays from the board
 
         [Doesn't really work... not sure why.  Usually just returns
          an array of zeroes.]
 
         Returns
         -------
-        `list` of `byetarray`
+        list of byetarray
             List of the control bit + values from the 4 relays
         """
         # Read the current state of the relays
@@ -239,7 +219,7 @@ class Relay:
         return self._READ_BUF
 
     def status(self):
-        """status Return the current status of the relays
+        """Return the current status of the relays
 
         Method writes the current state to ensure the relays match what
         the internal variables say they should be.  Then this method
@@ -247,14 +227,14 @@ class Relay:
 
         Returns
         -------
-        `list` of `bool`
+        list of bool
             The True/False state of each relay
         """
         self.write()
         return self.state
 
     def write(self):
-        """write Write the desired state of thr 4 relays to the board
+        """Write the desired state of thr 4 relays to the board
 
         [extended_summary]
         """
@@ -271,7 +251,7 @@ class Relay:
 
 
 class TempHumid:
-    """Chicken-Pi Class for the TSL2591 luminosity sensor
+    """Chicken-Pi Class for the various temp/humid sensors
 
     [extended_summary]
     """
@@ -296,13 +276,13 @@ class TempHumid:
 
     @property
     def temp(self):
-        """temp Returns the sensor temperature as a class attribute
+        """Returns the sensor temperature as a class attribute
 
         [extended_summary]
 
         Returns
         -------
-        `float`
+        float
             The requested temperature (ºF)
         """
         try:
@@ -313,13 +293,13 @@ class TempHumid:
 
     @property
     def humid(self):
-        """humid Returns the sensor humidity as a class attribute
+        """Returns the sensor humidity as a class attribute
 
         [extended_summary]
 
         Returns
         -------
-        `float`
+        float
             The requested humidity (%)
         """
         try:
@@ -330,35 +310,35 @@ class TempHumid:
 
     @property
     def cache_temp(self):
-        """cache_temp Return the cached temperature as a class attribute
+        """Return the cached temperature as a class attribute
 
         Returns
         -------
-        `float`
+        float
             The cached temperature (ºF)
         """
         return self._temp
 
     @property
     def cache_humid(self):
-        """cache_humid Return the cached humidity as a class attribute
+        """Return the cached humidity as a class attribute
 
         Returns
         -------
-        `float`
+        float
             The cached humidity (%)
         """
         return self._relh
 
     @property
     def data_entry(self):
-        """data_entry Return the DATA_ENTRY object needed for the database
+        """Return the DATA_ENTRY object needed for the database
 
         [extended_summary]
 
         Returns
         -------
-        `float`, `float`
+        tuple of float
             Cached sensor values for the database
         """
         return self.cache_temp, self.cache_humid
@@ -374,7 +354,7 @@ class ChickenDoor:
         self.kit = MotorKit()
 
     def test_motor(self):
-        """test_motor Test the Motor!
+        """Test the Motor!
 
         [extended_summary]
         """
@@ -394,44 +374,44 @@ class RPiCPU:
 
     @property
     def temp(self):
-        """temp Return the CPU temperature as a class attribute
+        """Return the CPU temperature as a class attribute
 
         [extended_summary]
 
         Returns
         -------
-        `float`
+        float
             The CPU temperature in ºF, as reported by the system
         """
-        return get_cpu_temp()
+        return self.get_cpu_temp()
 
     @property
     def data_entry(self):
-        """data_entry Return the DATA_ENTRY object needed for the database
+        """Return the DATA_ENTRY object needed for the database
 
         [extended_summary]
 
         Returns
         -------
-        `float`
+        float
             The CPU temperature (ºF)
         """
         return self.temp
 
+    @staticmethod
+    def get_cpu_temp():
+        """Read the CPU temperature from system file
 
-def get_cpu_temp():
-    """get_cpu_temp Read the CPU temperature from system file
+        [extended_summary]
 
-    [extended_summary]
-
-    Returns
-    -------
-    `float`
-        CPU temperature in ºF
-    """
-    # Check Pi CPU Temp:
-    if utils.get_system_type() == "Linux":
-        cputemp_fn = "/sys/class/thermal/thermal_zone0/temp"
-        with open(cputemp_fn, "r", encoding="utf-8") as sys_file:
-            return (float(sys_file.read()) / 1000.0) * 9.0 / 5.0 + 32.0
-    return None
+        Returns
+        -------
+        float
+            CPU temperature in ºF
+        """
+        # Check Pi CPU Temp:
+        if utils.get_system_type() == "Linux":
+            cputemp_fn = "/sys/class/thermal/thermal_zone0/temp"
+            with open(cputemp_fn, "r", encoding="utf-8") as sys_file:
+                return (float(sys_file.read()) / 1000.0) * 9.0 / 5.0 + 32.0
+        return None
