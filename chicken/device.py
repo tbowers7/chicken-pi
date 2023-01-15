@@ -9,6 +9,7 @@ Control classes for the hardware devices on the Chicken Pi
 """
 
 # Built-In Libraries
+import datetime
 import time
 
 # 3rd Party Libraries
@@ -23,6 +24,9 @@ from adafruit_motorkit import MotorKit  # Motor HAT
 
 # Internal Imports
 from chicken import utils
+
+# Module Constants
+TEMPHUMID_RESET_HOURS = 24
 
 
 def set_up_sensors():
@@ -254,9 +258,18 @@ class TempHumid:
     """Chicken-Pi Class for the various temp/humid sensors
 
     [extended_summary]
+
+    Parameters
+    ----------
+    senstyp : str
+        The Temp/Humid sensor type to set up
+    bus : int, optional
+        The I2C bus on which this device is connected (Default: 1)
     """
 
-    def __init__(self, senstyp, bus=1):
+    def __init__(self, senstyp: str, bus=1):
+
+        self.senstyp = senstyp
 
         # Load the appropriate I2C Bus
         self._i2c = EI2C(bus)
@@ -265,7 +278,6 @@ class TempHumid:
         if senstyp == "SHT30":
             self.sensor = adafruit_sht31d.SHT31D(self._i2c)
         elif senstyp == "AHT10":
-            # TODO: AHT10 seems to accumulate weirdly -- see about resetting before each read
             self.sensor = adafruit_ahtx0.AHTx0(self._i2c)
         else:
             raise ValueError("Sensor type must be either SHT30 or AHT10")
@@ -273,6 +285,7 @@ class TempHumid:
         # Internal variables
         self._temp = -99
         self._relh = -99
+        self._last_reset = datetime.datetime.now()
 
     @property
     def temp(self):
@@ -285,6 +298,9 @@ class TempHumid:
         float
             The requested temperature (ºF)
         """
+        # Reset the sensor, if necessary
+        self.reset_sensor()
+
         try:
             self._temp = self.sensor.temperature * 9.0 / 5.0 + 32.0
             return self._temp
@@ -343,6 +359,35 @@ class TempHumid:
         """
         return self.cache_temp, self.cache_humid
 
+    def reset_sensor(self):
+        """Reset the sensor if lone enough since last reset
+
+        The temperature and humidity sensors sometimes accumulate errors that
+        lead to spurious readings.  This method executes a periodic reset of
+        the sensors every ``TEMPHUMID_RESET_HOURS``.
+
+        The different sensors have slightly different reset mechanisms, so this
+        method queries the ``self.senstyp`` attribute to access the proper
+        reset method.
+        """
+        # Check elapsed time since last reset; return if not long enough
+        if (datetime.datetime.now() - self._last_reset) < datetime.timedelta(
+            hours=TEMPHUMID_RESET_HOURS
+        ):
+            return
+
+        # Run the reset routine based on `self.senstyp`
+        if self.senstyp == "AHT10":
+            self.sensor.reset()
+            if not self.sensor.calibrate():
+                raise RuntimeError("Could not calibrate AHT10 Sensor")
+
+        elif self.sensor == "SHT30":
+            self.sensor._reset()
+
+        # Record the time of the reset
+        self._last_reset = datetime.datetime.now()
+
 
 class ChickenDoor:
     """Chicken-Pi Class for the yet-to-be-built chicken door
@@ -361,6 +406,12 @@ class ChickenDoor:
         self.kit.motor1.throttle = 1.0
         time.sleep(0.5)
         self.kit.motor1.throttle = 0.0
+
+    def open_door(self):
+        """Open the door!
+
+        _extended_summary_
+        """
 
 
 class RPiCPU:
