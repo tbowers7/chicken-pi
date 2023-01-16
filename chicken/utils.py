@@ -27,6 +27,7 @@ class Paths:
     resources = pathlib.Path(resource_filename("chicken", "resources"))
     data = pathlib.Path(resource_filename("chicken", "data"))
     config = pathlib.Path(resource_filename("chicken", "config"))
+    logs = pathlib.Path(resource_filename("chicken", "logs"))
 
 
 def load_yaml_config():
@@ -62,9 +63,3 @@ def get_system_type():
     else:
         uname = ""
     return (os.popen(f"{uname} -a").read()).split()[0]
-
-
-if __name__ == "__main__":
-    config = load_yaml_config()
-    print(config)
-    print(type(config))

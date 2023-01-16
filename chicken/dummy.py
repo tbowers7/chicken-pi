@@ -77,7 +77,7 @@ class DummyCPU:
         self.data_entry = self.cache_temp
 
 
-class Relay:
+class RelayHAT:
     """Dummy Relay Class
 
     [extended_summary]

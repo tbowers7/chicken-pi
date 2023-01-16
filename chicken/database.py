@@ -11,6 +11,7 @@ Database routines for saving readings from the chicken-pi
 # Built-In Libraries
 import csv
 import datetime
+import logging
 
 # 3rd Party Libraries
 import astropy.table
@@ -25,12 +26,16 @@ class ChickenDatabase:
     [extended_summary]
     """
 
-    def __init__(self):
+    def __init__(self, logger: logging.Logger):
         # Set up internal variables
+        self.logger = logger
 
+        # Log the startup time for the database
         now = datetime.datetime.now()
-        self.date = now
-        print(f"Chicken-Pi database initialized: {now.date()} {now.time()}")
+        self.logger.info(
+            "Chicken-Pi database initialized: %s",
+            now.isoformat(sep=" ", timespec="seconds"),
+        )
 
         # Check for existing FITS file for today -- read in or create new
         today_fn = utils.Paths.data.joinpath(f"coop_{now.strftime('%Y%m%d')}.fits")
@@ -75,8 +80,8 @@ class ChickenDatabase:
         debug : `bool`, optional
             Print debugging statements?  [Default: False]
         """
-        if debug:
-            print(f"We're adding a row to the database at {nowobj.time()}...")
+
+        self.logger.debug("We're adding a row to the database at %s...", nowobj.time())
 
         # Create the empty row dictionary
         row = {}

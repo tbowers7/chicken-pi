@@ -15,12 +15,12 @@ import time
 # 3rd Party Libraries
 
 # Hardware Libraries
-from adafruit_bus_device.i2c_device import I2CDevice
-from adafruit_extended_bus import ExtendedI2C as EI2C
+import adafruit_bus_device.i2c_device
+import adafruit_extended_bus
 import adafruit_tsl2591  # Outside light sensor
 import adafruit_sht31d  # Inside/outside temp/humid sensors (x2)
 import adafruit_ahtx0  # Internal (box) temp/humid sensor
-from adafruit_motorkit import MotorKit  # Motor HAT
+import adafruit_motorkit  # Motor HAT
 
 # Internal Imports
 from chicken import utils
@@ -65,7 +65,7 @@ class TSL2591:
 
     def __init__(self, bus=3):
         # Initialize the I2C bus.
-        self._i2c = EI2C(bus)
+        self._i2c = adafruit_extended_bus.ExtendedI2C(bus)
 
         # Initialize the sensor.
         try:
@@ -173,10 +173,12 @@ class TSL2591:
         return self.cache_level
 
 
-class Relay:
+class Old3ARelay:
     """Chicken-Pi Class for the _____ Relay Board
 
-    [extended_summary]
+    This is the class for the original 3A Relay DDL board
+
+    These were removed in Jan 2023 in favor of a 10A relay board
     """
 
     # Internal constants:
@@ -199,8 +201,8 @@ class Relay:
             I2C address of this relay board [Default: _RELAY_ADDR]
         """
         # Initialize the I2C device
-        self._i2c = EI2C(1)
-        self._device = I2CDevice(self._i2c, address)
+        self._i2c = adafruit_extended_bus.ExtendedI2C(1)
+        self._device = adafruit_bus_device.i2c_device.I2CDevice(self._i2c, address)
 
         # Make instance variable, and write 0's to relay HAT
         self.good_write = None
@@ -254,6 +256,38 @@ class Relay:
             self.good_write = False
 
 
+class Relay(Old3ARelay):
+    """Placeholder while I'm working to move to the KS0212 relay board
+
+    _extended_summary_
+    """
+
+    def __init__(self):
+        super().__init__()
+
+
+# class RelayHAT:
+#     """Relay HAT Control Class
+
+#     This is the control class for the KS0212 relay HAT board installed in the
+#     chicken-pi in January 2023.
+#     """
+
+#     _WRITE_BUF = bytearray(5)
+
+#     def __init__(self):
+#         self.state = [False] * 4
+
+#     def write(self):
+#         """Write out something?
+
+#         [extended_summary]
+#         """
+#         self._WRITE_BUF[0] = 0x01
+#         for i, relay in enumerate(self.state, 1):
+#             self._WRITE_BUF[i] = 0xFF if relay else 0x00
+
+
 class TempHumid:
     """Chicken-Pi Class for the various temp/humid sensors
 
@@ -272,7 +306,7 @@ class TempHumid:
         self.senstyp = senstyp
 
         # Load the appropriate I2C Bus
-        self._i2c = EI2C(bus)
+        self._i2c = adafruit_extended_bus.ExtendedI2C(bus)
 
         # Load the appropriate sensor class
         if senstyp == "SHT30":
@@ -360,7 +394,7 @@ class TempHumid:
         return self.cache_temp, self.cache_humid
 
     def reset_sensor(self):
-        """Reset the sensor if lone enough since last reset
+        """Reset the sensor if long enough since last reset
 
         The temperature and humidity sensors sometimes accumulate errors that
         lead to spurious readings.  This method executes a periodic reset of
@@ -369,22 +403,20 @@ class TempHumid:
         The different sensors have slightly different reset mechanisms, so this
         method queries the ``self.senstyp`` attribute to access the proper
         reset method.
+
+        At present, only running the reset for the AHT10 sensor, as the SHT30
+        seems to be stable over long periods.
         """
-        # Check elapsed time since last reset; return if not long enough
-        if (datetime.datetime.now() - self._last_reset) < datetime.timedelta(
-            hours=TEMPHUMID_RESET_HOURS
-        ):
+        # Check sensor type, and elapsed time since last reset
+        if self.senstyp != "AHT10" or (
+            datetime.datetime.now() - self._last_reset
+        ) < datetime.timedelta(hours=TEMPHUMID_RESET_HOURS):
             return
 
-        # Run the reset routine based on `self.senstyp`
-        if self.senstyp == "AHT10":
-            self.sensor.reset()
-            if not self.sensor.calibrate():
-                raise RuntimeError("Could not calibrate AHT10 Sensor")
-
-        elif self.sensor == "SHT30":
-            self.sensor._reset()
-
+        # Run the reset routine for the AHT10
+        self.sensor.reset()
+        if not self.sensor.calibrate():
+            raise RuntimeError("Could not calibrate AHT10 Sensor")
         # Record the time of the reset
         self._last_reset = datetime.datetime.now()
 
@@ -396,7 +428,7 @@ class ChickenDoor:
     """
 
     def __init__(self):
-        self.kit = MotorKit()
+        self.kit = adafruit_motorkit.MotorKit()
 
     def test_motor(self):
         """Test the Motor!

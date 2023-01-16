@@ -9,6 +9,7 @@ Various network status and email control functions
 """
 
 # Built-In Libraries
+import logging
 import os
 
 # 3rd Party Libraries
@@ -28,7 +29,11 @@ class NetworkStatus:
     [extended_summary]
     """
 
-    def __init__(self):
+    def __init__(self, logger: logging.Logger):
+
+        # Use the passed-in logger
+        self.logger = logger
+
         self.lan_ipv4 = "-----"
         self.wan_ipv4 = "-----"
         self.wifi_status = "UNKNOWN"
@@ -62,8 +67,7 @@ class NetworkStatus:
         self.inet_status = "ON" if self.contact_server("1.1.1.1") else "OFF"
         self.wan_ipv4 = self.get_public_ipv4()
 
-    @staticmethod
-    def contact_server(host="192.168.0.1"):
+    def contact_server(self, host="192.168.0.1"):
         """Check whether a server is reachable
 
         [extended_summary]
@@ -71,7 +75,7 @@ class NetworkStatus:
         Parameters
         ----------
         host : str, optional
-            Name or IP address of server to contact [Default: '192.168.0.1']
+            Name or IP address of server to contact (Default: "``192.168.0.1``")
 
         Returns
         -------
@@ -82,9 +86,15 @@ class NetworkStatus:
             http = urllib3.PoolManager()
             http.request("GET", host, timeout=3, retries=False)
             return True
+        except urllib3.exceptions.ConnectTimeoutError:
+            self.logger.warning("Local router timeout error.")
         except Exception as error:
-            print(f"urllib3 threw exception: {error}")
-            return False
+            self.logger.warning(
+                "While contacting local router, urllib3 threw exception: %s %s",
+                error,
+                error.__class__.__name__,
+            )
+        return False
 
     @staticmethod
     def get_local_ipv4():
@@ -101,8 +111,7 @@ class NetworkStatus:
         cmd = f"/sbin/ifconfig {WLAN} | grep 'inet ' | awk '{{print $2}}'"
         return (os.popen(cmd).read()).strip()
 
-    @staticmethod
-    def get_public_ipv4():
+    def get_public_ipv4(self):
         """Return the public-facing IP address for the Pi
 
         Query ipify.org to return the public (WAN) IP address for the network
@@ -124,7 +133,14 @@ class NetworkStatus:
             # If response is longer than the maximum 15 characters, return '---'.
             if len(public_ipv4) > 15:
                 public_ipv4 = "-----"
+        except requests.exceptions.Timeout:
+            self.logger.warning("Public IPv4 timeout error.")
+            public_ipv4 = "-----"
         except Exception as error:
-            print(f"requests threw exception: {error}")
+            self.logger.warning(
+                "While getting public IPv4, requests threw exception: %s %s",
+                error,
+                error.__class__.__name__,
+            )
             public_ipv4 = "-----"
         return public_ipv4

@@ -10,6 +10,7 @@ Control window, with all the shiny knobs and buttons
 
 # Built-In Libraries
 import datetime
+import logging
 import tkinter as tk
 
 # 3rd Party Libraries
@@ -40,7 +41,10 @@ class ControlWindow:
         The master Tk object
     """
 
-    def __init__(self, master):
+    def __init__(self, master, logger: logging.Logger):
+
+        # Set logger as attribute
+        self.logger = logger
 
         # Set up geometry as a dictionary
         self.geom = {
@@ -61,8 +65,8 @@ class ControlWindow:
         self.relays = Relay()
 
         # Set up the database and network status classes
-        self.network = NetworkStatus()
-        self.database = ChickenDatabase()
+        self.network = NetworkStatus(self.logger)
+        self.database = ChickenDatabase(self.logger)
 
         # Indicator LEDs
         self.led = {
@@ -213,8 +217,8 @@ class ControlWindow:
         verbose : bool, optional
             Provide verbose output?  (Default: False)
         """
-        if verbose:
-            print("Writing readings to the database...")
+        logger_level = self.logger.info if verbose else self.logger.debug
+        logger_level("Writing readings to the database...")
         self.database.add_row_to_table(now, self.sensors, self.relays, self.network)
 
     def write_database_to_disk(self):
@@ -224,7 +228,7 @@ class ControlWindow:
         """
         # Write the current status to the database first
         self.write_to_database(datetime.datetime.now())
-        print("Writing the databse to disk...")
+        self.logger.info("Writing the databse to disk...")
         self.database.write_table_to_fits()
 
 
