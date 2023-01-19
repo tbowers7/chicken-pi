@@ -86,8 +86,10 @@ class NetworkStatus:
             http = urllib3.PoolManager()
             http.request("GET", host, timeout=3, retries=False)
             return True
-        except urllib3.exceptions.ConnectTimeoutError:
-            self.logger.warning("Local router timeout error.")
+        except urllib3.exceptions.TimeoutError:
+            self.logger.debug("Local router timeout error.")
+        except urllib3.exceptions.ProtocolError:
+            self.logger.debug("Local router protocol error.")
         except Exception as error:
             self.logger.warning(
                 "While contacting local router, urllib3 threw exception: %s %s",
@@ -134,7 +136,10 @@ class NetworkStatus:
             if len(public_ipv4) > 15:
                 public_ipv4 = "-----"
         except requests.exceptions.Timeout:
-            self.logger.warning("Public IPv4 timeout error.")
+            self.logger.debug("Public IPv4 timeout error.")
+            public_ipv4 = "-----"
+        except requests.exceptions.ConnectionError:
+            self.logger.debug("Public IPv4 connection error.")
             public_ipv4 = "-----"
         except Exception as error:
             self.logger.warning(

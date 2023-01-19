@@ -21,79 +21,78 @@ from chicken import utils
 
 
 class ChickenDatabase:
-    """ChickenDatabase Database class for the Chicken-Pi
+    """Database class for the Chicken-Pi
 
-    [extended_summary]
+    This class manages all of the data collected and produced by the Chicken-Pi
+    program.  It keeps the current day's values in memory, and writes it to
+    disk at midnight.
+
+    Data are stored in AstroPy Tables (inherited from the developer's
+    professional background), and written to disk as FITS binary tables.  While
+    other data management formats might be more universal, this form was deemed
+    most expedient given the limited time available to the developer for
+    writing this code.
+
+    This class includes methods for recording data into the current table,
+    writing tables to disk, and retrieving historical tables from disk.
+
+    Parameters
+    ----------
+    logger : logging.Logger
+        The logging object into which to place logs
     """
 
     def __init__(self, logger: logging.Logger):
         # Set up internal variables
         self.logger = logger
+        now = datetime.datetime.now()
+
+        # Check for existing FITS file for today -- read in or create new
+        today_fn = utils.Paths.data.joinpath(f"coop_{now.strftime('%Y%m%d')}.fits")
+        self.table = (
+            astropy.table.Table.read(today_fn)
+            if today_fn.exists()
+            else astropy.table.Table()
+        )
 
         # Log the startup time for the database
-        now = datetime.datetime.now()
         self.logger.info(
             "Chicken-Pi database initialized: %s",
             now.isoformat(sep=" ", timespec="seconds"),
         )
 
-        # Check for existing FITS file for today -- read in or create new
-        today_fn = utils.Paths.data.joinpath(f"coop_{now.strftime('%Y%m%d')}.fits")
-        self.table = (
-            self.read_table_file() if today_fn.exists() else astropy.table.Table()
-        )
-
-    @staticmethod
-    def read_table_file(date=None):
-        """Read the current table in from disk
-
-        [extended_summary]
-
-        Parameters
-        ----------
-        date : str, optional
-            The YYMMDD string of the date to read in. [Default: None]
-
-        Returns
-        -------
-        :obj:`astropy.table.Table`
-            The table associated with the date
-        """
-        date = datetime.datetime.now().strftime("%Y%m%d") if date is None else date
-        return astropy.table.Table.read(utils.Paths.data.joinpath(f"coop_{date}.fits"))
-
     def add_row_to_table(self, nowobj, sensors, relays, network, debug=False):
         """Add a row of data to the table
 
-        [extended_summary]
+        .. note::
+            When adding a row to the Table, this method checks whether the
+            date has changed.  If it has, then it writes the present Table to
+            disk and starts a new (blank) Table for the new date.
+
 
         Parameters
         ----------
-        nowobj : [type]
-            [description]
+        nowobj : :obj:`datetime.datetime`
+            The ``datetime`` object representing the official NOW
         sensors : [type]
             [description]
         relays : [type]
             [description]
         network : [type]
             [description]
-        debug : `bool`, optional
-            Print debugging statements?  [Default: False]
+        debug : bool, optional
+            Print debugging statements?  (Default: False)
         """
 
         self.logger.debug("We're adding a row to the database at %s...", nowobj.time())
 
-        # Create the empty row dictionary
-        row = {}
-
-        # Add the date/time to the row
-        row["date"] = nowobj.strftime("%Y-%m-%d")
-        row["time"] = nowobj.strftime("%H:%M:%S")
+        # Begin populating the `row` dictionary with the date & time
+        row = {"date": nowobj.strftime("%Y-%m-%d"), "time": nowobj.strftime("%H:%M:%S")}
 
         # Add the sensor readings to the row
-        for name in sensors.keys():
+        for name, sensor in sensors.items():
             # Retrieve the data from this sensor
-            data = sensors[name].data_entry
+            data = sensor.data_entry
 
             # If `data` is a tuple, it's a TH sensor, otherwise a LUX or CPU
             if isinstance(data, tuple):
@@ -139,7 +138,19 @@ class ChickenDatabase:
         if date is None:
             dt_object = datetime.datetime.now() - datetime.timedelta(minutes=15)
             date = dt_object.strftime("%Y%m%d")
+        self.logger.info(f"Writing the databse for {date} to disk...")
         self.table.write(utils.Paths.data.joinpath(f"coop_{date}.fits"), overwrite=True)
+
+    def read_table_from_fits(self, date=None):
+        """Read in a FITS file on disk
+
+        _extended_summary_
+
+        Parameters
+        ----------
+        date : _type_, optional
+            _description_, by default None
+        """
 
     def get_recent_weather(self, time_range=24):
         """get_recent_weather [summary]

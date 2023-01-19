@@ -10,6 +10,7 @@ Graphs display window, updates occasionally with current values
 
 # Built-In Libraries
 import datetime
+import logging
 import threading
 import tkinter as tk
 
@@ -24,26 +25,58 @@ from noaa_sdk import noaa
 from chicken import utils
 
 # Geometry
-PI_TOOLBAR = 36
-TK_HEADER = 25
 matplotlib.use("TkAgg")
 
 
 class GraphsWindow:
-    """_summary_
+    """Graphs Window Class
 
-    _extended_summary_
+    Creates the graphs window and updates it from time to time.
+
+    Parameters
+    ----------
+    master : :obj:`tkinter.Tk`
+        The master Tk object
+    logger : :obj:`logging.Logger`
+        The logging object into which to place logging messages
+    config : dict
+        The configuration file dictionary
     """
 
-    def __init__(self, master, data):
-        self.master = master
-        self.master.geometry(f"700x400+600+{200+PI_TOOLBAR+TK_HEADER}")
-        self.master.title("Graphs Window")
-        self.frame = tk.Frame(self.master)
+    def __init__(self, master, logger: logging.Logger, config: dict, database):
 
-        # The database object
-        self.data = data
-        self.config = utils.load_yaml_config()
+        # Set logger & config as attributes
+        self.logger = logger
+        self.config = config
+        self.geom = self.config["window_geometry"]
+        self.data = database
+
+        # Set up window layout as a dictionary
+        self.layout = {
+            "bkg_color": "#002D04",  # Dark Forest Green
+            "fg_color": "#faebd7",  # Antique White
+            "font_size": 9,
+        }
+
+        # Define the MASTER for the window, set geometry
+        # NOTE: Geomtery is set as "X x Y + X0 + Y0"
+        self.master = master
+        y_0 = (
+            self.geom["PI_TOOLBAR"]
+            + self.geom["TK_HEADER"]
+            + self.geom["STATUS_HIGH"]
+            + self.geom["GAP"]
+        )
+        self.master.geometry(
+            f"{self.geom['GRAPHS_WIDE']}x{self.geom['GRAPHS_HIGH']}+"
+            f"{self.geom['CONTROL_WIDE']+self.geom['GAP']}+{y_0}"
+        )
+        self.master.title("Graphs Window")
+        self.master.configure(bg=self.layout["bkg_color"])
+
+        # A "frame" holds the various window contents
+        self.frame = tk.Frame(self.master, bg=self.layout["bkg_color"])
+        self.frame.pack(expand=0)
 
         # Load the local coordinates from file
         self.lat = self.config["geography"]["latitude"]
@@ -130,6 +163,7 @@ class GraphsWindow:
         now : _type_
             _description_
         """
+        return
         x = threading.Thread(target=self.get_forecast, daemon=True)
         x.start()
         print(self.have_forecast)

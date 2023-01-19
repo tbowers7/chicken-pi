@@ -9,61 +9,73 @@ Status display window, updates frequently with current values
 """
 
 # Built-In Libraries
+import logging
 import tkinter as tk
 import time
 
 # 3rd Party Libraries
 
+# Internal Imports
+from chicken import utils
+
 
 class StatusWindow:
-    """
-    StatusWindow class
-    Creates the status window and (supposedly) updates it from time to time.
+    """Status Window Class
+
+    Creates the status window and updates it from time to time.
+
+    Parameters
+    ----------
+    master : :obj:`tkinter.Tk`
+        The master Tk object
+    logger : :obj:`logging.Logger`
+        The logging object into which to place logging messages
+    config : dict
+        The configuration file dictionary
     """
 
-    def __init__(self, master, control_width):
-        """
-        __init__ method: initializes the Status Window
-        """
-        # Set up geometry as a dictionary
-        self.geom = {
-            "PI_TOOLBAR": 36,
-            "TK_HEADER": 25,
-            "CONTROL_WIDTH": control_width,
-            "WIDGET_WIDE": 600,  # Width of the "Status Window"
-            "WIDGET_HIGH": 300,  # Height of the "Status Window"
-            "STATBG": "black",
-            "FONTSIZE": 13,
-            "DATAFIELD": 15,  # Width of a data field
-            "ENVROW": 1,  # Widget row for environmental status
-            "DEVROW": 5,  # Widget row for device status
-            "NETROW": 9,  # Widget row for network status
+    def __init__(self, master, logger: logging.Logger, config: dict):
+
+        # Set logger & config as attributes
+        self.logger = logger
+        self.config = config
+        self.geom = self.config["window_geometry"]
+
+        # Set up window layout as a dictionary
+        self.layout = {
+            "bkg_color": "black",
+            "font_size": 10,
+            "data_width": 15,  # Width of a data field
+            "env_row": 1,  # Widget row for environmental status
+            "dev_row": 5,  # Widget row for device status
+            "net_row": 9,  # Widget row for network status
         }
 
         # Because these are used so often...
-        env_row = self.geom["ENVROW"]
-        dev_row = self.geom["DEVROW"]
-        net_row = self.geom["NETROW"]
+        env_row = self.layout["env_row"]
+        dev_row = self.layout["dev_row"]
+        net_row = self.layout["net_row"]
 
         # Define the MASTER for the window, set geometry
+        # NOTE: Geomtery is set as "X x Y + X0 + Y0"
         self.master = master
         self.master.geometry(
-            f"{self.geom['WIDGET_WIDE']}x{self.geom['WIDGET_HIGH']}+"
-            f"{self.geom['CONTROL_WIDTH']+10}+{self.geom['PI_TOOLBAR']}"
+            f"{self.geom['STATUS_WIDE']}x{self.geom['STATUS_HIGH']}+"
+            f"{self.geom['CONTROL_WIDE']+self.geom['GAP']}+{self.geom['PI_TOOLBAR']}"
         )
         self.master.title("Status Window")
-        self.master.configure(bg=self.geom["STATBG"])
+        self.master.configure(bg=self.layout["bkg_color"])
 
         # A "frame" holds the various window contents
-        self.frame = tk.Frame(self.master, bg=self.geom["STATBG"])
+        self.frame = tk.Frame(self.master, bg=self.layout["bkg_color"])
         self.frame.pack(expand=0)
 
         # Put the time at the top of the window
         self.display_time = tk.Label(
             self.frame,
-            font=("courier", self.geom["FONTSIZE"], "bold"),
-            bg=self.geom["STATBG"],
-            fg="skyblue",
+            font=("courier", self.layout["font_size"], "bold"),
+            bg=self.layout["bkg_color"],
+            fg="LightBlue1",
         )
         self.display_time.grid(row=0, columnspan=4)
 
@@ -99,11 +111,19 @@ class StatusWindow:
         self.net_wanip_data = self.make_statistic_data(row=net_row + 2, column=3)
 
         # Device Status Labels
-        self.make_statistic_label("   Outlet 1:", row=dev_row + 1, column=0)
-        self.make_statistic_label("   Outlet 2:", row=dev_row + 2, column=0)
-        self.make_statistic_label("   Outlet 3:", row=dev_row + 1, column=2)
-        self.make_statistic_label("   Outlet 4:", row=dev_row + 2, column=2)
-        self.make_statistic_label("       Door:", row=dev_row + 3, column=0)
+        self.make_statistic_label(
+            f"{self.config['outlets']['outlet1']:>12s} (#1):", row=dev_row + 1, column=0
+        )
+        self.make_statistic_label(
+            f"{self.config['outlets']['outlet2']:>12s} (#2):", row=dev_row + 2, column=0
+        )
+        self.make_statistic_label(
+            f"{self.config['outlets']['outlet3']:>12s} (#3):", row=dev_row + 1, column=2
+        )
+        self.make_statistic_label(
+            f"{self.config['outlets']['outlet4']:>12s} (#4):", row=dev_row + 2, column=2
+        )
+        self.make_statistic_label(f"{'Door:':>18s}", row=dev_row + 3, column=0)
 
         # Device Status Data
         self.dev_outlet_data = []
@@ -112,94 +132,6 @@ class StatusWindow:
         self.dev_outlet_data.append(self.make_statistic_data(row=dev_row + 1, column=3))
         self.dev_outlet_data.append(self.make_statistic_data(row=dev_row + 2, column=3))
         self.dev_door_data = self.make_statistic_data(row=dev_row + 3, column=1)
-
-    # Label Creator Methods
-    def make_section_label(self, text, row):
-        """Make the Section labels
-
-        [extended_summary]
-
-        Parameters
-        ----------
-        text : str
-            The text for the section label
-        row : int
-            Which row of the GUI this label should be placed in
-
-        Returns
-        -------
-        :obj:`tkinter.Label`
-            The Label object
-        """
-        label = tk.Label(
-            self.frame,
-            font=("times", self.geom["FONTSIZE"], "bold"),
-            bg=self.geom["STATBG"],
-            fg="thistle2",
-            text=text,
-        )
-        label.grid(row=row, columnspan=4)
-        return label
-
-    def make_statistic_label(self, text, row, column):
-        """Make a label for a given statistic
-
-        [extended_summary]
-
-        Parameters
-        ----------
-        text : str
-            The text for the statistic label
-        row : int
-            Which row of the GUI this label should be placed in
-        column : int
-            Which column of the GUI this label should be placed in
-
-        Returns
-        -------
-        :obj:`tkinter.Label`
-            The Label object
-        """
-        label = tk.Label(
-            self.frame,
-            font=("courier", self.geom["FONTSIZE"], "bold"),
-            bg=self.geom["STATBG"],
-            fg="lightgreen",
-            text=text,
-        )
-        label.grid(row=row, column=column)
-        return label
-
-    def make_statistic_data(self, row, column):
-        """Make the data object for a given statistic
-
-        [extended_summary]
-
-        Parameters
-        ----------
-        row : int
-            Which row of the GUI this data should be placed in
-        column : int
-            Which column of the GUI this data should be placed in
-
-        Returns
-        -------
-        :obj:`tkinter.Label`
-            The Label object
-        """
-        label = tk.Label(
-            self.frame,
-            font=("courier", self.geom["FONTSIZE"], "bold"),
-            bg=self.geom["STATBG"],
-            fg="burlywood1",
-            width=self.geom["DATAFIELD"],
-        )
-        label.grid(row=row, column=column)
-        return label
-
-    def close_window(self):
-        """Close the window"""
-        self.master.destroy()
 
     def update(self, now, sensors, relays, network):
         """Update the information in this Window
@@ -265,6 +197,94 @@ class StatusWindow:
         if short_interval:
             time.sleep(0.5)
 
+    # Label Creator Methods
+    def make_section_label(self, text, row):
+        """Make the Section labels
+
+        [extended_summary]
+
+        Parameters
+        ----------
+        text : str
+            The text for the section label
+        row : int
+            Which row of the GUI this label should be placed in
+
+        Returns
+        -------
+        :obj:`tkinter.Label`
+            The Label object
+        """
+        label = tk.Label(
+            self.frame,
+            font=("times", self.layout["font_size"], "bold"),
+            bg=self.layout["bkg_color"],
+            fg="thistle2",
+            text=text,
+        )
+        label.grid(row=row, columnspan=4)
+        return label
+
+    def make_statistic_label(self, text, row, column):
+        """Make a label for a given statistic
+
+        [extended_summary]
+
+        Parameters
+        ----------
+        text : str
+            The text for the statistic label
+        row : int
+            Which row of the GUI this label should be placed in
+        column : int
+            Which column of the GUI this label should be placed in
+
+        Returns
+        -------
+        :obj:`tkinter.Label`
+            The Label object
+        """
+        label = tk.Label(
+            self.frame,
+            font=("courier", self.layout["font_size"], "bold"),
+            bg=self.layout["bkg_color"],
+            fg="lightgreen",
+            text=text,
+        )
+        label.grid(row=row, column=column)
+        return label
+
+    def make_statistic_data(self, row, column):
+        """Make the data object for a given statistic
+
+        [extended_summary]
+
+        Parameters
+        ----------
+        row : int
+            Which row of the GUI this data should be placed in
+        column : int
+            Which column of the GUI this data should be placed in
+
+        Returns
+        -------
+        :obj:`tkinter.Label`
+            The Label object
+        """
+        label = tk.Label(
+            self.frame,
+            font=("courier", self.layout["font_size"], "bold"),
+            bg=self.layout["bkg_color"],
+            fg="burlywood1",
+            width=self.layout["data_width"],
+        )
+        label.grid(row=row, column=column)
+        return label
+
+    def close_window(self):
+        """Close the window"""
+        self.master.destroy()
+
     @staticmethod
     def format_temp_humid_str(temp, humid):
         """Format the Temperature/Humidity strings
@@ -324,3 +344,76 @@ class StatusWindow:
             if cputemp is not None
             else "----- (<185\xb0F)"
         )
+
+
+class LogWindow:
+    """Log Window Class
+
+    Creates the log window and updates it from time to time.
+
+    Parameters
+    ----------
+    master : :obj:`tkinter.Tk`
+        The master Tk object
+    logger : :obj:`logging.Logger`
+        The logging object into which to place logging messages
+    config : dict
+        The configuration file dictionary
+    """
+
+    def __init__(self, master, logger: logging.Logger, config: dict):
+
+        # Set logger & config as attributes
+        self.logger = logger
+        self.config = config
+        self.geom = self.config["window_geometry"]
+
+        # Set up window layout as a dictionary
+        self.layout = {
+            "bkg_color": "#380000",  # Dark Red
+            "fg_color": "#faebd7",  # Antique White
+            "font_size": 9,
+        }
+
+        # Define the MASTER for the window, set geometry
+        # NOTE: Geomtery is set as "X x Y + X0 + Y0"
+        self.master = master
+        y_0 = (
+            self.geom["PI_TOOLBAR"]
+            + self.geom["TK_HEADER"]
+            + self.geom["CONTROL_HIGH"]
+            + self.geom["GAP"]
+        )
+        self.master.geometry(
+            f"{self.geom['LOGS_WIDE']}x{self.geom['LOGS_HIGH']}+0+{y_0}"
+        )
+        self.master.title("Logs Window")
+        self.master.configure(bg=self.layout["bkg_color"])
+
+        # A "frame" holds the various window contents
+        self.frame = tk.Frame(self.master, bg=self.layout["bkg_color"])
+        self.frame.pack(expand=0)
+
+        self.text = tk.Label(
+            self.frame,
+            anchor=tk.NW,
+            bg=self.layout["bkg_color"],
+            fg=self.layout["fg_color"],
+            font=("courier", self.layout["font_size"]),
+            width=80,
+            justify=tk.LEFT,
+        )
+        self.text.pack(expand=True, fill=tk.BOTH)
+        self.text.config(text="The Logs will appear here shortly...")
+
+    def update(self):
+        """Update the information in this Window
+
+        [extended_summary]
+        """
+        with open(
+            utils.Paths.logs.joinpath("chicken-pi.log"), "r", encoding="utf-8"
+        ) as f_obj:
+            contents = f_obj.readlines()
+
+        self.text.config(text="".join(contents[-13:]))

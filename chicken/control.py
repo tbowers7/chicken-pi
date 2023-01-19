@@ -20,7 +20,7 @@ import numpy as np
 from chicken.database import ChickenDatabase, OperationalSettings
 from chicken.graphs import GraphsWindow
 from chicken.network import NetworkStatus
-from chicken.status import StatusWindow
+from chicken.status import StatusWindow, LogWindow
 from chicken import utils
 
 try:
@@ -30,8 +30,8 @@ except ModuleNotFoundError:
 
 
 class ControlWindow:
-    """
-    ControlWindow class
+    """Control Window Class
+
     Creates the main control window and also spawns the secondary display
     windows.
 
@@ -39,6 +39,8 @@ class ControlWindow:
     ----------
     master : :obj:`tkinter.Tk`
         The master Tk object
+    logger : :obj:`logging.Logger`
+        The logging object into which to place logging messages
     """
 
     def __init__(self, master, logger: logging.Logger):
@@ -46,19 +48,17 @@ class ControlWindow:
         # Set logger as attribute
         self.logger = logger
 
-        # Set up geometry as a dictionary
-        self.geom = {
-            "PI_TOOLBAR": 36,  # Height of the Pi's toolbar
-            "TK_HEADER": 25,  # Header height
-            "WIDGET_WIDE": 600,  # Width of the "Control Window"
-            "WIDGET_HIGH": 400,  # Height of the "Control Window"
-            "OUTROW": 2,  # Start of the Outlet Section
-            "CONTBG": "lightgreen",  # Background color of the Control Window
+        # Set up window layout as a dictionary
+        self.layout = {
+            "outlet_row": 2,  # Start of the Outlet Section
+            "bkg_color": "lightgreen",  # Background color of the Control Window
         }
-        self.geom["DOORROW"] = self.geom["OUTROW"] + 14  # Start of the Door Section
+        # Start of the Door Section
+        self.layout["door_row"] = self.layout["outlet_row"] + 14
 
         # Load the configuration file
         self.config = utils.load_yaml_config()
+        self.geom = self.config["window_geometry"]
 
         # Initialize sensors and relays
         self.sensors = set_up_sensors()
@@ -81,20 +81,21 @@ class ControlWindow:
         # Define the MASTER for the CONTROL window, and spawn the other windows
         self.master = master
         self.status_window = StatusWindow(
-            tk.Toplevel(self.master), self.geom["WIDGET_WIDE"]
+            tk.Toplevel(self.master), self.logger, self.config
         )
-        if self.config["use_nws"]:
-            self.graphs_window = GraphsWindow(
-                tk.Toplevel(self.master, bg="forestgreen"), self.database
-            )
+        self.log_window = LogWindow(tk.Toplevel(self.master), self.logger, self.config)
+        self.graphs_window = GraphsWindow(
+            tk.Toplevel(self.master), self.logger, self.config, self.database
+        )
 
         # Define the geometry and title for the CONTROL window
+        # NOTE: Geomtery is set as "X x Y + X0 + Y0"
         self.master.geometry(
-            f"{self.geom['WIDGET_WIDE']}x{self.geom['WIDGET_HIGH']}+"
+            f"{self.geom['CONTROL_WIDE']}x{self.geom['CONTROL_HIGH']}+"
             f"0+{self.geom['PI_TOOLBAR']}"
         )
         self.master.title("Control Window")
-        self.master.configure(bg=self.geom["CONTBG"])
+        self.master.configure(bg=self.layout["bkg_color"])
 
         ## A "frame" holds the various GUI controls
         self.frame = tk.Frame(self.master)
@@ -107,7 +108,12 @@ class ControlWindow:
             fg="darkblue",
             bg="#ffff80",
             font=("courier", 14, "bold"),
-        ).grid(row=self.geom["OUTROW"] - 1, column=0, columnspan=4, sticky=tk.W + tk.E)
+        ).grid(
+            row=self.layout["outlet_row"] - 1,
+            column=0,
+            columnspan=4,
+            sticky=tk.W + tk.E,
+        )
 
         # The outlets are held as a list of OutletControl object instances
         self.outlet = []
@@ -118,12 +124,13 @@ class ControlWindow:
                 "sensors": self.sensors,
                 "img": self.led["off"],
                 "geom": self.geom,
+                "layout": self.layout,
             }
             self.outlet.append(OutletControl(self.frame, params))
 
         # ===== DOOR =====#
         tk.Label(self.frame, text=" - " * 40, fg="darkblue").grid(
-            row=self.geom["DOORROW"] - 1, column=0, columnspan=4, sticky=tk.W + tk.E
+            row=self.layout["door_row"] - 1, column=0, columnspan=4, sticky=tk.W + tk.E
         )
         tk.Label(
             self.frame,
@@ -131,10 +138,11 @@ class ControlWindow:
             fg="darkblue",
             bg="#ffff80",
             font=("courier", 14, "bold"),
-        ).grid(row=self.geom["DOORROW"], column=0, columnspan=4, sticky=tk.W + tk.E)
+        ).grid(row=self.layout["door_row"], column=0, columnspan=4, sticky=tk.W + tk.E)
 
         self.door = DoorControl(
-            self.frame, {"sensors": self.sensors, "geom": self.geom}
+            self.frame,
+            {"sensors": self.sensors, "geom": self.geom, "layout": self.layout},
         )
 
         # Set up the 'SaveSettings' object
@@ -152,7 +160,7 @@ class ControlWindow:
         # This is the official time for Chicken Pi
         now = datetime.datetime.now()
 
-        # Check for changed in the GUI settings
+        # Check for changes in the GUI settings
         self.settings.check_for_change(self.outlet, self.door)
 
         # Every 60 seconds, write changes in relay command to relays
@@ -170,9 +178,12 @@ class ControlWindow:
         # Every minute, write status to database
         if now.second % 60 == 0:  # and now.minute % 1 == 0:
             self.write_to_database(now)
-            # Update the NWS Graph window, if enabeled
+            self.log_window.update()
+            # Update the Graphs window, if enabeled
             if self.config["use_nws"]:
-                self.graphs_window.update(now)
+                self.graphs_window.update(
+                    now,
+                )
 
         # Wait 0.5 seconds (500 ms) and repeat
         self.master.after(500, self.update)
@@ -228,7 +239,6 @@ class ControlWindow:
         """
         # Write the current status to the database first
         self.write_to_database(datetime.datetime.now())
-        self.logger.info("Writing the databse to disk...")
         self.database.write_table_to_fits()
 
 
@@ -384,11 +394,11 @@ class OutletControl(_BaseControl):
 
         # Unpack repeatedly used params members:
         column = params["column"]
-        outlet_row = params["geom"]["OUTROW"]
+        outlet_row = params["layout"]["outlet_row"]
         self.img = params["img"]
 
         # Scale slider width to window
-        slider_size = (params["geom"]["WIDGET_WIDE"] - 5 * 5) / 4
+        slider_size = (params["geom"]["CONTROL_WIDE"] - 5 * 5) / 4
 
         # Column Label for this outlet
         tk.Label(frame, text=f"{params['name']} (#{column+1})", bg="#f0f0f0").grid(
@@ -656,10 +666,10 @@ class DoorControl(_BaseControl):
         self.sensors = params["sensors"]
 
         # Unpack repeatedly used params members:
-        door_row = params["geom"]["DOORROW"]
+        door_row = params["layout"]["door_row"]
 
         # Scale slider width to window
-        slider_size = (params["geom"]["WIDGET_WIDE"] - 5 * 5) / 4
+        slider_size = (params["geom"]["CONTROL_WIDE"] - 5 * 5) / 4
 
         # Column 0: ENABLE
         self.door_enable = tk.Checkbutton(
