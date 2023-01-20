@@ -45,8 +45,9 @@ class ControlWindow:
 
     def __init__(self, master, logger: logging.Logger):
 
-        # Set logger as attribute
+        # Set logger as attribute; set after_id
         self.logger = logger
+        self.after_id = None
 
         # Set up window layout as a dictionary
         self.layout = {
@@ -179,14 +180,11 @@ class ControlWindow:
         if now.second % 60 == 0:  # and now.minute % 1 == 0:
             self.write_to_database(now)
             self.log_window.update()
-            # Update the Graphs window, if enabeled
-            if self.config["use_nws"]:
-                self.graphs_window.update(
-                    now,
-                )
+            # Update the Graphs window
+            self.graphs_window.plot_data()
 
         # Wait 0.5 seconds (500 ms) and repeat
-        self.master.after(500, self.update)
+        self.after_id = self.master.after(500, self.update)
 
     def set_relays(self, change=False):
         """Write the relay commands to the Relay HAT

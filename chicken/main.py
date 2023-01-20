@@ -40,15 +40,16 @@ def main(verbose=False):
     logger.info("Starting Program")
 
     # Set up the GUI
-    root = tk.Tk()
-    app = ControlWindow(root, logger)
-    atexit.register(app.write_database_to_disk)
+    root_tk_object = tk.Tk()
+    control_window = ControlWindow(root_tk_object, logger)
+    atexit.register(control_window.write_database_to_disk)
 
     # Begin the loop
     try:
-        app.update()
-        root.mainloop()
+        control_window.update()
+        root_tk_object.mainloop()
     finally:
+        root_tk_object.after_cancel(control_window.after_id)
         logger.info("Exiting Program")
 
     # Return success
