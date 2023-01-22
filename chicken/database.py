@@ -15,6 +15,7 @@ import logging
 
 # 3rd Party Libraries
 import astropy.table
+import numpy as np
 
 # Internal Imports
 from chicken import utils
@@ -163,19 +164,60 @@ class ChickenDatabase:
             [description], by default 24
         """
 
+    def retrieve_historical(self, lookback=1):
+        """Retrieve historical data for plotting
 
-# """
-# Outline:
-#     Daily make a new Table to hold observations
-#     Record everything we want to every 5 mintues
-#     At end of day (or at exit) write the Table to FITS in data/ directory
+        _extended_summary_
 
-# Provide routines to:
-#     Read in extant file for the day
-#     Add lines to the table
-#     Write out the Table to FITS
-#     Retrieve information from the Table for graphing routines
-# """
+        Parameters
+        ----------
+        lookback : int, optional
+            Number of days to look back (Default: 1)
+
+        Returns
+        -------
+        timestamps : :obj:`datetime.datetime`
+            The timestamps for each row of data in the table
+        data : :obj:`astropy.table.Table`
+            The Table of data
+        """
+        # Determine which historical tables need to be read in based on ``lookback``
+        now = datetime.datetime.now()
+        historical = now - datetime.timedelta(days=lookback)
+
+        # Stack up the historical tables
+        hist_table = astropy.table.Table()
+        while historical < now:
+            filename = utils.Paths.data.joinpath(
+                f"coop_{historical.strftime('%Y%m%d')}.fits"
+            )
+            hist_table = astropy.table.vstack(
+                [hist_table, astropy.table.Table.read(filename)]
+            )
+            historical += datetime.timedelta(days=1)
+
+        # Finally, add the current table in memory
+        hist_table = astropy.table.vstack([hist_table, self.table])
+
+        # Create timestamps from the ``date`` and ``time`` columns
+        hist_table["timestamps"] = [
+            datetime.datetime.fromisoformat(f"{d} {t}")
+            for d, t in zip(hist_table["date"], hist_table["time"])
+        ]
+        # Sort the table on the timestamp column (should already be okay, but...)
+        hist_table.sort("timestamps")
+
+        # Cull the historical table by the exact lookback
+        cutoff = now - datetime.timedelta(days=lookback)
+        hist_table = hist_table[hist_table["timestamps"] > cutoff]
+
+        # Next, remove spurious data by converting to NaN
+        for tempval in [
+            col for col in hist_table.colnames if ("temp" in col or "humid" in col)
+        ]:
+            hist_table[tempval][hist_table[tempval] < -20] = np.nan
+
+        return hist_table["timestamps"], hist_table
 
 
 class OperationalSettings:

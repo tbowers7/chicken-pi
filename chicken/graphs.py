@@ -9,22 +9,20 @@ Graphs display window, updates occasionally with current values
 """
 
 # Built-In Libraries
-import datetime
 import logging
-import threading
+
+# import threading
 import tkinter as tk
 
 # 3rd Party Libraries
 import matplotlib
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
-from matplotlib.dates import DateFormatter, DayLocator, HourLocator
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.dates import DateFormatter, ConciseDateFormatter, AutoDateLocator
 import matplotlib.pyplot as plt
 from noaa_sdk import noaa
-import numpy as np
 
 # Internal Imports
 from chicken.database import ChickenDatabase
-from chicken import utils
 
 # Geometry
 matplotlib.use("TkAgg")
@@ -61,7 +59,7 @@ class GraphsWindow:
         # Set up window layout as a dictionary
         self.layout = {
             "bkg_color": "#002D04",  # Dark Forest Green
-            "fg_color": "white",
+            "fg_color": "#faebd7",  # Antique White
             "font_size": 8,
         }
 
@@ -89,7 +87,7 @@ class GraphsWindow:
         self.lon = self.config["geography"]["longitude"]
 
         # Create the NOAA object instance
-        self.n = noaa.NOAA() if self.config["use_nws"] else None
+        self.noaa = noaa.NOAA() if self.config["use_nws"] else None
         self.have_forecast = False
 
         # Plot date formats
@@ -98,12 +96,58 @@ class GraphsWindow:
         self.day_format = DateFormatter("%a %-m/%d")
 
         # Define instance attributes needed for the plotting
-        self.axis = None
+        self.ax1 = None
         self.canvas = None
         self.tsz = 8
 
         # Create the plot setup
         self.create_plot()
+
+        # Create the lookback info
+        self.lookback = 1
+        tk.Label(
+            self.frame,
+            text="Lookback Time:",
+            fg=self.layout["fg_color"],
+            bg=self.layout["bkg_color"],
+        ).grid(row=0, column=0, sticky=tk.W + tk.E)
+        slider_size = self.geom["GRAPHS_WIDE"] * 0.50
+        self.lookback_slider = tk.Scale(
+            self.frame,
+            from_=1,
+            to=7,
+            digits=1,
+            orient=tk.HORIZONTAL,
+            resolution=1,
+            command=self.update_lookback,
+            variable=tk.DoubleVar,
+            length=slider_size,
+            showvalue=0,
+            troughcolor="#547857",
+            bg=self.layout["bkg_color"],
+            fg=self.layout["fg_color"],
+            highlightcolor=self.layout["fg_color"],
+        )
+        self.lookback_label = tk.Label(
+            self.frame,
+            fg=self.layout["fg_color"],
+            bg=self.layout["bkg_color"],
+            text=f" {self.lookback} day{'s' if self.lookback > 1 else ' '} ",
+        )
+        self.lookback_set = tk.Button(
+            self.frame,
+            command=self.plot_data,
+            text="Set",
+            bg="#547857",
+            fg=self.layout["fg_color"],
+            activebackground=self.layout["fg_color"],
+            activeforeground=self.layout["bkg_color"],
+        )
+
+        # Set lookback stuff to the grid
+        self.lookback_slider.grid(row=0, column=1, columnspan=2, sticky=tk.W + tk.E)
+        self.lookback_label.grid(row=0, column=3, sticky=tk.W + tk.E)
+        self.lookback_set.grid(row=0, column=4, sticky=tk.W + tk.E)
 
     def close_window(self):
         """close_window _summary_
@@ -118,26 +162,35 @@ class GraphsWindow:
         _extended_summary_
         """
         # Initialize the figure object and create the axis attribute
-        px = 1 / plt.rcParams["figure.dpi"]  # pixel in inches
+        pix_size = 1 / plt.rcParams["figure.dpi"]  # pixel in inches
         figure = plt.figure(
-            figsize=(self.geom["GRAPHS_WIDE"] * px, self.geom["GRAPHS_HIGH"] * px)
+            figsize=(
+                self.geom["GRAPHS_WIDE"] * pix_size,
+                (self.geom["GRAPHS_HIGH"] - 30) * pix_size,
+            )
         )
-        self.axis = figure.add_subplot(111)
-        self.axis.tick_params(
-            axis="both",
-            which="both",
-            direction="in",
-            top=True,
-            right=True,
-            labelsize=self.tsz,
-        )
-        self.axis.text(
-            0.5, 0.5, "Graphs will load shortly...", ha="center", va="center"
-        )
+        self.ax1 = figure.add_subplot(311)
+        self.ax1.text(0.5, 0.5, "Graphs will load shortly...", ha="center", va="center")
+
+        self.ax2 = figure.add_subplot(312)
+        self.ax3 = figure.add_subplot(313)
+
+        self.axis_list = [self.ax1, self.ax2, self.ax3]
+        for axis in self.axis_list:
+            axis.tick_params(
+                axis="both",
+                which="both",
+                direction="in",
+                top=True,
+                right=True,
+                labelsize=self.tsz,
+            )
+        plt.subplots_adjust(hspace=0.0)
 
         # Create the Tk Canvas object and draw it
-        self.canvas = FigureCanvasTkAgg(figure, master=self.master)
+        self.canvas = FigureCanvasTkAgg(figure, master=self.frame)
         self.canvas.get_tk_widget().pack()
+        self.canvas.get_tk_widget().grid(row=1, columnspan=5)
         self.canvas.draw()
 
     def plot_data(self):
@@ -146,29 +199,71 @@ class GraphsWindow:
         _extended_summary_
         """
         # Clear the axis from the previous plot
-        self.axis.clear()
+        for axis in self.axis_list:
+            axis.clear()
 
-        # Do the desired plotting
+        # Retrieve the cleaned historical data from the Database object using
+        #  the current ``lookback`` time.
+        timestamps, data = self.data.retrieve_historical(self.lookback)
 
-        # Turn the date/time columns from the Table into datetime objects
-        date = self.data.table["date"]
-        time = self.data.table["time"]
-        timestamps = [
-            datetime.datetime.fromisoformat(f"{d} {t}") for d, t in zip(date, time)
-        ]
+        # Start building the plot
+        # Temperature Panel
+        self.ax1.plot(
+            timestamps,
+            data["inside_temp"],
+            label="Inside Coop",
+            linewidth=0.8,
+            color="C1",
+        )
+        self.ax1.plot(
+            timestamps,
+            data["outside_temp"],
+            label="Outside",
+            linewidth=0.8,
+            color="C2",
+        )
+        self.ax1.set_ylabel("Temp (\xb0F)", fontsize=self.tsz)
+        # self.ax1.set_xlabel("Time", fontsize=self.tsz)
+        # self.ax1.xaxis.set_major_formatter(ConciseDateFormatter(AutoDateLocator))
+        self.ax1.set_xticklabels([])
+        self.ax1.legend(loc="lower left", fontsize=self.tsz)
 
-        inside_temp = self.data.table["inside_temp"]
-        outside_temp = self.data.table["outside_temp"]
-        # Remove spurious data by converting to NaN
-        inside_temp[inside_temp < -20] = np.nan
-        outside_temp[outside_temp < -20] = np.nan
+        # Relative Humidity Panel
+        self.ax2.plot(
+            timestamps,
+            data["inside_humid"],
+            label="Inside Coop",
+            linewidth=0.8,
+            color="C1",
+        )
+        self.ax2.plot(
+            timestamps,
+            data["outside_humid"],
+            label="Outside",
+            linewidth=0.8,
+            color="C2",
+        )
+        self.ax2.set_ylabel("Rel Humid (%)", fontsize=self.tsz)
+        # self.ax2.set_xlabel("Time", fontsize=self.tsz)
+        # self.ax2.xaxis.set_major_formatter(ConciseDateFormatter(AutoDateLocator))
+        self.ax2.set_xticklabels([])
+        self.ax2.legend(loc="lower left", fontsize=self.tsz)
 
-        self.axis.plot(timestamps, inside_temp, label="Inside Coop")
-        self.axis.plot(timestamps, outside_temp, label="Outside")
-        self.axis.set_ylabel("Temperature (\xb0F)", fontsize=self.tsz)
-        self.axis.set_xlabel("Time", fontsize=self.tsz)
+        # Light (and WiFi?) panel
+        self.ax3.plot(
+            timestamps,
+            data["light_lux"],
+            label="Light Level",
+            linewidth=0.8,
+            color="C0",
+        )
+        self.ax3.set_yscale("log")
+        self.ax3.set_ylabel("Light (lux)", fontsize=self.tsz)
+        self.ax3.set_xlabel("Date / Time", fontsize=self.tsz)
+        self.ax3.xaxis.set_major_formatter(ConciseDateFormatter(AutoDateLocator))
+        # self.ax3.legend(loc="lower right", fontsize=self.tsz)
 
-        self.axis.legend(loc="lower right", fontsize=self.tsz)
+        plt.subplots_adjust(hspace=0.0, bottom=0, top=1)
         plt.tight_layout()
 
         # Draw the new plot into the Canvas
@@ -223,7 +318,7 @@ class GraphsWindow:
 
     #     self.have_forecast = True
 
-    def update(self, now):
+    def update(self):
         """update _summary_
 
         _extended_summary_
@@ -233,34 +328,46 @@ class GraphsWindow:
         now : _type_
             _description_
         """
-        return
-        x = threading.Thread(target=self.get_forecast, daemon=True)
-        x.start()
-        print(self.have_forecast)
-        print("Got here 0?")
+        # x = threading.Thread(target=self.get_forecast, daemon=True)
+        # x.start()
+        # print(self.have_forecast)
+        # print("Got here 0?")
 
-        if self.have_forecast:
-            plt.close()
-            f = plt.Figure(figsize=(5, 5), dpi=100)
-            a = f.add_subplot(111)
-            # a.xaxis.set_major_locator(self.alldays)
-            # a.xaxis.set_minor_locator(self.quartdays)
-            a.xaxis.set_major_formatter(self.day_format)
-            a.grid(which="major", axis="x", color="#505050", linestyle="-")
-            # a.grid(which='minor',axis='x',color='pink',linestyle='-')
-            a.plot(self.highDate, self.highTemp, "ro")
-            a.plot(self.lowDate, self.lowTemp, "bo")
-            a.plot(self.highDate, self.highTemp, "r-")
-            a.plot(self.lowDate, self.lowTemp, "b-")
+        # if self.have_forecast:
+        #     plt.close()
+        #     f = plt.Figure(figsize=(5, 5), dpi=100)
+        #     a = f.add_subplot(111)
+        #     # a.xaxis.set_major_locator(self.alldays)
+        #     # a.xaxis.set_minor_locator(self.quartdays)
+        #     a.xaxis.set_major_formatter(self.day_format)
+        #     a.grid(which="major", axis="x", color="#505050", linestyle="-")
+        #     # a.grid(which='minor',axis='x',color='pink',linestyle='-')
+        #     a.plot(self.highDate, self.highTemp, "ro")
+        #     a.plot(self.lowDate, self.lowTemp, "bo")
+        #     a.plot(self.highDate, self.highTemp, "r-")
+        #     a.plot(self.lowDate, self.lowTemp, "b-")
 
-            print("Got here 1?")
-            canvas = FigureCanvasTkAgg(f, self.master)
-            print("Got here 1a?")
-            canvas.draw()
-            print("Got here 1b?")
-            canvas.get_tk_widget().pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
+        #     print("Got here 1?")
+        #     canvas = FigureCanvasTkAgg(f, self.master)
+        #     print("Got here 1a?")
+        #     canvas.draw()
+        #     print("Got here 1b?")
+        #     canvas.get_tk_widget().pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
 
-            print("Got here 2?")
-            toolbar = NavigationToolbar2Tk(canvas, self.master)
-            toolbar.update()
-            canvas._tkcanvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        #     print("Got here 2?")
+        #     toolbar = NavigationToolbar2Tk(canvas, self.master)
+        #     toolbar.update()
+        #     canvas._tkcanvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
+    def update_lookback(self, seltime):
+        """Update the lookback time from the GUI
+
+        Parameters
+        ----------
+        seltime : string or float
+            The selected time from the Tk widget
+        """
+        self.lookback = int(seltime)
+        self.lookback_label.config(
+            text=f" {self.lookback} day{'s' if self.lookback > 1 else ' '} "
+        )

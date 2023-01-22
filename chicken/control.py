@@ -139,7 +139,7 @@ class ControlWindow:
             fg="darkblue",
             bg="#ffff80",
             font=("courier", 14, "bold"),
-        ).grid(row=self.layout["door_row"], column=0, columnspan=4, sticky=tk.W + tk.E)
+        ).grid(row=self.layout["door_row"], column=0, columnspan=3, sticky=tk.W + tk.E)
 
         self.door = DoorControl(
             self.frame,
@@ -254,7 +254,8 @@ class _BaseControl:
         self.and_or = False  # Time AND/OR Temperature
         self.on_time = 0  # Switch turn on time
         self.off_time = 0  # Switch turn off time
-        self.switch_temp = 20  # Temp / Light trigger for switch
+        self.switch_temp = 20  # Temp trigger for switch
+        self.switch_light = 2  # Light trigger for switch
         self.temp_direction = 0  # Temperature direction for trigger
         self.en_var = tk.BooleanVar()  # Variable needed for ENABLE boxes
         self.tempsel_var = tk.IntVar()  # Variable needed for temp radio button
@@ -669,7 +670,7 @@ class DoorControl(_BaseControl):
         # Scale slider width to window
         slider_size = (params["geom"]["CONTROL_WIDE"] - 5 * 5) / 4
 
-        # Column 0: ENABLE
+        # Column 3, row-1: ENABLE
         self.door_enable = tk.Checkbutton(
             frame,
             text="Enable",
@@ -680,7 +681,7 @@ class DoorControl(_BaseControl):
             state=tk.DISABLED,
         )
 
-        # Column 1: Open Time
+        # Column 0: Open Time
         self.on_label = tk.Label(
             frame,
             fg="green",
@@ -701,7 +702,7 @@ class DoorControl(_BaseControl):
             troughcolor="#bfd9bf",
         )
 
-        # Column 2: Close Time
+        # Column 1: Close Time
         self.off_label = tk.Label(
             frame,
             fg="red",
@@ -722,13 +723,13 @@ class DoorControl(_BaseControl):
             troughcolor="#d9bfbf",
         )
 
-        # Column 3: Light Trigger
-        self.switch_temp = 2
+        # Column 2: Light Trigger
+        self.switch_light = 2
         self.door_light_label = tk.Label(
             frame,
             fg="#9932cc",
             bg="#f3e6f9",
-            text=f" LIGHT {self.string_light(self.switch_temp)}",
+            text=f" LIGHT > {self.string_light(self.switch_light)}",
         )
         self.door_light_slider = tk.Scale(
             frame,
@@ -744,16 +745,40 @@ class DoorControl(_BaseControl):
             troughcolor="#cfc4d4",
         )
 
-        # Set everything to the grid
-        self.door_enable.grid(row=door_row + 1, column=0, rowspan=2)
-        self.on_label.grid(row=door_row + 1, column=1, sticky=tk.W + tk.E)
-        self.door_open_slider.grid(row=door_row + 2, column=1, sticky=tk.W + tk.E)
-        self.off_label.grid(row=door_row + 1, column=2, sticky=tk.W + tk.E)
-        self.door_closed_slider.grid(row=door_row + 2, column=2, sticky=tk.W + tk.E)
-        self.door_light_label.grid(row=door_row + 1, column=3, sticky=tk.W + tk.E)
-        self.door_light_slider.grid(row=door_row + 2, column=3, sticky=tk.W + tk.E)
+        # Column 3: Temp Trigger
+        self.switch_temp = 20
+        self.door_temp_label = tk.Label(
+            frame,
+            fg="blue",
+            bg="#e0e0ff",
+            text=f" TEMP > {self.string_temp(self.switch_temp)}",
+        )
+        self.door_temp_slider = tk.Scale(
+            frame,
+            from_=0,
+            to=50,
+            digits=2,
+            orient=tk.HORIZONTAL,
+            resolution=5,
+            command=self.update_door_temp,
+            showvalue=0,
+            variable=tk.DoubleVar,
+            length=slider_size,
+            troughcolor="#bfbfd9",
+        )
 
-    # Light Update Method
+        # Set everything to the grid
+        self.door_enable.grid(row=door_row + 0, column=3, rowspan=1)
+        self.on_label.grid(row=door_row + 1, column=0, sticky=tk.W + tk.E)
+        self.door_open_slider.grid(row=door_row + 2, column=0, sticky=tk.W + tk.E)
+        self.off_label.grid(row=door_row + 1, column=1, sticky=tk.W + tk.E)
+        self.door_closed_slider.grid(row=door_row + 2, column=1, sticky=tk.W + tk.E)
+        self.door_light_label.grid(row=door_row + 1, column=2, sticky=tk.W + tk.E)
+        self.door_light_slider.grid(row=door_row + 2, column=2, sticky=tk.W + tk.E)
+        self.door_temp_label.grid(row=door_row + 1, column=3, sticky=tk.W + tk.E)
+        self.door_temp_slider.grid(row=door_row + 2, column=3, sticky=tk.W + tk.E)
+
+    # Update Methods
     def update_door_light(self, sellux):
         """Update the door light trigger
 
@@ -762,9 +787,22 @@ class DoorControl(_BaseControl):
         sellux : float
             Selected lux from the Tk widget
         """
-        self.switch_temp = float(sellux)
+        self.switch_light = float(sellux)
         self.door_light_label.config(
-            text=f" LIGHT > {self.string_light(self.switch_temp)}"
+            text=f" LIGHT > {self.string_light(self.switch_light)}"
+        )
+
+    def update_door_temp(self, seltemp):
+        """Update the door temperature trigger
+
+        Parameters
+        ----------
+        seltemp : float
+            Selected temperature from the Tk widget
+        """
+        self.switch_temp = float(seltemp)
+        self.door_temp_label.config(
+            text=f" TEMP > {self.string_temp(self.switch_temp)}"
         )
 
     def update_open_time(self, seltime):
