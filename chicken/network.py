@@ -30,7 +30,6 @@ class NetworkStatus:
     """
 
     def __init__(self, logger: logging.Logger):
-
         # Use the passed-in logger
         self.logger = logger
 

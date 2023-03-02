@@ -21,6 +21,7 @@ import tkinter as tk
 from chicken.control import ControlWindow
 from chicken import utils
 
+
 # ===================================================================#
 def main(verbose=False):
     """

@@ -49,7 +49,6 @@ class GraphsWindow:
     def __init__(
         self, master, logger: logging.Logger, config: dict, database: ChickenDatabase
     ):
-
         # Set logger & config as attributes
         self.logger = logger
         self.config = config

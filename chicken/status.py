@@ -35,7 +35,6 @@ class StatusWindow:
     """
 
     def __init__(self, master, logger: logging.Logger, config: dict):
-
         # Set logger & config as attributes
         self.logger = logger
         self.config = config
@@ -362,7 +361,6 @@ class LogWindow:
     """
 
     def __init__(self, master, logger: logging.Logger, config: dict):
-
         # Set logger & config as attributes
         self.logger = logger
         self.config = config

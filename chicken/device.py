@@ -9,18 +9,21 @@ Control classes for the hardware devices on the Chicken Pi
 """
 
 # Built-In Libraries
+from abc import abstractmethod
 import datetime
 import time
 
 # 3rd Party Libraries
 
 # Hardware Libraries
-import adafruit_bus_device.i2c_device
-import adafruit_extended_bus
+import adafruit_bus_device.i2c_device  # Adafruit I2C bus device
+import adafruit_extended_bus  # Adafruit I2C extended bus
 import adafruit_tsl2591  # Outside light sensor
 import adafruit_sht31d  # Inside/outside temp/humid sensors (x2)
 import adafruit_ahtx0  # Internal (box) temp/humid sensor
 import adafruit_motorkit  # Motor HAT
+import board  # Adafruit Blinka for direct GPIO control
+import digitalio  # Adafruit Blinka for direct GPIO control
 
 # Internal Imports
 from chicken import dummy
@@ -77,8 +80,9 @@ def set_up_devices():
 
     # The relays
     try:
-        relays = Relay()
-    except ValueError:
+        relays = RelayHAT()  # Use the new KS0212 relay HAT board
+    except Exception as err:
+        print(f"Relay HAT had error: {err}")
         relays = dummy.Relay()
 
     # Build the return dictionary + Relays class
@@ -93,6 +97,7 @@ def set_up_devices():
 
 # ============================================================================#
 # Device classes:
+
 
 # Implementation of the TSL2591 for the chicken-pi
 class TSL2591:
@@ -211,121 +216,6 @@ class TSL2591:
         return self.cache_level
 
 
-class Old3ARelay:
-    """Chicken-Pi Class for the _____ Relay Board
-
-    This is the class for the original 3A Relay DDL board
-
-    These were removed in Jan 2023 in favor of a 10A relay board
-    """
-
-    # Internal constants:
-    _RELAY_ADDR = 0x10
-    _RELAY_COMMAND_BIT = 0x01
-
-    # Class-level buffer to reduce memory usage and allocations.
-    # Note this is NOT thread-safe or re-entrant by design
-    _READ_BUF = bytearray(5)
-    _WRITE_BUF = bytearray(5)
-
-    def __init__(self, address=_RELAY_ADDR):
-        """__init__ Class Initialization
-
-        [extended_summary]
-
-        Parameters
-        ----------
-        address : `const`, optional
-            I2C address of this relay board [Default: _RELAY_ADDR]
-        """
-        # Initialize the I2C device
-        self._i2c = adafruit_extended_bus.ExtendedI2C(1)
-        self._device = adafruit_bus_device.i2c_device.I2CDevice(self._i2c, address)
-
-        # Make instance variable, and write 0's to relay HAT
-        self.good_write = None
-        self.state = [False] * 4
-        self.write()
-
-    def read(self):
-        """Read the status of the 4 relays from the board
-
-        [Doesn't really work... not sure why.  Usually just returns
-         an array of zeroes.]
-
-        Returns
-        -------
-        list of byetarray
-            List of the control bit + values from the 4 relays
-        """
-        # Read the current state of the relays
-        self._device.readinto(self._READ_BUF)
-        return self._READ_BUF
-
-    def status(self):
-        """Return the current status of the relays
-
-        Method writes the current state to ensure the relays match what
-        the internal variables say they should be.  Then this method
-        returns the current status.
-
-        Returns
-        -------
-        list of bool
-            The True/False state of each relay
-        """
-        self.write()
-        return self.state
-
-    def write(self):
-        """Write the desired state of thr 4 relays to the board
-
-        [extended_summary]
-        """
-        try:
-            self._WRITE_BUF[0] = self._RELAY_COMMAND_BIT
-            for i, relay in enumerate(self.state, 1):
-                self._WRITE_BUF[i] = 0xFF if relay else 0x00
-            with self._device as i2c:
-                i2c.write_then_readinto(self._WRITE_BUF, self._READ_BUF)
-            self.good_write = True
-        except OSError as error:
-            print(f"i2c threw exception: {error}")
-            self.good_write = False
-
-
-class Relay(Old3ARelay):
-    """Placeholder while I'm working to move to the KS0212 relay board
-
-    _extended_summary_
-    """
-
-    def __init__(self):
-        super().__init__()
-
-
-# class RelayHAT:
-#     """Relay HAT Control Class
-
-#     This is the control class for the KS0212 relay HAT board installed in the
-#     chicken-pi in January 2023.
-#     """
-
-#     _WRITE_BUF = bytearray(5)
-
-#     def __init__(self):
-#         self.state = [False] * 4
-
-#     def write(self):
-#         """Write out something?
-
-#         [extended_summary]
-#         """
-#         self._WRITE_BUF[0] = 0x01
-#         for i, relay in enumerate(self.state, 1):
-#             self._WRITE_BUF[i] = 0xFF if relay else 0x00
-
-
 class TempHumid:
     """Chicken-Pi Class for the various temp/humid sensors
 
@@ -340,7 +230,6 @@ class TempHumid:
     """
 
     def __init__(self, senstyp: str, bus=1):
-
         self.senstyp = senstyp
 
         # Load the appropriate I2C Bus
@@ -536,3 +425,163 @@ class RPiCPU:
             with open(cputemp_fn, "r", encoding="utf-8") as sys_file:
                 return (float(sys_file.read()) / 1000.0) * 9.0 / 5.0 + 32.0
         return None
+
+
+# Relay Classes ====================================================#
+class RelayBase:
+    """Base Relay Class
+
+    This base class cane be used with any implementation of relay control
+    used with the chicken-pi.
+    """
+
+    def __init__(self):
+        # Make instance variable, and write 0's to relays
+        self.good_write = None
+        self.state = [False] * 4
+
+    def status(self):
+        """Return the current status of the relays
+
+        Method writes the current state to ensure the relays match what
+        the internal variables say they should be.  Then this method
+        returns the current status.
+
+        Returns
+        -------
+        list of bool
+            The True/False state of each relay
+        """
+        self.write()
+        return self.state
+
+    @abstractmethod
+    def read(self):
+        """Read the current state of the relays
+
+        This method must be implemented by hardware-specific code
+        """
+
+    @abstractmethod
+    def write(self):
+        """Write the current demand to the relays
+
+        This method must be implemented by hardware-specific code
+        """
+
+
+class Old3ARelay(RelayBase):
+    """Chicken-Pi Class for the _____ Relay Board
+
+    This is the class for the original 3A Relay DDL board
+
+    These were removed in Jan 2023 in favor of a 10A relay board
+    """
+
+    # Class-level buffer to reduce memory usage and allocations.
+    # Note this is NOT thread-safe or re-entrant by design
+    _READ_BUF = bytearray(5)
+    _WRITE_BUF = bytearray(5)
+
+    # Internal constants:
+    _RELAY_ADDR = 0x10
+    _RELAY_COMMAND_BIT = 0x01
+
+    def __init__(self, address=_RELAY_ADDR):
+        """__init__ Class Initialization
+
+        [extended_summary]
+
+        Parameters
+        ----------
+        address : `const`, optional
+            I2C address of this relay board [Default: _RELAY_ADDR]
+        """
+        super().__init__()
+
+        # Initialize the I2C device
+        self._i2c = adafruit_extended_bus.ExtendedI2C(1)
+        self._device = adafruit_bus_device.i2c_device.I2CDevice(self._i2c, address)
+
+        self.write()
+
+    def read(self):
+        """Read the current state of the relays
+
+        [Doesn't really work... not sure why.  Usually just returns
+         an array of zeroes.]
+
+        Returns
+        -------
+        list of byetarray
+            List of the control bit + values from the 4 relays
+        """
+        # Read the current state of the relays
+        self._device.readinto(self._READ_BUF)
+        return self._READ_BUF
+
+    def write(self):
+        """Write the current demand to the relays
+
+        [extended_summary]
+        """
+        try:
+            self._WRITE_BUF[0] = self._RELAY_COMMAND_BIT
+            for i, relay in enumerate(self.state, 1):
+                self._WRITE_BUF[i] = 0xFF if relay else 0x00
+            with self._device as i2c:
+                i2c.write_then_readinto(self._WRITE_BUF, self._READ_BUF)
+            self.good_write = True
+        except OSError as error:
+            print(f"i2c threw exception: {error}")
+            self.good_write = False
+
+
+class RelayHAT(RelayBase):
+    """Relay HAT Control Class
+
+    This is the control class for the KS0212 relay HAT board installed in the
+    chicken-pi in January 2023.
+
+    Unlike the 3A Relay DDL board that was installed in the chicken-pi's prior
+    to January 2023, these relay boards are directly controlled by toggling
+    GPIO pins.  The previous boards were controlled by I2C
+    If you test with other code like Python code, you should use BCM port and
+    set the corresponding port 4 22 6 26.
+    """
+
+    def __init__(self):
+        super().__init__()
+
+        # Initialize the GPIO pins needed
+        self.pins = [
+            digitalio.DigitalInOut(board.D4),
+            digitalio.DigitalInOut(board.D22),
+            digitalio.DigitalInOut(board.D6),
+            digitalio.DigitalInOut(board.D26),
+        ]
+        # Set pin direction
+        for pin in self.pins:
+            pin.direction = digitalio.Direction.OUTPUT
+
+        self.write()
+
+    def read(self):
+        """Read the current state of the relays"""
+
+        return [pin.value for pin in self.pins]
+
+    def write(self):
+        """Write the current demand to the relays
+
+        [extended_summary]
+        """
+
+        try:
+            for pin, demand in zip(self.pins, self.state):
+                pin.value = demand
+            self.good_write = True
+
+        except Exception as err:
+            print(f"We had a problem with writing to the RelayHAT: {err}")
+            self.good_write = False

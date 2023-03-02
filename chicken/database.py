@@ -199,7 +199,11 @@ class ChickenDatabase:
             date = dt_object.strftime("%Y%m%d")
         self.logger.info(f"Writing the databse for {date} to disk...")
         if self.table:
-            self.table.write(
+            # The full table includes the `object` type column `timestamps`
+            #   We can't save that to FITS, so remove before saving
+            savetable = self.table.copy()
+            savetable.remove_column("timestamps")
+            savetable.write(
                 utils.Paths.data.joinpath(f"coop_{date}.fits"), overwrite=True
             )
 
@@ -267,7 +271,6 @@ class ChickenDatabase:
         # If `hist_table` is empty, return now
         if not hist_table:
             return [], hist_table
-        print(f"This is the length of hist_table: {len(hist_table)}")
 
         # Create timestamps from the ``date`` and ``time`` columns
         hist_table["timestamps"] = [
@@ -298,7 +301,6 @@ class OperationalSettings:
     """
 
     def __init__(self, outlets, door):
-
         # Set up internal variables
         self.file = utils.Paths.data.joinpath("operational_state.csv")
 
@@ -330,7 +332,6 @@ class OperationalSettings:
 
             # Should be 5 lines: one for each outlet, one for the door
             for i, states in enumerate(state_reader):
-
                 if i < 4:
                     outlet = outlets[i]
                     # Read outlet states from file

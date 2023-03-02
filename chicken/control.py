@@ -44,7 +44,6 @@ class ControlWindow:
     """
 
     def __init__(self, master, logger: logging.Logger):
-
         # Set logger as attribute; set after_id
         self.logger = logger
         self.after_id = None
