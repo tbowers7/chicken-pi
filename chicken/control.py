@@ -24,9 +24,9 @@ from chicken.status import StatusWindow, LogWindow
 from chicken import utils
 
 try:
-    from chicken.device import set_up_sensors, Relay
+    from chicken.device import set_up_devices
 except ModuleNotFoundError:
-    from chicken.dummy import set_up_sensors, Relay
+    from chicken.dummy import set_up_devices
 
 
 class ControlWindow:
@@ -62,12 +62,11 @@ class ControlWindow:
         self.geom = self.config["window_geometry"]
 
         # Initialize sensors and relays
-        self.sensors = set_up_sensors()
-        self.relays = Relay()
+        self.sensors, self.relays = set_up_devices()
 
         # Set up the database and network status classes
         self.network = NetworkStatus(self.logger)
-        self.database = ChickenDatabase(self.logger)
+        self.database = ChickenDatabase(self.logger, self.sensors, self.relays)
 
         # Indicator LEDs
         self.led = {

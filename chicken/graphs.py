@@ -206,6 +206,14 @@ class GraphsWindow:
         #  the current ``lookback`` time.
         timestamps, data = self.data.retrieve_historical(self.lookback)
 
+        # If we have no data, display a notice stating such
+        if timestamps == []:
+            self.ax1.text(
+                0.5, 0.5, "No data yet, please wait...", ha="center", va="center"
+            )
+            self.canvas.draw()
+            return
+
         # Start building the plot
         # Temperature Panel
         self.ax1.plot(

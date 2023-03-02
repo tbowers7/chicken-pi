@@ -23,34 +23,72 @@ import adafruit_ahtx0  # Internal (box) temp/humid sensor
 import adafruit_motorkit  # Motor HAT
 
 # Internal Imports
+from chicken import dummy
 from chicken import utils
 
 # Module Constants
 TEMPHUMID_RESET_HOURS = 24
 
+__all__ = ["set_up_devices"]
 
-def set_up_sensors():
-    """Set up the sensors
 
-    [extended_summary]
+def set_up_devices():
+    """Set up the sensors and relays
+
+    Initialize each thing inside a try/except, loading in the appropriate
+    dummy if the actual sensor cannot be reached.
 
     Returns
     -------
-    dict
+    sensors: dict
         Dictionary containing the sensor objects
+    relays : :class:`Relays`
+        The Relays class
     """
+    # Inside the Pi box -- AHT10 temp/humid sensor on I2C bus #1
+    try:
+        box = TempHumid("AHT10", bus=1)
+    except ValueError:
+        box = dummy.DummyTH()
+
+    # Inside the coop -- SHT30 temp/humid sensor on I2C bus #1
+    try:
+        inside = TempHumid("SHT30", bus=1)
+    except ValueError:
+        inside = dummy.DummyTH()
+
+    # Outside the coop -- SHT30 temp/humid sensor on I2C bus #3
+    try:
+        outside = TempHumid("SHT30", bus=3)
+    except ValueError:
+        outside = dummy.DummyTH()
+
+    # Outside the coop -- TSL2591 light sensor on I2C bus #3
+    try:
+        light = TSL2591(bus=3)
+    except ValueError:
+        light = dummy.DummyLux()
+
+    # Raspberry Pi CPU
+    try:
+        cpu = RPiCPU()
+    except ValueError:
+        cpu = dummy.DummyCPU()
+
+    # The relays
+    try:
+        relays = Relay()
+    except ValueError:
+        relays = dummy.Relay()
+
+    # Build the return dictionary + Relays class
     return {
-        # Inside the Pi box -- AHT10 temp/humid sensor on I2C bus #1
-        "box": TempHumid("AHT10", bus=1),
-        # Inside the coop -- SHT30 temp/humid sensor on I2C bus #1
-        "inside": TempHumid("SHT30", bus=1),
-        # Outside the coop -- SHT30 temp/humid sensor on I2C bus #3
-        "outside": TempHumid("SHT30", bus=3),
-        # Outside the coop -- TSL2591 light sensor on I2C bus #3
-        "light": TSL2591(bus=3),
-        # Raspberry Pi CPU
-        "cpu": RPiCPU(),
-    }
+        "box": box,
+        "inside": inside,
+        "outside": outside,
+        "light": light,
+        "cpu": cpu,
+    }, relays
 
 
 # ============================================================================#

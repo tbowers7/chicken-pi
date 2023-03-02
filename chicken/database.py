@@ -18,6 +18,7 @@ import astropy.table
 import numpy as np
 
 # Internal Imports
+from chicken import network
 from chicken import utils
 
 
@@ -43,7 +44,7 @@ class ChickenDatabase:
         The logging object into which to place logs
     """
 
-    def __init__(self, logger: logging.Logger):
+    def __init__(self, logger: logging.Logger, sensors, relays):
         # Set up internal variables
         self.logger = logger
         now = datetime.datetime.now()
@@ -53,7 +54,7 @@ class ChickenDatabase:
         self.table = (
             astropy.table.Table.read(today_fn)
             if today_fn.exists()
-            else astropy.table.Table()
+            else self.create_empty_table(sensors, relays)
         )
 
         # Log the startup time for the database
@@ -62,7 +63,9 @@ class ChickenDatabase:
             now.isoformat(sep=" ", timespec="seconds"),
         )
 
-    def add_row_to_table(self, nowobj, sensors, relays, network, debug=False):
+    def add_row_to_table(
+        self, nowobj, sensors, relays, network_data: network.NetworkStatus, debug=False
+    ):
         """Add a row of data to the table
 
         .. note::
@@ -79,7 +82,7 @@ class ChickenDatabase:
             [description]
         relays : [type]
             [description]
-        network : [type]
+        network_data : :obj:`network.NetworkStatus`
             [description]
         debug : bool, optional
             Print debugging statements?  (Default: False)
@@ -110,21 +113,76 @@ class ChickenDatabase:
             row[f"outlet_{i}"] = state
 
         # Add network status to the row
-        row["wifi_status"] = network.wifi_status
-        row["inet_status"] = network.inet_status
-        row["lan_ipv4"] = network.lan_ipv4
-        row["wan_ipv4"] = network.wan_ipv4
+        row["wifi_status"] = network_data.wifi_status
+        row["inet_status"] = network_data.inet_status
+        row["lan_ipv4"] = network_data.lan_ipv4
+        row["wan_ipv4"] = network_data.wan_ipv4
 
         # Before appending the row to the end of the table, check new day
         #  If so, write out existing table and start a new one
-        if "date" in self.table.colnames and row["date"] != self.table["date"][-1]:
+        if (
+            self.table
+            and "date" in self.table.colnames
+            and row["date"] != self.table["date"][-1]
+        ):
             self.write_table_to_fits()
-            self.table = astropy.table.Table()
+            self.table = self.create_empty_table(sensors, relays)
 
         # Append the row to the end of the table
-        self.table = astropy.table.vstack([self.table, row])
+        self.table = (
+            astropy.table.vstack([self.table, row])
+            if self.table
+            else astropy.table.Table([row])
+        )
         if debug:
             self.table.pprint()
+
+    def create_empty_table(self, sensors, relays):
+        """Create an empty table with appropriate names and dtypes
+
+        _extended_summary_
+
+        Parameters
+        ----------
+        sensors : _type_
+            _description_
+        relays : _type_
+            _description_
+
+        Returns
+        -------
+        :obj:`astropy.table.Table`
+            The empty table with column names and dtypes
+        """
+        names = ["date", "time"]
+        dtypes = [str, str]
+
+        for name, sensor in sensors.items():
+            # Retrieve the data from this sensor
+            data = sensor.data_entry
+
+            # If `data` is a tuple, it's a TH sensor, otherwise a LUX or CPU
+            if isinstance(data, tuple):
+                names = names + [f"{name}_temp", f"{name}_humid"]
+                dtypes = dtypes + [float, float]
+
+            else:
+                if name == "light":
+                    names.append(f"{name}_lux")
+                    dtypes.append(float)
+                elif name == "cpu":
+                    names.append(f"{name}_temp")
+                    dtypes.append(float)
+
+        names = (
+            names
+            + [f"outlet_{i}" for i in range(1, len(relays.state) + 1)]
+            + ["wifi_status", "inet_status", "lan_ipv4", "wan_ipv4"]
+        )
+        dtypes = dtypes + [bool] * len(relays.state) + [str] * 4
+
+        # Construct the empty table
+        return astropy.table.Table(names=names, dtype=dtypes)
 
     def write_table_to_fits(self, date=None):
         """Write the table in memory to a FITS file on disk
@@ -140,7 +198,10 @@ class ChickenDatabase:
             dt_object = datetime.datetime.now() - datetime.timedelta(minutes=15)
             date = dt_object.strftime("%Y%m%d")
         self.logger.info(f"Writing the databse for {date} to disk...")
-        self.table.write(utils.Paths.data.joinpath(f"coop_{date}.fits"), overwrite=True)
+        if self.table:
+            self.table.write(
+                utils.Paths.data.joinpath(f"coop_{date}.fits"), overwrite=True
+            )
 
     def read_table_from_fits(self, date=None):
         """Read in a FITS file on disk
@@ -191,13 +252,22 @@ class ChickenDatabase:
             filename = utils.Paths.data.joinpath(
                 f"coop_{historical.strftime('%Y%m%d')}.fits"
             )
-            hist_table = astropy.table.vstack(
-                [hist_table, astropy.table.Table.read(filename)]
-            )
+            # Only try to read in the file if it exists
+            if filename.exists():
+                hist_table = astropy.table.vstack(
+                    [hist_table, astropy.table.Table.read(filename)]
+                )
             historical += datetime.timedelta(days=1)
 
         # Finally, add the current table in memory
-        hist_table = astropy.table.vstack([hist_table, self.table])
+        hist_table = (
+            astropy.table.vstack([hist_table, self.table]) if hist_table else self.table
+        )
+
+        # If `hist_table` is empty, return now
+        if not hist_table:
+            return [], hist_table
+        print(f"This is the length of hist_table: {len(hist_table)}")
 
         # Create timestamps from the ``date`` and ``time`` columns
         hist_table["timestamps"] = [
@@ -216,6 +286,7 @@ class ChickenDatabase:
             col for col in hist_table.colnames if ("temp" in col or "humid" in col)
         ]:
             hist_table[tempval][hist_table[tempval] < -20] = np.nan
+        hist_table["light_lux"][hist_table["light_lux"] < 0.05] = np.nan
 
         return hist_table["timestamps"], hist_table
 

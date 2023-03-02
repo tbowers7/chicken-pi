@@ -20,8 +20,10 @@ def set_up_sensors():
 
     Returns
     -------
-    dict
+    sensors : dict
         A dictionary containing the dummy sensors
+    relays : :class:`Relay`
+        The dummy relay class
     """
     return {
         # Inside the Pi box -- AHT10 temp/humid sensor on I2C bus #1
@@ -34,7 +36,7 @@ def set_up_sensors():
         "light": DummyLux(),
         # Raspberry Pi CPU
         "cpu": DummyCPU(),
-    }
+    }, Relay
 
 
 # =========================================================#
@@ -77,7 +79,7 @@ class DummyCPU:
         self.data_entry = self.cache_temp
 
 
-class RelayHAT:
+class Old3ARelay:
     """Dummy Relay Class
 
     [extended_summary]
@@ -86,7 +88,10 @@ class RelayHAT:
     _WRITE_BUF = bytearray(5)
 
     def __init__(self):
+        # Make instance variable, and write 0's to relay HAT
+        self.good_write = None
         self.state = [False] * 4
+        self.write()
 
     def write(self):
         """Write out something?
@@ -96,3 +101,11 @@ class RelayHAT:
         self._WRITE_BUF[0] = 0x01
         for i, relay in enumerate(self.state, 1):
             self._WRITE_BUF[i] = 0xFF if relay else 0x00
+        self.good_write = True
+
+
+class Relay(Old3ARelay):
+    """Placeholder while I'm working to move to the KS0212 relay board
+
+    _extended_summary_
+    """
